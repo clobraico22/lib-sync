@@ -17,7 +17,7 @@ def create_spotify_playlists(
     """
 
     logging.info(
-        f"running create_spotify_playlists with "
+        "running create_spotify_playlists with "
         + f"rekordbox_playlists: {rekordbox_playlists}, "
         + f"rekordbox_to_spotify_map: {rekordbox_to_spotify_map}, "
         + f"spotify_username: {spotify_username}"

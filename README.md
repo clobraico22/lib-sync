@@ -17,7 +17,7 @@ TODO: make this script more portable so anyone can run it on their machine (pref
 - in this directory, run:
 
 ```bash
-python3.10 src/cli_entry_point.py \
+python3.10 libsync/cli_entry_point.py \
 --rekordbox_xml_path <path to your XML file> \
 --spotify_username <your spotify username>
 ```
@@ -27,6 +27,6 @@ python3.10 src/cli_entry_point.py \
 to run with sample data:
 
 ```bash
-python3.10 src/cli_entry_point.py \
+python3.10 libsync/cli_entry_point.py \
 --rekordbox_xml_path sample_data/example_rekordbox_export.xml
 ```

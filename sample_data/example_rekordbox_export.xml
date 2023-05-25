@@ -55,7 +55,18 @@
     </TRACK>
   </COLLECTION>
   <PLAYLISTS>
-    <NODE Type="0" Name="ROOT" Count="0">
+    <NODE Type="0" Name="ROOT" Count="2">
+      <NODE Type="0" Name="folder 1" Count="1">
+        <NODE Name="playlist 2 (nested)" Type="1" KeyType="0" Entries="2">
+          <TRACK Key="140409118"/>
+          <TRACK Key="214856896"/>
+        </NODE>
+      </NODE>
+      <NODE Name="playlist 1 (root)" Type="1" KeyType="0" Entries="3">
+        <TRACK Key="44216344"/>
+        <TRACK Key="249534592"/>
+        <TRACK Key="137833529"/>
+      </NODE>
     </NODE>
   </PLAYLISTS>
 </DJ_PLAYLISTS>

@@ -26,6 +26,7 @@ def main():
     # this library will be a python representation of the rekordbox db structure
     try:
         rekordbox_library = get_rekordbox_library(rekordbox_xml_path)
+        logging.info(f"got rekordbox library: {rekordbox_library}")
     except FileNotFoundError as e:
         logging.error(e)
         print(f"couldn't find '{rekordbox_xml_path}'. check the path and try again")
