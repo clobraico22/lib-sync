@@ -1,3 +1,4 @@
+import logging
 from rekordbox_library import RekordboxLibrary, RekordboxTrack
 
 
@@ -10,6 +11,11 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
     Returns:
         RekordboxLibrary: _description_
     """
+
+    logging.info(
+        f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
+    )
+
     return RekordboxLibrary(
         {
             "id1": RekordboxTrack("id1", "Winona", "DJ Boring", "Winona EP"),

@@ -1,2 +1,4 @@
 argparse
 logging
+spotipy
+python-dotenv

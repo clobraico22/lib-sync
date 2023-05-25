@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-import create_spotify_playlists
+from create_spotify_playlists import create_spotify_playlists
 from get_rekordbox_library import get_rekordbox_library
 from get_spotify_matches import get_spotify_matches
 
@@ -31,7 +31,7 @@ def main():
 
     # this will create playlists in the user's account corresponding to
     create_spotify_playlists(
-        rekordbox_library, rekordbox_to_spotify_map, spotify_username
+        rekordbox_library.playlists, rekordbox_to_spotify_map, spotify_username
     )
 
 

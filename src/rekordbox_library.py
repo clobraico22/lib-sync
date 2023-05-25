@@ -1,3 +1,6 @@
+import pprint
+
+
 class RekordboxTrack:
     def __init__(self, id, name, artist, album=""):
         self.id = id
@@ -5,8 +8,13 @@ class RekordboxTrack:
         self.artist = artist
         self.album = album
 
+    def __repr__(self) -> str:
+        return f"[{self.id}] {self.name} - {self.artist} - " + (
+            self.album if self.album is not "" else "<no album>"
+        )
+
     def __str__(self) -> str:
-        return f"[{self.id}] {self.name} - {self.artist} - {self.album}"
+        return self.__repr__()
 
 
 # dict of all tracks in a collection, indexed by track ID from rekordbox
@@ -24,3 +32,9 @@ class RekordboxLibrary:
     ):
         self.collection = collection
         self.playlists = playlists
+
+    def __repr__(self) -> str:
+        return f"RekordboxLibrary object\n  collection:\n{pprint.pformat(self.collection)}\n  playlists:\n{self.playlists}"
+
+    def __str__(self) -> str:
+        return self.__repr__()
