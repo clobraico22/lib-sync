@@ -4,13 +4,22 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import urllib.parse
 from pprint import pprint
 
+
+from rekordbox_library import RekordboxCollection
+
+
+def get_spotify_matches(rekordbox_collection: RekordboxCollection) -> dict[str, str]:
+    """attempt to map all songs in rekordbox library to spotify uris
+
+    Args:
+        rekordbox_collection (RekordboxCollection): set of songs
+
+    Returns:
+        dict[str, str]: map from rekordbox song ID to spotify URI
+    """
+    return
+
 load_dotenv()
-
-
-# def get_spotify_matches(spotify_client: spotipy.Spotify,rekordbox_library):
-#     for track in rekordbox_library:
-#         search_spotify(spotify_client,track=track) # Not supported yet
-#     return
 
 def search_spotify(
     spotify_client: spotipy.Spotify,
@@ -38,3 +47,5 @@ def test_search_spotify(artist="Fisher",track="Losing it"):
 
 if __name__=="__main__":
     test_search_spotify()
+
+
