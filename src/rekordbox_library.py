@@ -2,7 +2,7 @@ import pprint
 
 
 class RekordboxTrack:
-    def __init__(self, id, name, artist, album=""):
+    def __init__(self, id, name, artist, album=None):
         self.id = id
         self.name = name
         self.artist = artist
@@ -10,7 +10,7 @@ class RekordboxTrack:
 
     def __repr__(self) -> str:
         return f"[{self.id}] {self.name} - {self.artist} - " + (
-            self.album if self.album is not "" else "<no album>"
+            self.album if self.album else "<no album>"
         )
 
     def __str__(self) -> str:

@@ -24,7 +24,18 @@ def main():
     spotify_username = args.spotify_username
 
     # this library will be a python representation of the rekordbox db structure
-    rekordbox_library = get_rekordbox_library(rekordbox_xml_path)
+    try:
+        rekordbox_library = get_rekordbox_library(rekordbox_xml_path)
+    except FileNotFoundError as e:
+        logging.error(e)
+        print(f"couldn't find '{rekordbox_xml_path}'. check the path and try again")
+        return
+    except TypeError as e:
+        logging.error(e)
+        print(
+            f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
+        )
+        return
 
     # this map will map songs from the user's rekordbox library onto spotify search results
     rekordbox_to_spotify_map = get_spotify_matches(rekordbox_library.collection)

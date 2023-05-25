@@ -21,3 +21,12 @@ python3.10 src/cli_entry_point.py \
 --rekordbox_xml_path <path to your XML file> \
 --spotify_username <your spotify username>
 ```
+
+## dev quickstart
+
+to run with sample data:
+
+```bash
+python3.10 src/cli_entry_point.py \
+--rekordbox_xml_path sample_data/example_rekordbox_export.xml
+```

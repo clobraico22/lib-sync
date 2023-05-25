@@ -1,4 +1,7 @@
 import logging
+
+from pyrekordbox import RekordboxXml
+
 from rekordbox_library import RekordboxLibrary, RekordboxTrack
 
 
@@ -16,12 +19,16 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
         f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
     )
 
-    return RekordboxLibrary(
-        {
-            "id1": RekordboxTrack("id1", "Winona", "DJ Boring", "Winona EP"),
-            "id2": RekordboxTrack(
-                "id2", "Kali", "Charlotte de Witte", "Universal Consciousness EP"
-            ),
-            "id3": RekordboxTrack("id3", "Funk You (Original Mix)", "Kreech"),
-        }
-    )
+    xml = RekordboxXml(rekordbox_xml_path)
+    rekordboxCollection = [
+        RekordboxTrack(
+            id=track.TrackID,
+            name=track.Name,
+            artist=track.Artist,
+            album=track.Album,
+        )
+        for track in xml.get_tracks()
+    ]
+    # TODO: get the playlists
+
+    return RekordboxLibrary(collection=rekordboxCollection, playlists=[])
