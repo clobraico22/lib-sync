@@ -1,5 +1,7 @@
 import argparse
 import logging
+import create_spotify_playlists
+from get_rekordbox_library import get_rekordbox_library
 
 from get_spotify_matches import get_spotify_matches
 
