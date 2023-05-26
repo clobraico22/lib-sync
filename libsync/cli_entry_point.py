@@ -4,7 +4,8 @@ import logging
 from create_spotify_playlists import create_spotify_playlists
 from get_rekordbox_library import get_rekordbox_library
 from get_spotify_matches import get_spotify_matches
-
+# from libsync.get_spotify_client import get_spotify_client
+from spotipy.util import prompt_for_user_token
 
 def main():
     parser = argparse.ArgumentParser(description="description here")
@@ -38,6 +39,23 @@ def main():
         )
         return
 
+    token = prompt_for_user_token(
+                username=spotify_username,
+                scope=["user-library-read",
+                       "playlist-modify-private"],
+            )
+    logging.info(f"got spotify token: {token}")
+    # except FileNotFoundError as e:
+    #     logging.error(e)
+    #     print(f"couldn't retrieve token for '{spotify_username}'.")
+    #     return
+    # except TypeError as e:
+    #     logging.error(e)
+    #     print(
+    #         f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
+    #     )
+    #     return
+
     # this map will map songs from the user's rekordbox library onto spotify search results
     rekordbox_to_spotify_map = get_spotify_matches(rekordbox_library.collection)
 
@@ -48,7 +66,7 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logging.info("starting up lib-sync")
 
     main()
