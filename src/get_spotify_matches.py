@@ -11,6 +11,19 @@ load_dotenv()
 #     for track in rekordbox_library:
 #         search_spotify(spotify_client,track=track) # Not supported yet
 #     return
+from rekordbox_library import RekordboxCollection
+
+
+def get_spotify_matches(rekordbox_collection: RekordboxCollection) -> dict[str, str]:
+    """attempt to map all songs in rekordbox library to spotify uris
+
+    Args:
+        rekordbox_collection (RekordboxCollection): set of songs
+
+    Returns:
+        dict[str, str]: map from rekordbox song ID to spotify URI
+    """
+    return
 
 def search_spotify(
     spotify_client: spotipy.Spotify,
@@ -38,3 +51,4 @@ def test_search_spotify(artist="Fisher",track="Losing it"):
 
 if __name__=="__main__":
     test_search_spotify()
+
