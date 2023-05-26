@@ -10,6 +10,7 @@ TODO: make this script more portable so anyone can run it on their machine (pref
 
 - python 3.10
 - pip install packages from requirements.txt (TODO: add virtualenvs)
+- `.env` file in the root directory (copy .example.env and add your `id` and `secret`)
 
 ### steps
 
