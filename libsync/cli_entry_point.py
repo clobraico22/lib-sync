@@ -5,7 +5,7 @@ from create_spotify_playlists import create_spotify_playlists
 from get_rekordbox_library import get_rekordbox_library
 from get_spotify_matches import get_spotify_matches
 # from libsync.get_spotify_client import get_spotify_client
-from spotipy.util import prompt_for_user_token
+from spotipy.oauth2 import prompt_for_user_token
 
 def main():
     parser = argparse.ArgumentParser(description="description here")
