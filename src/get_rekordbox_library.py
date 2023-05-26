@@ -1,4 +1,4 @@
-from rekordbox_library import RekordboxLibrary
+from rekordbox_library import RekordboxLibrary, RekordboxTrack
 
 
 def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
@@ -10,4 +10,12 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
     Returns:
         RekordboxLibrary: _description_
     """
-    return
+    return RekordboxLibrary(
+        {
+            "id1": RekordboxTrack("id1", "Winona", "DJ Boring", "Winona EP"),
+            "id2": RekordboxTrack(
+                "id2", "Kali", "Charlotte de Witte", "Universal Consciousness EP"
+            ),
+            "id3": RekordboxTrack("id3", "Funk You (Original Mix)", "Kreech"),
+        }
+    )
