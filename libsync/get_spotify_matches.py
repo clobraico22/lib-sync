@@ -33,7 +33,7 @@ def get_spotify_matches(rekordbox_collection: RekordboxCollection) -> dict[str, 
         )
         list_of_spotify_tracks = spotify_search_track_results["items"] # this will give us the first page of results
         best_match = find_best_track_match(rb_track,list_of_spotify_tracks)
-        match_map[rb_track] = best_match['uri'] # NOTE: consider returning the entire dictionary rather than just uri
+        match_map[rb_track.id] = best_match['uri'] # NOTE: consider returning the entire dictionary rather than just uri
 
     return match_map
 

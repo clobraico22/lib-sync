@@ -5,7 +5,8 @@ from create_spotify_playlists import create_spotify_playlists
 from get_rekordbox_library import get_rekordbox_library
 from get_spotify_matches import get_spotify_matches
 # from libsync.get_spotify_client import get_spotify_client
-from spotipy.oauth2 import prompt_for_user_token
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 def main():
     parser = argparse.ArgumentParser(description="description here")
@@ -20,9 +21,12 @@ def main():
         type=str,
         help="spotify username [add other spotify auth]",
     )
+
+    # TODO: add optional arg for toggling create collection playlist
     args = parser.parse_args()
     rekordbox_xml_path = args.rekordbox_xml_path
     spotify_username = args.spotify_username
+
 
     # this library will be a python representation of the rekordbox db structure
     try:
@@ -39,29 +43,13 @@ def main():
         )
         return
 
-    token = prompt_for_user_token(
-                username=spotify_username,
-                scope=["user-library-read",
-                       "playlist-modify-private"],
-            )
-    logging.info(f"got spotify token: {token}")
-    # except FileNotFoundError as e:
-    #     logging.error(e)
-    #     print(f"couldn't retrieve token for '{spotify_username}'.")
-    #     return
-    # except TypeError as e:
-    #     logging.error(e)
-    #     print(
-    #         f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
-    #     )
-    #     return
 
     # this map will map songs from the user's rekordbox library onto spotify search results
     rekordbox_to_spotify_map = get_spotify_matches(rekordbox_library.collection)
 
     # this will create playlists in the user's account corresponding to
     create_spotify_playlists(
-        rekordbox_library.playlists, rekordbox_to_spotify_map, spotify_username
+        rekordbox_library.playlists, rekordbox_to_spotify_map, spotify_username, create_collection_playlist=True
     )
 
 
