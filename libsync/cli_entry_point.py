@@ -4,9 +4,11 @@ import logging
 from create_spotify_playlists import create_spotify_playlists
 from get_rekordbox_library import get_rekordbox_library
 from get_spotify_matches import get_spotify_matches
+
 # from libsync.get_spotify_client import get_spotify_client
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+
 
 def main():
     parser = argparse.ArgumentParser(description="description here")
@@ -21,12 +23,21 @@ def main():
         type=str,
         help="spotify username [add other spotify auth]",
     )
-
-    # TODO: add optional arg for toggling create collection playlist
+    parser.add_argument(
+        "--create_collection_playlist",
+        action=argparse.BooleanOptionalAction,
+        help="make a playlist of the total rekordbox collection",
+    )
+    parser.add_argument(
+        "--make_playlists_public",
+        action=argparse.BooleanOptionalAction,
+        help="make generated playlists public",
+    )
     args = parser.parse_args()
     rekordbox_xml_path = args.rekordbox_xml_path
     spotify_username = args.spotify_username
-
+    create_collection_playlist = args.create_collection_playlist
+    make_playlists_public = args.make_playlists_public
 
     # this library will be a python representation of the rekordbox db structure
     try:
@@ -38,18 +49,19 @@ def main():
         return
     except TypeError as e:
         logging.error(e)
-        print(
-            f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
-        )
+        print(f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again")
         return
-
 
     # this map will map songs from the user's rekordbox library onto spotify search results
     rekordbox_to_spotify_map = get_spotify_matches(rekordbox_library.collection)
 
     # this will create playlists in the user's account corresponding to
     create_spotify_playlists(
-        rekordbox_library.playlists, rekordbox_to_spotify_map, spotify_username, create_collection_playlist=True
+        rekordbox_library.playlists,
+        rekordbox_to_spotify_map,
+        spotify_username,
+        create_collection_playlist=create_collection_playlist,
+        make_playlists_public=make_playlists_public,
     )
 
 
