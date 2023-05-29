@@ -52,7 +52,7 @@ def create_spotify_playlists(
             logging.info(f"created spotify playlist: {playlist.name}")
 
             tracks_uris_to_add = [
-                rekordbox_to_spotify_map[track_id] for track_id in playlist.tracks
+                rekordbox_to_spotify_map[track_id] for track_id in playlist.tracks if rekordbox_to_spotify_map[track_id]
             ]
             spotify_client.user_playlist_add_tracks(
                 user=spotify_username, playlist_id=spotify_playlist_data["uri"], tracks=tracks_uris_to_add
