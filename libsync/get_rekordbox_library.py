@@ -1,3 +1,7 @@
+"""
+contains get_rekordbox_library function and helpers
+"""
+
 import logging
 import xml.etree.ElementTree as ET
 
@@ -36,7 +40,6 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
         for track in root.findall("./COLLECTION/TRACK")
     ]
     # flatten playlist structure into one folder
-    # TODO: switch to nested structure
     rekordbox_playlists: list[RekordboxPlaylist] = []
     nodes: list = root.findall("./PLAYLISTS/NODE")
     while len(nodes) >= 1:
@@ -48,11 +51,8 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
         )
 
         logging.debug(f"running loop with nodes: {nodes}, " + f"nodes[0]: {nodes[0]}, ")
-        # print(node.get("Type"))
-        # print(node_type)
         if node_type == RekordboxNodeType.PLAYLIST:
             logging.debug("found playlist")
-            print([track.get("Key") for track in node.findall("TRACK")])
             rekordbox_playlists.append(
                 RekordboxPlaylist(
                     name=node.get("Name"),

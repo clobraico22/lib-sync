@@ -1,16 +1,15 @@
+"""
+contains get_spotify_matches function and helpers
+"""
+
 import logging
 import pprint
 import urllib.parse
-from difflib import SequenceMatcher as SM
 from datetime import datetime
 
 import spotipy
-from dotenv import load_dotenv
 from rekordbox_library import RekordboxCollection, RekordboxTrack
 from spotipy.oauth2 import SpotifyClientCredentials
-
-
-load_dotenv()
 
 
 def get_spotify_matches(rekordbox_collection: RekordboxCollection) -> dict[str, str]:
@@ -23,8 +22,9 @@ def get_spotify_matches(rekordbox_collection: RekordboxCollection) -> dict[str, 
         dict[str, str]: map from rekordbox song ID to spotify URI
     """
 
-    logging.info(
-        f"running get_spotify_matches with rekordbox_collection:\n{pprint.pformat(rekordbox_collection)}"
+    logging.debug(
+        "running get_spotify_matches with rekordbox_collection:\n"
+        + f"{pprint.pformat(rekordbox_collection)}"
     )
 
     match_map = {}
@@ -32,23 +32,22 @@ def get_spotify_matches(rekordbox_collection: RekordboxCollection) -> dict[str, 
     for rb_track in rekordbox_collection:
         best_match_uri = "next"
         spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
-        spotify_search_track_results = search_spotify_for_rekordbox_track(
+        spotify_search_results = search_spotify_for_rekordbox_track(
             spotify,
             rb_track,
         )
         logging.debug(
-            f"Search results for track {rb_track}: {pprint.pformat([track['name'] for track in spotify_search_track_results['items']])}"
+            f"Search results for track {rb_track}: "
+            + f"{pprint.pformat([track['name'] for track in spotify_search_results['items']])}"
         )
 
         best_match_uri = find_best_track_match_uri(
-            rb_track, spotify_search_track_results["items"]
+            rb_track, spotify_search_results["items"]
         )
-        while best_match_uri == "next" and spotify_search_track_results["next"]:
-            spotify_search_track_results = spotify.next(spotify_search_track_results)[
-                "tracks"
-            ]
-            best_match = find_best_track_match_uri(
-                rb_track, spotify_search_track_results["items"]
+        while best_match_uri == "next" and spotify_search_results["next"]:
+            spotify_search_results = spotify.next(spotify_search_results)["tracks"]
+            best_match_uri = find_best_track_match_uri(
+                rb_track, spotify_search_results["items"]
             )
 
         if best_match_uri is None:
@@ -68,19 +67,18 @@ def export_failed_matches_to_file(failed_matches: list[RekordboxTrack]):
         failed_matches (list[RekordboxTrack]): list of failed rekordbox tracks
     """
 
-    with open(f"failed_matches_{datetime.now()}.txt", "w") as fp:
-        fp.write(
-            "The below files were not found on Spotify. Consider updating the metadata before re-running lib-sync.\n"
+    with open(f"failed_matches_{datetime.now()}.txt", "w", encoding="utf-8") as file:
+        file.write(
+            "The below files were not found on Spotify. "
+            + "Consider updating the metadata before re-running lib-sync.\n"
         )
         for line in failed_matches:
-            fp.write(f"\t{line}\n")
+            file.write(f"\t{line}\n")
 
 
 def search_spotify_for_rekordbox_track(
     spotify_client: spotipy.Spotify,
     rekordbox_track: RekordboxTrack,
-    *,
-    market: str = "US",
 ) -> dict[str, list]:
     """search spotify for a given rekordbox track.Z
 
@@ -111,17 +109,18 @@ def find_best_track_match_uri(
         list_of_spotify_tracks (list): list of spotify tracks from a spotify search
 
     Returns:
-        str: uri of the matching spotify track; If an exact match is not found, the user either selects the uri index, 0, or 11.
-             0 returns None. 11 iterates to the next page of results
+        str: uri of the matching spotify track.
+        If an exact match is not found, the user either selects the uri index, 0, or 11.
+        0 returns None. 11 iterates to the next page of results
     """
-    logging.info(
+    logging.debug(
         f"running find_best_track_match with rekordbox_track:\n{pprint.pformat(rekordbox_track)}"
     )
     if not list_of_spotify_tracks:
-        logging.warning(f"list_of_spotify_tracks is empty. Returning None...\n")
+        logging.debug("list_of_spotify_tracks is empty. Returning None...")
         return None
     if rekordbox_track.name.strip() == list_of_spotify_tracks[0]:
-        logging.info(
+        logging.debug(
             f"Found an exact match for rekordbox_track:\n{pprint.pformat(rekordbox_track)}"
         )
         return list_of_spotify_tracks[0]
@@ -135,7 +134,7 @@ def find_best_track_match_uri(
             album = track["album"]["name"]
             artists = [artist["name"] for artist in track["artists"]]
             track_name = track["name"]
-            track_uri = track["uri"]
+            # track_uri = track["uri"]
             potential_match_strings[
                 i
             ] = f"{track_name} - Artist(s): {artists} Album: {album}"
@@ -145,8 +144,8 @@ def find_best_track_match_uri(
 
         print(f"No exact matches were found for {rekordbox_track}")
 
-        for k, v in potential_match_strings.items():
-            print(f"  {k}: {v}")
+        for index, track_string in potential_match_strings.items():
+            print(f"  {index}: {track_string}")
         selected_match_i = int(
             input("Please select an an option from the list [0-11]: ")
         )

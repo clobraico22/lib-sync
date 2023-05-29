@@ -25,6 +25,19 @@ python3.10 libsync/cli_entry_point.py \
 
 ## dev quickstart
 
+first time setup:
+
+```bash
+python3.10 -m venv .venv
+```
+
+activate python virtual environment and update dependencies (after each pull):
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+```
+
 to run with sample data:
 
 ```bash
