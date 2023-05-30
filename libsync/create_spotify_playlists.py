@@ -9,6 +9,8 @@ import spotipy
 from rekordbox_library import RekordboxPlaylist
 from spotipy.oauth2 import SpotifyOAuth
 
+ITEMS_PER_PAGE_SPOTIFY_API = 100
+
 
 def create_spotify_playlists(
     playlist_id_map: dict[str, str],
@@ -22,9 +24,11 @@ def create_spotify_playlists(
     Args:
         playlist_id_map (dict[str, str]): map from rekordbox playlist name to spotify playlist id.
             passed by reference, modified in place
-        rekordbox_playlists (list[RekordboxPlaylist]): user's playlists from rekordbox (list of rekordbox track IDs)
+        rekordbox_playlists (list[RekordboxPlaylist]): user's playlists from rekordbox
+            (list of rekordbox track IDs)
         rekordbox_to_spotify_map (dict[str, str]): mapping from rekordbox track IDs to spotify URIs
-        create_collection_playlist (bool,optional): if true, will create a spotify playlist of the entire rekordbox collection
+        create_collection_playlist (bool,optional): if true, will create a spotify playlist of
+            the entire rekordbox collection
         make_playlists_public (bool,optional): determines if playlist will be made public or not
 
     Returns:
@@ -65,8 +69,9 @@ def create_spotify_playlists(
                     user=user_id,
                     name=playlist.name,
                     public=make_playlists_public,
-                    description="Automatically generated based on your rekordbox library by lib-sync."
-                    + "\nFor more information, visit here https://github.com/clobraico22/lib-sync",
+                    description="Automatically generated based on your rekordbox"
+                    + "library by lib-sync.\nFor more information, visit: "
+                    + "https://github.com/clobraico22/lib-sync",
                 )
                 logging.info(f"created spotify playlist: {playlist.name}")
 
@@ -79,11 +84,13 @@ def create_spotify_playlists(
                 if track_id in rekordbox_to_spotify_map
             ]
 
-            # TODO: paginate this call, spotify only allows 100 items per call
-            print(tracks_uris_to_add)
-            spotify.playlist_add_items(
-                playlist_id=playlist_id, items=tracks_uris_to_add
-            )
+            pages = [
+                tracks_uris_to_add[i : i + ITEMS_PER_PAGE_SPOTIFY_API]
+                for i in range(0, len(tracks_uris_to_add), ITEMS_PER_PAGE_SPOTIFY_API)
+            ]
+            for page in pages:
+                spotify.playlist_add_items(playlist_id=playlist_id, items=page)
+
             logging.info(f"added tracks to spotify playlist: {playlist.name}")
 
         except spotipy.exceptions.SpotifyException as error:
