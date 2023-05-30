@@ -2,3 +2,5 @@ libsync/__pycache__
 .env
 .cache
 .venv
+*.pickle
+failed_matches_*

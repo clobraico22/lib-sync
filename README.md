@@ -2,15 +2,14 @@
 
 rekordbox -> spotify playlists
 
-## how to use
-
-TODO: make this script more portable so anyone can run it on their machine (preferably without docker)
+## user guide
 
 ### prereqs
 
-- python 3.10
-- pip install packages from requirements.txt (TODO: add virtualenvs)
-- `.env` file in the root directory (copy .example.env and add your `id` and `secret`)
+- [python 3.10](https://www.python.org/downloads/release/python-31010/) installed locally
+- `.env` file in the root directory with client ID and secret
+  - go to the [Spotify developers dashboard](https://developer.spotify.com/dashboard) and go to Create App to get a client ID and secret
+  - copy .example.env from this directory into a new file .env in the same directory and add your `id` and `secret`
 
 ### steps
 
@@ -18,14 +17,22 @@ TODO: make this script more portable so anyone can run it on their machine (pref
 - in this directory, run:
 
 ```bash
-python3.10 libsync/cli_entry_point.py \
---rekordbox_xml_path <path to your XML file> \
---spotify_username <your spotify username>
+python3.10 -m venv .venv  # create python virtual environment
+source .venv/bin/activate  # activate virtual environment
+pip install -r requirements.txt  # install dependencies
+
+# see options
+python libsync/cli_entry_point.py -h
+
+# run script
+python libsync/cli_entry_point.py \
+--rekordbox_xml_path <path to your XML file>
+--libsync_db_path ${HOME}/.libsync.db
 ```
 
 ## dev quickstart
 
-first time setup:
+one time setup:
 
 ```bash
 python3.10 -m venv .venv
@@ -41,6 +48,8 @@ pip install -r requirements.txt -r requirements-dev.txt
 to run with sample data:
 
 ```bash
-python3.10 libsync/cli_entry_point.py \
---rekordbox_xml_path sample_data/example_rekordbox_export.xml
+python libsync/cli_entry_point.py \
+--rekordbox_xml_path sample_data/example_rekordbox_export.xml \
+--libsync_db_path testdb.pickle \
+--create_collection_playlist
 ```

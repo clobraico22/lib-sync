@@ -1,14 +1,12 @@
 """CLI entry point"""
-
 import argparse
 import logging
+import pickle
 
 from create_spotify_playlists import create_spotify_playlists
+from dotenv import load_dotenv
 from get_rekordbox_library import get_rekordbox_library
 from get_spotify_matches import get_spotify_matches
-from dotenv import load_dotenv
-
-# from spotipy.util import prompt_for_user_token
 
 
 def main():
@@ -23,9 +21,10 @@ def main():
         help="path to rekordbox db [add more help here]",
     )
     parser.add_argument(
-        "--spotify_username",
+        "--libsync_db_path",
         type=str,
-        help="spotify username [add other spotify auth]",
+        help="path to local libsync db file."
+        + "This can be a db from a previous run, or a new db will be created if none exists.",
     )
     parser.add_argument(
         "--create_collection_playlist",
@@ -39,11 +38,35 @@ def main():
     )
     args = parser.parse_args()
     rekordbox_xml_path = args.rekordbox_xml_path
-    spotify_username = args.spotify_username
+    libsync_db_path = args.libsync_db_path
     create_collection_playlist = args.create_collection_playlist
     make_playlists_public = args.make_playlists_public
 
-    # this library will be a python representation of the rekordbox db structure
+    rekordbox_to_spotify_map = {}
+    playlist_id_map = {}
+
+    # get libsync db from file
+    try:
+        with open(libsync_db_path, "rb") as handle:
+            database = pickle.load(handle)
+            rekordbox_to_spotify_map, playlist_id_map = (
+                database["rekordbox_to_spotify_map"],
+                database["playlist_id_map"],
+            )
+    except FileNotFoundError as error:
+        logging.error(error)
+        print(
+            f"couldn't find database: '{rekordbox_xml_path}'. creating new database from scratch"
+        )
+    except KeyError as error:
+        logging.error(error)
+        print(
+            f"database is an incorrect format: '{rekordbox_xml_path}'. creating new database from scratch"
+        )
+        rekordbox_to_spotify_map = {}
+        playlist_id_map = {}
+
+    # get rekordbox db from xml
     try:
         rekordbox_library = get_rekordbox_library(rekordbox_xml_path)
         logging.debug(f"got rekordbox library: {rekordbox_library}")
@@ -58,23 +81,27 @@ def main():
         )
         return
 
-    # token = prompt_for_user_token(
-    #     username=spotify_username,
-    #     scope=["user-library-read", "playlist-modify-private"],
-    # )
-    # logging.info(f"got spotify token: {token}")
+    # map songs from the user's rekordbox library onto spotify search results
+    get_spotify_matches(rekordbox_to_spotify_map, rekordbox_library.collection)
 
-    # this map will map songs from the user's rekordbox library onto spotify search results
-    rekordbox_to_spotify_map = get_spotify_matches(rekordbox_library.collection)
+    # create a playlist in the user's account for each rekordbox playlist
+    create_spotify_playlists(
+        playlist_id_map=playlist_id_map,
+        rekordbox_playlists=rekordbox_library.playlists,
+        rekordbox_to_spotify_map=rekordbox_to_spotify_map,
+        create_collection_playlist=create_collection_playlist,
+        make_playlists_public=make_playlists_public,
+    )
 
-    # this will create playlists in the user's account corresponding to
-    # create_spotify_playlists(
-    #     rekordbox_library.playlists,
-    #     rekordbox_to_spotify_map,
-    #     spotify_username,
-    #     create_collection_playlist=create_collection_playlist,
-    #     make_playlists_public=make_playlists_public,
-    # )
+    with open(libsync_db_path, "wb") as handle:
+        pickle.dump(
+            {
+                "rekordbox_to_spotify_map": rekordbox_to_spotify_map,
+                "playlist_id_map": playlist_id_map,
+            },
+            handle,
+            protocol=pickle.HIGHEST_PROTOCOL,
+        )
 
 
 if __name__ == "__main__":
