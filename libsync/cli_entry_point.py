@@ -36,11 +36,17 @@ def main():
         action=argparse.BooleanOptionalAction,
         help="make generated playlists public",
     )
+    parser.add_argument(
+        "--include_loose_songs",
+        action=argparse.BooleanOptionalAction,
+        help="include songs not on any playlists",
+    )
     args = parser.parse_args()
     rekordbox_xml_path = args.rekordbox_xml_path
     libsync_db_path = args.libsync_db_path
     create_collection_playlist = args.create_collection_playlist
     make_playlists_public = args.make_playlists_public
+    include_loose_songs = args.include_loose_songs
 
     rekordbox_to_spotify_map = {}
     playlist_id_map = {}
@@ -54,12 +60,12 @@ def main():
                 database["playlist_id_map"],
             )
     except FileNotFoundError as error:
-        logging.error(error)
+        logging.exception(error)
         print(
             f"couldn't find database: '{rekordbox_xml_path}'. creating new database from scratch"
         )
     except KeyError as error:
-        logging.error(error)
+        logging.exception(error)
         print(
             f"database is an incorrect format: '{rekordbox_xml_path}'. creating new database from scratch"
         )
@@ -68,14 +74,16 @@ def main():
 
     # get rekordbox db from xml
     try:
-        rekordbox_library = get_rekordbox_library(rekordbox_xml_path)
+        rekordbox_library = get_rekordbox_library(
+            rekordbox_xml_path, include_loose_songs
+        )
         logging.debug(f"got rekordbox library: {rekordbox_library}")
     except FileNotFoundError as error:
-        logging.error(error)
+        logging.exception(error)
         print(f"couldn't find '{rekordbox_xml_path}'. check the path and try again")
         return
     except TypeError as error:
-        logging.error(error)
+        logging.exception(error)
         print(
             f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
         )

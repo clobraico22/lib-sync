@@ -10,6 +10,8 @@ from rekordbox_library import RekordboxPlaylist
 from spotipy.oauth2 import SpotifyOAuth
 
 ITEMS_PER_PAGE_SPOTIFY_API = 100
+# turn this on for debugging without the spotify match module
+SKIP_CREATE_SPOTIFY_PLAYLISTS = False
 
 
 def create_spotify_playlists(
@@ -34,6 +36,9 @@ def create_spotify_playlists(
     Returns:
         dict[str, str]: reference to playlist_id_map argument which is modified in place
     """
+
+    if SKIP_CREATE_SPOTIFY_PLAYLISTS:
+        return
 
     logging.debug(
         "running create_spotify_playlists with\n"
@@ -94,7 +99,7 @@ def create_spotify_playlists(
             logging.info(f"added tracks to spotify playlist: {playlist.name}")
 
         except spotipy.exceptions.SpotifyException as error:
-            logging.error(error)
+            logging.exception(error)
             print(f"failed to create playlist {playlist.name}")
 
     return playlist_id_map

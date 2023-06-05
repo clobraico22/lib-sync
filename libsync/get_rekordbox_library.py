@@ -3,6 +3,7 @@ contains get_rekordbox_library function and helpers
 """
 
 import logging
+import re
 import xml.etree.ElementTree as ET
 
 from rekordbox_library import (
@@ -13,7 +14,9 @@ from rekordbox_library import (
 )
 
 
-def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
+def get_rekordbox_library(
+    rekordbox_xml_path: str, include_loose_songs: bool
+) -> RekordboxLibrary:
     """_summary_
 
     Args:
@@ -39,6 +42,7 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
         )
         for track in root.findall("./COLLECTION/TRACK")
     ]
+    tracks_found_on_at_least_one_playlist = set()
     # flatten playlist structure into one folder
     rekordbox_playlists: list[RekordboxPlaylist] = []
     nodes: list = root.findall("./PLAYLISTS/NODE")
@@ -59,6 +63,8 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
                     tracks=[track.get("Key") for track in node.findall("TRACK")],
                 )
             )
+            for track in rekordbox_playlists[-1].tracks:
+                tracks_found_on_at_least_one_playlist.add(track)
 
         elif node_type == RekordboxNodeType.FOLDER:
             logging.debug("found folder")
@@ -69,6 +75,14 @@ def get_rekordbox_library(rekordbox_xml_path: str) -> RekordboxLibrary:
             break
 
         nodes.pop(0)
+
+    if not include_loose_songs:
+        rekordbox_collection = list(
+            filter(
+                lambda track: track.id in tracks_found_on_at_least_one_playlist,
+                rekordbox_collection,
+            )
+        )
 
     logging.info("done getting rekordbox library")
     return RekordboxLibrary(

@@ -50,6 +50,15 @@ to run with sample data:
 ```bash
 python libsync/cli_entry_point.py \
 --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
+--libsync_db_path example_rekordbox_export.db.pickle \
+--create_collection_playlist
+```
+
+to run with prod data:
+
+```bash
+python libsync/cli_entry_point.py \
+--rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
 --libsync_db_path testdb.pickle \
 --create_collection_playlist
 ```
