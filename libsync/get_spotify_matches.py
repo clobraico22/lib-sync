@@ -17,7 +17,7 @@ from spotipy.oauth2 import SpotifyOAuth
 ARTIST_LIST_DELIMITERS = r",| & |vs\.|\n|ft\.|feat\.|featuring| / |; "
 NUMBER_OF_RESULTS_PER_QUERY = 5
 # while prototyping, leave this off
-USE_SAVED_DB_MATCHES = True
+USE_SAVED_DB_MATCHES = False
 # turn this on for debugging without the spotify match module
 SKIP_GET_SPOTIFY_MATCHES = False
 DEBUG_SIMILARITY = False
@@ -44,6 +44,7 @@ def get_spotify_matches(
         + f"{pprint.pformat(rekordbox_collection)}"
     )
 
+    # TODO: cache these results in local db to cut down on iteration time during testing
     library_search_results = {}
     failed_matches = []
 
