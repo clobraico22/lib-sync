@@ -2,6 +2,7 @@
 import argparse
 import logging
 import pickle
+import time
 
 from create_spotify_playlists import create_spotify_playlists
 from dotenv import load_dotenv
@@ -13,6 +14,7 @@ def main():
     """
     parse command line args, call other components
     """
+
     load_dotenv()
     parser = argparse.ArgumentParser(description="description here")
     parser.add_argument(
@@ -126,5 +128,6 @@ def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logging.info("starting up lib-sync")
-
+    start_time = time.time()
     main()
+    logging.info(f"total runtime: {time.time() - start_time} seconds")
