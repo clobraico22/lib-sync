@@ -114,6 +114,7 @@ def main():
             {
                 "rekordbox_to_spotify_map": rekordbox_to_spotify_map,
                 "playlist_id_map": playlist_id_map,
+                "library_search_results": library_search_results,
             },
             handle,
             protocol=pickle.HIGHEST_PROTOCOL,
