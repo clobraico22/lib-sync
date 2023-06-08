@@ -21,17 +21,20 @@ USE_SAVED_DB_MATCHES = False
 # turn this on for debugging without the spotify match module
 SKIP_GET_SPOTIFY_MATCHES = False
 DEBUG_SIMILARITY = False
-MINIMUM_SIMILARITY_THRESHOLD = 0.6
+MINIMUM_SIMILARITY_THRESHOLD = 0.9
 
 
 def get_spotify_matches(
-    rekordbox_to_spotify_map: dict[str, str], rekordbox_collection: RekordboxCollection
+    rekordbox_to_spotify_map: dict[str, str],
+    cached_search_search_results: dict,
+    rekordbox_collection: RekordboxCollection,
 ) -> dict[str, str]:
     """attempt to map all songs in rekordbox library to spotify uris
 
     Args:
         rekordbox_to_spotify_map (dict[str, str]): map from rekordbox song ID to spotify URI.
             passed by reference, modified in place
+        cached_search_search_results: dict [TODO]
         rekordbox_collection (RekordboxCollection): set of songs
 
     Returns:
@@ -44,8 +47,6 @@ def get_spotify_matches(
         + f"{pprint.pformat(rekordbox_collection)}"
     )
 
-    # TODO: cache these results in local db to cut down on iteration time during testing
-    library_search_results = {}
     failed_matches = []
 
     scope = ["user-library-read", "playlist-modify-private"]
@@ -57,8 +58,12 @@ def get_spotify_matches(
             logging.debug("found a match in libsync db, skipping this spotify query")
             continue
 
-        spotify_search_results = get_spotify_search_results(spotify, rb_track)
-        library_search_results[rb_track.id] = spotify_search_results
+        if rb_track.id in cached_search_search_results:
+            spotify_search_results = cached_search_search_results[rb_track.id]
+        else:
+            spotify_search_results = get_spotify_search_results(spotify, rb_track)
+            cached_search_search_results[rb_track.id] = spotify_search_results
+
         logging.debug(
             f"Search results for track {rb_track}: "
             + f"{pprint.pformat([track['name'] for track in spotify_search_results.values()])}"
