@@ -58,11 +58,11 @@ def main():
             (
                 rekordbox_to_spotify_map,
                 playlist_id_map,
-                library_search_results,
+                cached_search_search_results,
             ) = (
                 database["rekordbox_to_spotify_map"],
                 database["playlist_id_map"],
-                database["library_search_results"],
+                database["cached_search_search_results"],
             )
     except FileNotFoundError as error:
         logging.exception(error)
@@ -76,7 +76,7 @@ def main():
         )
         rekordbox_to_spotify_map = {}
         playlist_id_map = {}
-        library_search_results = {}
+        cached_search_search_results = {}
 
     # get rekordbox db from xml
     try:
@@ -97,7 +97,9 @@ def main():
 
     # map songs from the user's rekordbox library onto spotify search results
     get_spotify_matches(
-        rekordbox_to_spotify_map, library_search_results, rekordbox_library.collection
+        rekordbox_to_spotify_map,
+        cached_search_search_results,
+        rekordbox_library.collection,
     )
 
     # create a playlist in the user's account for each rekordbox playlist
@@ -114,7 +116,7 @@ def main():
             {
                 "rekordbox_to_spotify_map": rekordbox_to_spotify_map,
                 "playlist_id_map": playlist_id_map,
-                "library_search_results": library_search_results,
+                "cached_search_search_results": cached_search_search_results,
             },
             handle,
             protocol=pickle.HIGHEST_PROTOCOL,
