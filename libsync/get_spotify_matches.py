@@ -47,8 +47,6 @@ def get_spotify_matches(
         + f"{pprint.pformat(rekordbox_collection)}"
     )
 
-    # TODO: cache these results in local db to cut down on iteration time during testing
-    library_search_results = {}
     failed_matches = []
 
     scope = ["user-library-read", "playlist-modify-private"]
