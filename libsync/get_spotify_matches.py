@@ -26,7 +26,7 @@ MINIMUM_SIMILARITY_THRESHOLD = 0.9
 
 def get_spotify_matches(
     rekordbox_to_spotify_map: dict[str, str],
-    library_search_results: dict,
+    cached_search_search_results: dict,
     rekordbox_collection: RekordboxCollection,
 ) -> dict[str, str]:
     """attempt to map all songs in rekordbox library to spotify uris
@@ -34,7 +34,7 @@ def get_spotify_matches(
     Args:
         rekordbox_to_spotify_map (dict[str, str]): map from rekordbox song ID to spotify URI.
             passed by reference, modified in place
-        library_search_results: dict [TODO]
+        cached_search_search_results: dict [TODO]
         rekordbox_collection (RekordboxCollection): set of songs
 
     Returns:
@@ -58,11 +58,11 @@ def get_spotify_matches(
             logging.debug("found a match in libsync db, skipping this spotify query")
             continue
 
-        if rb_track.id in library_search_results:
-            spotify_search_results = library_search_results[rb_track.id]
+        if rb_track.id in cached_search_search_results:
+            spotify_search_results = cached_search_search_results[rb_track.id]
         else:
             spotify_search_results = get_spotify_search_results(spotify, rb_track)
-            library_search_results[rb_track.id] = spotify_search_results
+            cached_search_search_results[rb_track.id] = spotify_search_results
 
         logging.debug(
             f"Search results for track {rb_track}: "
