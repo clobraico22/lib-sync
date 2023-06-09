@@ -22,7 +22,7 @@ USE_SAVED_DB_MATCHES = False
 SKIP_GET_SPOTIFY_MATCHES = False
 DEBUG_SIMILARITY = False
 MINIMUM_SIMILARITY_THRESHOLD = 0.95
-
+RESOLVE_FAILED_MATCHES = True
 
 def get_spotify_matches(
     rekordbox_to_spotify_map: dict[str, str],
@@ -75,8 +75,24 @@ def get_spotify_matches(
         else:
             rekordbox_to_spotify_map[rb_track.id] = best_match_uri
 
-    if failed_matches:
+    if RESOLVE_FAILED_MATCHES:
+        rekordbox_to_spotify_map = resolve_failed_matches(failed_matches,rekordbox_to_spotify_map)
+    else:
         export_failed_matches_to_file(failed_matches)
+
+    return rekordbox_to_spotify_map
+
+
+
+def resolve_failed_matches(failed_matches,rekordbox_to_spotify_map):
+    for rb_track in failed_matches:
+        correct_uri = get_correct_spotify_url_from_user(rb_track)
+        if correct_uri:
+            # correct_url = convert_uri_to_url(correct_uri)
+            rekordbox_to_spotify_map[rb_track.id] = (correct_uri)
+
+        elif check_if_track_should_be_ignored_in_future_from_user(rb_track):
+            rekordbox_to_spotify_map[rb_track.id] = None
 
     return rekordbox_to_spotify_map
 
@@ -98,6 +114,30 @@ def export_failed_matches_to_file(failed_matches: list[RekordboxTrack]):
         for line in failed_matches:
             file.write(f"\t{line}\n")
 
+def check_if_spotify_url_is_valid(spotify_url)->bool:
+    #TODO: implement this
+    return True
+
+
+def get_correct_spotify_url_from_user(rb_track):
+    # TODO: consider using click for user input https://click.palletsprojects.com/en/8.1.x/
+    correct_spotify_url_input = input(f"Couldn't find a good match for {rb_track}. Please paste the matching spotify link here (press 'Enter' to skip): ").lower().strip(" ")
+    while True:
+        if correct_spotify_url_input=="" or check_if_spotify_url_is_valid(correct_spotify_url_input):
+            return correct_spotify_url_input
+
+        correct_spotify_url_input = input(f"The given response is invalid. Please try again (press 'Enter' to skip): ").lower().strip("")
+
+
+def check_if_track_should_be_ignored_in_future_from_user(rb_track):
+    ignore_track_in_future_input = input("No link entered. Would you like lib-sync to ignore this track in the future? [y/n]: ").lower().strip(" ")
+    while True:
+        if ignore_track_in_future_input in {"y","yes","ye"}:
+            return True
+        elif ignore_track_in_future_input in {"n","no"}:
+            return False
+
+        ignore_track_in_future_input = input("The given response is invalid. Please enter 'y' or 'n'.\nWould you like lib-sync to ignore this track in the future? [y/n]: ").lower().strip(" ")
 
 def remove_original_mix(song_title: str) -> str:
     trimmed_song_title = re.sub(
@@ -336,12 +376,12 @@ def find_best_track_match_uri(
         # print(f"probably a good match for {rekordbox_track}: {spotify_track['uri']}")
         return spotify_track["uri"]
     else:
-        # TODO: add multiple choice or just allow pasting in a url or uri
-        print(
-            f"couldn't find a good match for {rekordbox_track}. "
-            + f"best match (similarity {similarity}): "
-            + f"{spotify_track['name']} - "
-            + f"{[artist['name'] for artist in spotify_track['artists']]} ({spotify_track['uri']})"
-        )
+        # # TODO: add multiple choice or just allow pasting in a url or uri
+        # print(
+        #     f"couldn't find a good match for {rekordbox_track}. "
+        #     + f"best match (similarity {similarity}): "
+        #     + f"{spotify_track['name']} - "
+        #     + f"{[artist['name'] for artist in spotify_track['artists']]} ({spotify_track['uri']})"
+        # )
         # input("enter to continue")
         return None
