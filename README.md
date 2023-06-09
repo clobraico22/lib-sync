@@ -21,13 +21,15 @@ python3.10 -m venv .venv  # create python virtual environment
 source .venv/bin/activate  # activate virtual environment
 pip install -r requirements.txt  # install dependencies
 
-# see options
-python libsync/cli_entry_point.py -h
+# see options for various commands
+python libsync/libsync.py -h
+python libsync/libsync.py sync -h
+python libsync/libsync.py analyze -h
 
 # run script
-python libsync/cli_entry_point.py \
+python libsync/libsync.py \
 --rekordbox_xml_path <path to your XML file>
---libsync_db_path ${HOME}/.libsync.db
+--libsync_db_path ${HOME}/libsync.db
 ```
 
 ## dev quickstart
@@ -48,7 +50,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 to run with sample data:
 
 ```bash
-python libsync/cli_entry_point.py \
+python libsync/libsync.py sync \
 --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
 --libsync_db_path example_rekordbox_export.db.pickle \
 --create_collection_playlist
@@ -57,7 +59,7 @@ python libsync/cli_entry_point.py \
 to run with prod data:
 
 ```bash
-python libsync/cli_entry_point.py \
+python libsync/libsync.py sync \
 --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
 --libsync_db_path testdb.pickle \
 --create_collection_playlist

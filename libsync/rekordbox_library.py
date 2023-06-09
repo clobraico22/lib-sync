@@ -6,7 +6,16 @@ import pprint
 from enum import Enum
 
 
+class LibsyncCommand(str, Enum):
+    """enum with the names of commands"""
+
+    SYNC = "sync"
+    ANALYZE = "analyze"
+
+
 class RekordboxTrack:
+    """Relevant track info from rekordbox xml file"""
+
     def __init__(self, id, name, artist, album=None) -> None:
         self.id = id
         self.name = name
