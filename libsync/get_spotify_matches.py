@@ -21,7 +21,7 @@ USE_SAVED_DB_MATCHES = False
 # turn this on for debugging without the spotify match module
 SKIP_GET_SPOTIFY_MATCHES = False
 DEBUG_SIMILARITY = False
-MINIMUM_SIMILARITY_THRESHOLD = 0.9
+MINIMUM_SIMILARITY_THRESHOLD = 0.95
 
 
 def get_spotify_matches(
