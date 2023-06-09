@@ -14,9 +14,7 @@ from rekordbox_library import (
 )
 
 
-def get_rekordbox_library(
-    rekordbox_xml_path: str, include_loose_songs: bool
-) -> RekordboxLibrary:
+def get_rekordbox_library(rekordbox_xml_path: str, include_loose_songs: bool) -> RekordboxLibrary:
     """_summary_
 
     Args:
@@ -26,9 +24,7 @@ def get_rekordbox_library(
         RekordboxLibrary: _description_
     """
 
-    logging.info(
-        f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
-    )
+    logging.info(f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}")
 
     tree = ET.parse(rekordbox_xml_path)
     root = tree.getroot()
@@ -49,9 +45,7 @@ def get_rekordbox_library(
     while len(nodes) >= 1:
         node = nodes[0]
         node_type = (
-            RekordboxNodeType.FOLDER
-            if node.get("Type") == "0"
-            else RekordboxNodeType.PLAYLIST
+            RekordboxNodeType.FOLDER if node.get("Type") == "0" else RekordboxNodeType.PLAYLIST
         )
 
         logging.debug(f"running loop with nodes: {nodes}, " + f"nodes[0]: {nodes[0]}, ")
@@ -85,6 +79,4 @@ def get_rekordbox_library(
         )
 
     logging.info("done getting rekordbox library")
-    return RekordboxLibrary(
-        collection=rekordbox_collection, playlists=rekordbox_playlists
-    )
+    return RekordboxLibrary(collection=rekordbox_collection, playlists=rekordbox_playlists)

@@ -15,7 +15,6 @@ SKIP_CREATE_SPOTIFY_PLAYLISTS = False
 USE_SAVED_DB_PLAYLISTS = False
 
 
-
 def create_spotify_playlists(
     playlist_id_map: dict[str, str],
     rekordbox_playlists: list[RekordboxPlaylist],
@@ -88,7 +87,8 @@ def create_spotify_playlists(
             tracks_uris_to_add = [
                 rekordbox_to_spotify_map[track_id]
                 for track_id in playlist.tracks
-                if track_id in rekordbox_to_spotify_map and rekordbox_to_spotify_map[track_id] is not None
+                if track_id in rekordbox_to_spotify_map
+                and rekordbox_to_spotify_map[track_id] is not None
             ]
 
             pages = [
