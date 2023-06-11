@@ -6,17 +6,12 @@ from rekordbox_library import LibsyncCommand
 
 
 def get_cli_argparser():
-    """get parser for CLI arguments
-
-    Args:
-        callable_sync (callable): callable for sync command
-        callable_analyze (callable): callable for analyze command
-    """
+    """get parser for CLI arguments"""
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
         title="commands",
-        help="select one of these subcommands",
+        help="",
         metavar="",
         required=True,
         dest="command",
@@ -24,12 +19,12 @@ def get_cli_argparser():
 
     # sync command
     parser_sync = subparsers.add_parser(
-        LibsyncCommand.SYNC, help="sync your rekordbox playlists to spotify"
+        LibsyncCommand.SYNC.value, help="sync your rekordbox playlists to spotify"
     )
     parser_sync.add_argument(
         "--rekordbox_xml_path",
         type=str,
-        help="path to rekordbox xml (in rekordbox: file -> export library to xml)",
+        help="path to rekordbox xml (in rekordbox: file -> Export Collection in xml format)",
         required=True,
     )
     parser_sync.add_argument(
@@ -57,12 +52,12 @@ def get_cli_argparser():
 
     # analyze command
     parser_analyze = subparsers.add_parser(
-        LibsyncCommand.ANALYZE, help="analyze your rekordbox library"
+        LibsyncCommand.ANALYZE.value, help="analyze your rekordbox library"
     )
     parser_analyze.add_argument(
         "--rekordbox_xml_path",
         type=str,
-        help="path to rekordbox xml (in rekordbox: file -> export library to xml)",
+        help="path to rekordbox xml (in rekordbox: file -> Export Collection in xml format)",
         required=True,
     )
     parser_analyze.add_argument(

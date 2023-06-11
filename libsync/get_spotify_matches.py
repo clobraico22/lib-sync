@@ -36,7 +36,7 @@ def get_spotify_matches(
         rekordbox_to_spotify_map (dict[str, str]): map from rekordbox song ID to spotify URI.
             passed by reference, modified in place
         cached_search_search_results: dict [TODO]
-        rekordbox_collection (RekordboxCollection): set of songs
+        rekordbox_collection (RekordboxCollection): dict of songs indexed by rekordbox track id
 
     Returns:
         dict[str, str]: reference to rekordbox_to_spotify_map argument which is modified in place
@@ -53,17 +53,17 @@ def get_spotify_matches(
     scope = ["user-library-read", "playlist-modify-private"]
     spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
-    for rb_track in rekordbox_collection:
+    for rb_track_id, rb_track in rekordbox_collection.items():
         # if already in db, skip it
-        if USE_SAVED_DB_MATCHES and rb_track.id in rekordbox_to_spotify_map:
+        if USE_SAVED_DB_MATCHES and rb_track_id in rekordbox_to_spotify_map:
             logging.debug("found a match in libsync db, skipping this spotify query")
             continue
 
-        if rb_track.id in cached_search_search_results:
-            spotify_search_results = cached_search_search_results[rb_track.id]
+        if rb_track_id in cached_search_search_results:
+            spotify_search_results = cached_search_search_results[rb_track_id]
         else:
             spotify_search_results = get_spotify_search_results(spotify, rb_track)
-            cached_search_search_results[rb_track.id] = spotify_search_results
+            cached_search_search_results[rb_track_id] = spotify_search_results
 
         logging.debug(
             f"Search results for track {rb_track}: "
@@ -74,7 +74,7 @@ def get_spotify_matches(
         if best_match_uri is None:
             failed_matches.append(rb_track)
         else:
-            rekordbox_to_spotify_map[rb_track.id] = best_match_uri
+            rekordbox_to_spotify_map[rb_track_id] = best_match_uri
 
     if RESOLVE_FAILED_MATCHES:
         rekordbox_to_spotify_map = resolve_failed_matches(failed_matches, rekordbox_to_spotify_map)

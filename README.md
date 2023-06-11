@@ -64,3 +64,13 @@ python libsync/libsync.py sync \
 --libsync_db_path testdb.pickle \
 --create_collection_playlist
 ```
+
+to run analysis command:
+
+```bash
+python libsync/libsync.py analyze \
+--rekordbox_xml_path sample_data/example_rekordbox_export.xml \
+
+python libsync/libsync.py analyze \
+--rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml
+```

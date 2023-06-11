@@ -37,7 +37,7 @@ RekordboxCollection = dict[str, RekordboxTrack]
 
 # ordered list of track IDs
 class RekordboxPlaylist:
-    def __init__(self, name: str, tracks: list[str] = []) -> None:
+    def __init__(self, name: str, tracks: list[str]) -> None:
         self.name = name
         self.tracks = tracks
 
@@ -51,8 +51,8 @@ class RekordboxPlaylist:
 class RekordboxLibrary:
     def __init__(
         self,
-        collection: RekordboxCollection = {},
-        playlists: list[RekordboxPlaylist] = [],
+        collection: RekordboxCollection,
+        playlists: list[RekordboxPlaylist],
     ) -> None:
         self.collection = collection
         self.playlists = playlists

@@ -3,7 +3,6 @@ contains get_rekordbox_library function and helpers
 """
 
 import logging
-import re
 import xml.etree.ElementTree as ET
 
 from rekordbox_library import (
@@ -29,7 +28,7 @@ def get_rekordbox_library(rekordbox_xml_path: str, include_loose_songs: bool) ->
     tree = ET.parse(rekordbox_xml_path)
     root = tree.getroot()
     # xml = RekordboxXml(rekordbox_xml_path)
-    rekordbox_collection = [
+    rekordbox_collection_list = [
         RekordboxTrack(
             id=track.get("TrackID"),
             name=track.get("Name"),
@@ -71,12 +70,15 @@ def get_rekordbox_library(rekordbox_xml_path: str, include_loose_songs: bool) ->
         nodes.pop(0)
 
     if not include_loose_songs:
-        rekordbox_collection = list(
+        rekordbox_collection_list = list(
             filter(
                 lambda track: track.id in tracks_found_on_at_least_one_playlist,
-                rekordbox_collection,
+                rekordbox_collection_list,
             )
         )
 
     logging.info("done getting rekordbox library")
-    return RekordboxLibrary(collection=rekordbox_collection, playlists=rekordbox_playlists)
+    return RekordboxLibrary(
+        collection={track.id: track for track in rekordbox_collection_list},
+        playlists=rekordbox_playlists,
+    )
