@@ -12,6 +12,7 @@ from spotipy.oauth2 import SpotifyOAuth
 ITEMS_PER_PAGE_SPOTIFY_API = 100
 # turn this on for debugging without the spotify match module
 SKIP_CREATE_SPOTIFY_PLAYLISTS = False
+USE_SAVED_DB_PLAYLISTS = False
 
 
 def create_spotify_playlists(
@@ -62,7 +63,7 @@ def create_spotify_playlists(
     for playlist in rekordbox_playlists:
         try:
             # get or create playlist
-            if playlist.name in playlist_id_map:
+            if playlist.name in playlist_id_map and USE_SAVED_DB_PLAYLISTS:
                 spotify_playlist_data = spotify.playlist(playlist_id_map[playlist.name])
                 logging.info(f"found spotify playlist from last time: {playlist.name}")
                 # clear playlist
@@ -87,6 +88,7 @@ def create_spotify_playlists(
                 rekordbox_to_spotify_map[track_id]
                 for track_id in playlist.tracks
                 if track_id in rekordbox_to_spotify_map
+                and rekordbox_to_spotify_map[track_id] is not None
             ]
 
             pages = [

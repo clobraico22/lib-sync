@@ -51,9 +51,7 @@ def sync_rekordbox_to_spotify(
             )
     except FileNotFoundError as error:
         logging.exception(error)
-        print(
-            f"couldn't find database: '{rekordbox_xml_path}'. creating new database from scratch"
-        )
+        print(f"couldn't find database: '{rekordbox_xml_path}'. creating new database from scratch")
     except KeyError as error:
         logging.exception(error)
         print(

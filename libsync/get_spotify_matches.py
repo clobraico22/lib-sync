@@ -22,6 +22,7 @@ USE_SAVED_DB_MATCHES = False
 SKIP_GET_SPOTIFY_MATCHES = False
 DEBUG_SIMILARITY = False
 MINIMUM_SIMILARITY_THRESHOLD = 0.95
+RESOLVE_FAILED_MATCHES = True
 
 
 def get_spotify_matches(
@@ -75,8 +76,23 @@ def get_spotify_matches(
         else:
             rekordbox_to_spotify_map[rb_track.id] = best_match_uri
 
-    if failed_matches:
+    if RESOLVE_FAILED_MATCHES:
+        rekordbox_to_spotify_map = resolve_failed_matches(failed_matches, rekordbox_to_spotify_map)
+    else:
         export_failed_matches_to_file(failed_matches)
+
+    return rekordbox_to_spotify_map
+
+
+def resolve_failed_matches(failed_matches, rekordbox_to_spotify_map):
+    for rb_track in failed_matches:
+        correct_uri = get_correct_spotify_url_from_user(rb_track)
+        if correct_uri:
+            # correct_url = convert_uri_to_url(correct_uri)
+            rekordbox_to_spotify_map[rb_track.id] = correct_uri
+
+        elif check_if_track_should_be_ignored_in_future_from_user(rb_track):
+            rekordbox_to_spotify_map[rb_track.id] = None
 
     return rekordbox_to_spotify_map
 
@@ -99,17 +115,63 @@ def export_failed_matches_to_file(failed_matches: list[RekordboxTrack]):
             file.write(f"\t{line}\n")
 
 
-def remove_original_mix(song_title: str) -> str:
-    trimmed_song_title = re.sub(
-        r"[\(\[]original mix[\)\]]", "", song_title, flags=re.IGNORECASE
+def check_if_spotify_url_is_valid(spotify_url) -> bool:
+    # TODO: implement this
+    return True
+
+
+def get_correct_spotify_url_from_user(rb_track):
+    # TODO: consider using click for user input https://click.palletsprojects.com/en/8.1.x/
+    correct_spotify_url_input = (
+        input(
+            f"Couldn't find a good match for {rb_track}. Please paste the matching spotify link here (press 'Enter' to skip): "
+        )
+        .lower()
+        .strip(" ")
     )
+    while True:
+        if correct_spotify_url_input == "" or check_if_spotify_url_is_valid(
+            correct_spotify_url_input
+        ):
+            return correct_spotify_url_input
+
+        correct_spotify_url_input = (
+            input(f"The given response is invalid. Please try again (press 'Enter' to skip): ")
+            .lower()
+            .strip("")
+        )
+
+
+def check_if_track_should_be_ignored_in_future_from_user(rb_track):
+    ignore_track_in_future_input = (
+        input(
+            "No link entered. Would you like lib-sync to ignore this track in the future? [y/n]: "
+        )
+        .lower()
+        .strip(" ")
+    )
+    while True:
+        if ignore_track_in_future_input in {"y", "yes", "ye"}:
+            return True
+        elif ignore_track_in_future_input in {"n", "no"}:
+            return False
+
+        ignore_track_in_future_input = (
+            input(
+                "The given response is invalid. Please enter 'y' or 'n'.\nWould you like lib-sync to ignore this track in the future? [y/n]: "
+            )
+            .lower()
+            .strip(" ")
+        )
+
+
+def remove_original_mix(song_title: str) -> str:
+    trimmed_song_title = re.sub(r"[\(\[]original mix[\)\]]", "", song_title, flags=re.IGNORECASE)
     return trimmed_song_title
 
 
 def remove_extended_mix(song_title: str) -> str:
-    trimmed_song_title = re.sub(
-        r"[\(\[]extended mix[\)\]]", "", song_title, flags=re.IGNORECASE
-    )
+    trimmed_song_title = re.sub(r"[\(\[]extended mix[\)\]]", "", song_title, flags=re.IGNORECASE)
     return trimmed_song_title
 
 
@@ -144,10 +206,7 @@ def get_spotify_search_results(
 def get_artists_from_rekordbox_track(
     rekordbox_track: RekordboxTrack,
 ):
-    return [
-        artist.strip()
-        for artist in re.split(ARTIST_LIST_DELIMITERS, rekordbox_track.artist)
-    ]
+    return [artist.strip() for artist in re.split(ARTIST_LIST_DELIMITERS, rekordbox_track.artist)]
 
 
 def get_name_varieties_from_track_name(name: str):
@@ -174,9 +233,7 @@ def get_spotify_queries_from_rekordbox_track(
             # try artist first, then song name first
             for ordered_search_terms in [search_terms, reversed(search_terms)]:
                 # remove punctuation
-                ordered_search_terms = [
-                    strip_punctuation(term) for term in ordered_search_terms
-                ]
+                ordered_search_terms = [strip_punctuation(term) for term in ordered_search_terms]
                 # build query
                 query = urllib.parse.quote(" ".join(ordered_search_terms))
                 queries.append(query)
@@ -213,9 +270,7 @@ def try_to_find_perfect_match_and_fall_back_on_user_input(
             artists = [artist["name"] for artist in track["artists"]]
             track_name = track["name"]
             # track_uri = track["uri"]
-            potential_match_strings[
-                i
-            ] = f"{track_name} - Artist(s): {artists} Album: {album}"
+            potential_match_strings[i] = f"{track_name} - Artist(s): {artists} Album: {album}"
             i += 1
 
         potential_match_strings[11] = "See next page of results"
@@ -224,12 +279,8 @@ def try_to_find_perfect_match_and_fall_back_on_user_input(
 
         for index, track_string in potential_match_strings.items():
             print(f"  {index}: {track_string}")
-        selected_match_i = int(
-            input("Please select an an option from the list [0-11]: ")
-        )
-        print(
-            f"Selected option {selected_match_i}: {potential_match_strings[selected_match_i]}"
-        )
+        selected_match_i = int(input("Please select an an option from the list [0-11]: "))
+        print(f"Selected option {selected_match_i}: {potential_match_strings[selected_match_i]}")
         if not selected_match_i:
             print("This track will be ignored and left out of spotify playlist.)")
             return None
@@ -259,9 +310,7 @@ def get_string_similarity(string_1: str, string_2: str) -> float:
     return SequenceMatcher(None, string_1.lower(), string_2.lower()).ratio()
 
 
-def find_best_track_match_uri(
-    rekordbox_track: RekordboxTrack, spotify_search_results: dict
-):
+def find_best_track_match_uri(rekordbox_track: RekordboxTrack, spotify_search_results: dict):
     logging.debug(
         f"running find_best_track_match_uri with rekordbox_track:\n{pprint.pformat(rekordbox_track)}"
     )
@@ -289,12 +338,8 @@ def find_best_track_match_uri(
         ]
 
         # artist similarity
-        spotify_artist_list = [
-            artist["name"] for artist in spotify_track_option["artists"]
-        ]
-        rekordbox_artist_list = get_artists_from_rekordbox_track(
-            rekordbox_track=rekordbox_track
-        )
+        spotify_artist_list = [artist["name"] for artist in spotify_track_option["artists"]]
+        rekordbox_artist_list = get_artists_from_rekordbox_track(rekordbox_track=rekordbox_track)
 
         artist_similarities = [
             get_string_similarity(spotify_artist, rekordbox_artist)
@@ -336,12 +381,12 @@ def find_best_track_match_uri(
         # print(f"probably a good match for {rekordbox_track}: {spotify_track['uri']}")
         return spotify_track["uri"]
     else:
-        # TODO: add multiple choice or just allow pasting in a url or uri
-        print(
-            f"couldn't find a good match for {rekordbox_track}. "
-            + f"best match (similarity {similarity}): "
-            + f"{spotify_track['name']} - "
-            + f"{[artist['name'] for artist in spotify_track['artists']]} ({spotify_track['uri']})"
-        )
+        # # TODO: add multiple choice or just allow pasting in a url or uri
+        # print(
+        #     f"couldn't find a good match for {rekordbox_track}. "
+        #     + f"best match (similarity {similarity}): "
+        #     + f"{spotify_track['name']} - "
+        #     + f"{[artist['name'] for artist in spotify_track['artists']]} ({spotify_track['uri']})"
+        # )
         # input("enter to continue")
         return None
