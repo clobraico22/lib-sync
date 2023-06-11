@@ -49,4 +49,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     start_time = time.time()
     main()
-    logging.info(f"total runtime: {time.time() - start_time} seconds")
+    logging.info(f"total runtime: {(time.time() - start_time):.3f} seconds")
