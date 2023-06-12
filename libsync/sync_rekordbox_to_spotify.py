@@ -51,11 +51,14 @@ def sync_rekordbox_to_spotify(
             )
     except FileNotFoundError as error:
         logging.exception(error)
-        print(f"couldn't find database: '{rekordbox_xml_path}'. creating new database from scratch")
+        print(f"couldn't find database: '{libsync_db_path}'. creating new database from scratch")
+        rekordbox_to_spotify_map = {}
+        playlist_id_map = {}
+        cached_search_search_results = {}
     except KeyError as error:
         logging.exception(error)
         print(
-            f"database is an incorrect format: '{rekordbox_xml_path}'. creating new database from scratch"
+            f"database is an incorrect format: '{libsync_db_path}'. creating new database from scratch"
         )
         rekordbox_to_spotify_map = {}
         playlist_id_map = {}
