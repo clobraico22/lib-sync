@@ -126,9 +126,9 @@ def get_correct_spotify_url_from_user(rb_track):
         input(
             f"Couldn't find a good match for {rb_track}. Please paste the matching spotify link here (press 'Enter' to skip): "
         )
-        .lower()
         .strip(" ")
     )
+    print(f"Entered {correct_spotify_url_input=}")
     while True:
         if correct_spotify_url_input == "" or check_if_spotify_url_is_valid(
             correct_spotify_url_input
@@ -137,7 +137,6 @@ def get_correct_spotify_url_from_user(rb_track):
 
         correct_spotify_url_input = (
             input(f"The given response is invalid. Please try again (press 'Enter' to skip): ")
-            .lower()
             .strip("")
         )
 
