@@ -2,5 +2,8 @@ libsync/__pycache__
 .env
 .cache
 .venv
-*.pickle
-failed_matches_*
+data/failed_matches_*
+.DS_Store
+*.pyc
+data/*.mp3
+data/*.db

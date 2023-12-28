@@ -1,26 +1,20 @@
-"""
-contains get_rekordbox_library function and helpers
-"""
+"""contains get_rekordbox_library function and helpers"""
 
 import logging
 import xml.etree.ElementTree as ET
 
-from rekordbox_library import (
-    RekordboxLibrary,
-    RekordboxNodeType,
-    RekordboxPlaylist,
-    RekordboxTrack,
-)
+from utils.rekordbox_library import (RekordboxLibrary, RekordboxNodeType,
+                                     RekordboxPlaylist, RekordboxTrack)
 
 
 def get_rekordbox_library(rekordbox_xml_path: str, include_loose_songs: bool) -> RekordboxLibrary:
-    """_summary_
+    """get user's rekordbox library from filepath and convert it into internal data structures
 
     Args:
-        rekordbox_xml_path (str): _description_
+        rekordbox_xml_path (str): path to user's library export
 
     Returns:
-        RekordboxLibrary: _description_
+        RekordboxLibrary: data structure containing a representation of the library
     """
 
     logging.info(f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}")
