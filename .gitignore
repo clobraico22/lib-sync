@@ -4,3 +4,4 @@ libsync/__pycache__
 .venv
 *.pickle
 failed_matches_*
+.DS_Store

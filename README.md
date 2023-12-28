@@ -52,7 +52,6 @@ to run with sample data:
 ```bash
 python libsync/libsync.py sync \
 --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
---libsync_db_path example_rekordbox_export.db.pickle \
 --create_collection_playlist
 ```
 
@@ -61,7 +60,6 @@ to run with prod data:
 ```bash
 python libsync/libsync.py sync \
 --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
---libsync_db_path testdb.pickle \
 --create_collection_playlist
 ```
 
@@ -73,4 +71,11 @@ python libsync/libsync.py analyze \
 
 python libsync/libsync.py analyze \
 --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml
+```
+
+to run id command:
+
+```bash
+python libsync/libsync.py id file \
+--recording_audio_file_path sample_data/file.mp3 \
 ```

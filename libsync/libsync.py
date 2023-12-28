@@ -3,7 +3,12 @@ import logging
 import time
 
 from analyze_rekordbox_library import analyze_rekordbox_library
+from constants import LOGGING_LEVEL
 from dotenv import load_dotenv
+from get_ids_from_recording import (
+    get_track_ids_from_audio_file,
+    get_track_ids_from_youtube_link,
+)
 from parser_utils import get_cli_argparser
 from rekordbox_library import LibsyncCommand
 from sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
@@ -19,17 +24,16 @@ def main():
     parser = get_cli_argparser()
     args = parser.parse_args()
     command = args.command
+    subcommand = args.subcommand
 
     if command == LibsyncCommand.SYNC:
         rekordbox_xml_path = args.rekordbox_xml_path
-        libsync_db_path = args.libsync_db_path
         create_collection_playlist = args.create_collection_playlist
         make_playlists_public = args.make_playlists_public
         include_loose_songs = args.include_loose_songs
 
         sync_rekordbox_to_spotify(
             rekordbox_xml_path,
-            libsync_db_path,
             create_collection_playlist,
             make_playlists_public,
             include_loose_songs,
@@ -44,9 +48,18 @@ def main():
             include_loose_songs,
         )
 
+    elif command == LibsyncCommand.ID:
+        if subcommand == LibsyncCommand.FILE:
+            recording_audio_file_path = args.recording_audio_file_path
+            get_track_ids_from_audio_file(recording_audio_file_path)
+
+        elif subcommand == LibsyncCommand.YOUTUBE:
+            youtube_url = args.youtube_url
+            get_track_ids_from_youtube_link(youtube_url)
+
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=LOGGING_LEVEL)
     start_time = time.time()
     main()
     logging.info(f"total runtime: {(time.time() - start_time):.3f} seconds")

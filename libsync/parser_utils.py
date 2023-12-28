@@ -11,8 +11,6 @@ def get_cli_argparser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
         title="commands",
-        help="",
-        metavar="",
         required=True,
         dest="command",
     )
@@ -26,13 +24,6 @@ def get_cli_argparser():
         type=str,
         help="path to rekordbox xml (in rekordbox: file -> Export Collection in xml format)",
         required=True,
-    )
-    parser_sync.add_argument(
-        "--libsync_db_path",
-        type=str,
-        default="libsync.db",
-        help="path to local libsync db file."
-        + "This can be a db from a previous run, or a new db will be created if none exists.",
     )
     parser_sync.add_argument(
         "--create_collection_playlist",
@@ -64,6 +55,38 @@ def get_cli_argparser():
         "--include_loose_songs",
         action="store_true",
         help="include songs not on any playlists",
+    )
+
+    # id command
+    parser_id = subparsers.add_parser(
+        LibsyncCommand.ID.value, help="ID tracks from an audio file or youtube link"
+    )
+    subsubparsers = parser_id.add_subparsers(
+        title="subcommands",
+        required=True,
+        dest="subcommand",
+    )
+
+    # file subcommand
+    parser_file = subsubparsers.add_parser(
+        LibsyncCommand.FILE.value, help="ID tracks from an audio file"
+    )
+    parser_file.add_argument(
+        "--recording_audio_file_path",
+        type=str,
+        help="path to audio recording to ID",
+        required=True,
+    )
+
+    # youtube subcommand
+    parser_youtube = subsubparsers.add_parser(
+        LibsyncCommand.YOUTUBE.value, help="ID tracks from a youtube link"
+    )
+    parser_youtube.add_argument(
+        "--youtube_url",
+        type=str,
+        help="URL of youtube video to ID",
+        required=True,
     )
 
     return parser
