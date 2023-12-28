@@ -1,10 +1,11 @@
-"""CLI entry point"""
+"""sync rekordbox library to spotify playlists"""
+
 import logging
 import pickle
 
-from create_spotify_playlists import create_spotify_playlists
-from get_rekordbox_library import get_rekordbox_library
-from get_spotify_matches import get_spotify_matches
+from analyze.get_rekordbox_library import get_rekordbox_library
+from spotify.create_spotify_playlists import create_spotify_playlists
+from spotify.get_spotify_matches import get_spotify_matches
 
 
 def sync_rekordbox_to_spotify(

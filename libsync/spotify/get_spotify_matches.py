@@ -7,23 +7,18 @@ import pprint
 import urllib.parse
 
 import spotipy
-from constants import (
-    DEBUG_SIMILARITY,
-    MINIMUM_SIMILARITY_THRESHOLD,
-    NUMBER_OF_RESULTS_PER_QUERY,
-    RESOLVE_FAILED_MATCHES,
-    USE_RB_TO_SPOTIFY_MATCHES_CACHE,
-)
-from file_utils import export_failed_matches_to_file
-from rekordbox_library import RekordboxCollection, RekordboxTrack
-from similarity_utils import calculate_similarities
 from spotipy.oauth2 import SpotifyOAuth
-from string_utils import (
-    check_if_spotify_url_is_valid,
-    get_artists_from_rekordbox_track,
-    get_name_varieties_from_track_name,
-    strip_punctuation,
-)
+from utils.constants import (DEBUG_SIMILARITY, MINIMUM_SIMILARITY_THRESHOLD,
+                             NUMBER_OF_RESULTS_PER_QUERY,
+                             RESOLVE_FAILED_MATCHES,
+                             USE_RB_TO_SPOTIFY_MATCHES_CACHE)
+from utils.file_utils import export_failed_matches_to_file
+from utils.rekordbox_library import RekordboxCollection, RekordboxTrack
+from utils.similarity_utils import calculate_similarities
+from utils.string_utils import (check_if_spotify_url_is_valid,
+                                get_artists_from_rekordbox_track,
+                                get_name_varieties_from_track_name,
+                                strip_punctuation)
 
 
 def get_spotify_matches(

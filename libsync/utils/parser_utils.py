@@ -2,7 +2,7 @@
 
 import argparse
 
-from rekordbox_library import LibsyncCommand
+from utils.rekordbox_library import LibsyncCommand
 
 
 def get_cli_argparser():

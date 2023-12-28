@@ -4,8 +4,8 @@ import logging
 import re
 import string
 
-from constants import ARTIST_LIST_DELIMITERS
-from rekordbox_library import RekordboxTrack
+from utils.constants import ARTIST_LIST_DELIMITERS
+from utils.rekordbox_library import RekordboxTrack
 
 
 def check_if_spotify_url_is_valid(spotify_url: str) -> bool:

@@ -1,13 +1,11 @@
-"""
-contains create_spotify_playlists function and helpers
-"""
+"""contains create_spotify_playlists function and helpers"""
 
 import logging
 import pprint
 
 import spotipy
-from rekordbox_library import RekordboxPlaylist
 from spotipy.oauth2 import SpotifyOAuth
+from utils.rekordbox_library import RekordboxPlaylist
 
 ITEMS_PER_PAGE_SPOTIFY_API = 100
 # turn this on for debugging without the spotify match module
@@ -21,7 +19,7 @@ def create_spotify_playlists(
     rekordbox_to_spotify_map: dict[str, str],
     create_collection_playlist: bool = False,
     make_playlists_public: bool = False,
-):
+) -> dict[str, str]:
     """creates playlists in the user's account with the matched songs
 
     Args:

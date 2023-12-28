@@ -1,6 +1,4 @@
-"""
-the rekordbox_library module contains the RekordboxLibrary class and other related classes
-"""
+"""the rekordbox_library module contains the RekordboxLibrary class and other related classes"""
 
 import pprint
 from enum import Enum

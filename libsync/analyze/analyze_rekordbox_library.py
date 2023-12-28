@@ -1,8 +1,10 @@
-"""CLI entry point"""
+"""analyze a user's rekordbox library"""
+
 import logging
 
-from generate_rekordbox_library_report import generate_rekordbox_library_report
-from get_rekordbox_library import get_rekordbox_library
+from analyze.generate_rekordbox_library_report import \
+    generate_rekordbox_library_report
+from analyze.get_rekordbox_library import get_rekordbox_library
 
 
 def analyze_rekordbox_library(

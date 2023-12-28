@@ -79,3 +79,8 @@ to run id command:
 python libsync/libsync.py id file \
 --recording_audio_file_path sample_data/file.mp3 \
 ```
+
+# TODO
+
+* move pickle files and mp3 downloads into a data dir
+* add timestamps to auto-shazam output

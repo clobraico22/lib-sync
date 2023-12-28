@@ -5,3 +5,6 @@ libsync/__pycache__
 *.pickle
 failed_matches_*
 .DS_Store
+*.audio.libsync.mp3
+*.audio.libsync.mp3.libsync.id.db
+*.pyc

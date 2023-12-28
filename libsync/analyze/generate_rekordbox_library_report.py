@@ -1,6 +1,6 @@
-import pprint
+"""generates report based on user's rekordbox library"""
 
-from rekordbox_library import RekordboxLibrary
+from utils.rekordbox_library import RekordboxLibrary
 
 
 def generate_rekordbox_library_report(rekordbox_library: RekordboxLibrary) -> None:

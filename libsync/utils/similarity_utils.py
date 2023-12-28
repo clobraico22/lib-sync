@@ -1,11 +1,11 @@
+"""contains utility functions to compare two song results"""
+
 from difflib import SequenceMatcher
 
-from constants import DEBUG_SIMILARITY
-from string_utils import (
-    get_artists_from_rekordbox_track,
-    get_name_varieties_from_track_name,
-    strip_punctuation,
-)
+from utils.constants import DEBUG_SIMILARITY
+from utils.string_utils import (get_artists_from_rekordbox_track,
+                                get_name_varieties_from_track_name,
+                                strip_punctuation)
 
 
 def calculate_similarity_metric(similarity_matrix: dict):

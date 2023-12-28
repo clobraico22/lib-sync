@@ -1,17 +1,16 @@
 """CLI entry point"""
+
 import logging
 import time
 
-from analyze_rekordbox_library import analyze_rekordbox_library
-from constants import LOGGING_LEVEL
+from analyze.analyze_rekordbox_library import analyze_rekordbox_library
 from dotenv import load_dotenv
-from get_ids_from_recording import (
-    get_track_ids_from_audio_file,
-    get_track_ids_from_youtube_link,
-)
-from parser_utils import get_cli_argparser
-from rekordbox_library import LibsyncCommand
-from sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
+from id.get_ids_from_recording import (get_track_ids_from_audio_file,
+                                       get_track_ids_from_youtube_link)
+from spotify.sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
+from utils.constants import LOGGING_LEVEL
+from utils.parser_utils import get_cli_argparser
+from utils.rekordbox_library import LibsyncCommand
 
 
 def main():
@@ -24,7 +23,6 @@ def main():
     parser = get_cli_argparser()
     args = parser.parse_args()
     command = args.command
-    subcommand = args.subcommand
 
     if command == LibsyncCommand.SYNC:
         rekordbox_xml_path = args.rekordbox_xml_path
@@ -49,6 +47,7 @@ def main():
         )
 
     elif command == LibsyncCommand.ID:
+        subcommand = args.subcommand
         if subcommand == LibsyncCommand.FILE:
             recording_audio_file_path = args.recording_audio_file_path
             get_track_ids_from_audio_file(recording_audio_file_path)
