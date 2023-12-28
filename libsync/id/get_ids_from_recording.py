@@ -9,7 +9,8 @@ from id.download_audio import download_mp3_from_youtube_url
 from id.youtube_dl_utils import (get_mp3_output_path,
                                  get_youtube_video_id_from_url)
 from ShazamAPI import Shazam
-from utils.constants import FORCE_REDO_SHAZAM, NUM_SHAZAM_MATCHES_THRESHOLD, SHOW_URL_IN_SHAZAM_OUTPUT
+from utils.constants import (FORCE_REDO_SHAZAM, NUM_SHAZAM_MATCHES_THRESHOLD,
+                             SHOW_URL_IN_SHAZAM_OUTPUT)
 
 
 def get_track_ids_from_youtube_link(youtube_url: str) -> None:
@@ -43,7 +44,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
         recording_audio_file_path (str): path to audio file to analyze
     """
 
-    libsync_cache_path = f"{recording_audio_file_path}.libsync.id.db"
+    libsync_cache_path = f"{recording_audio_file_path}_libsync_shazam_cache.db"
     logging.info(
         "get_track_ids_from_audio_file with args "
         + f"recording_audio_file_path: {recording_audio_file_path}, "

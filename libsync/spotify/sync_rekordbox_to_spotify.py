@@ -23,7 +23,7 @@ def sync_rekordbox_to_spotify(
         include_loose_songs (bool): _description_
     """
 
-    libsync_cache_path = f"{rekordbox_xml_path}.libsync.sync.cache"
+    libsync_cache_path = f"data/{rekordbox_xml_path}_libsync_sync_cache.db"
     logging.info(
         "running sync_rekordbox_to_spotify.py with args: "
         + f"rekordbox_xml_path={rekordbox_xml_path}, "

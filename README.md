@@ -82,5 +82,4 @@ python libsync/libsync.py id file \
 
 # TODO
 
-* move pickle files and mp3 downloads into a data dir
 * add timestamps to auto-shazam output

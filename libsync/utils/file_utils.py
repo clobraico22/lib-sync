@@ -13,7 +13,7 @@ def export_failed_matches_to_file(failed_matches: list[RekordboxTrack]):
     """
 
     with open(
-        f"failed_matches_{datetime.now()}.txt".replace(" ", "_"), "w", encoding="utf-8"
+        f"data/failed_matches_{datetime.now()}.txt".replace(" ", "_"), "w", encoding="utf-8"
     ) as file:
         file.write(
             "The below files were not found on Spotify. "

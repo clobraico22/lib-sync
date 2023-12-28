@@ -3,7 +3,7 @@
 import logging
 import re
 
-OUTPUT_TEMPLATE = "%(id)s.audio.libsync"
+OUTPUT_TEMPLATE = "data/%(id)s_audio_download"
 YOUTUBE_URL_PARSE_PATTERN = (
     r"(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)"
 )
