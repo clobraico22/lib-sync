@@ -9,6 +9,10 @@ def get_cli_argparser():
     """get parser for CLI arguments"""
 
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-v", "--verbose", help="increase output verbosity", action="store_true"
+    )
+
     subparsers = parser.add_subparsers(
         title="commands",
         required=True,

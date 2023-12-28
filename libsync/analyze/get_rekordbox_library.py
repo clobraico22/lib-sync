@@ -3,11 +3,17 @@
 import logging
 import xml.etree.ElementTree as ET
 
-from utils.rekordbox_library import (RekordboxLibrary, RekordboxNodeType,
-                                     RekordboxPlaylist, RekordboxTrack)
+from utils.rekordbox_library import (
+    RekordboxLibrary,
+    RekordboxNodeType,
+    RekordboxPlaylist,
+    RekordboxTrack,
+)
 
 
-def get_rekordbox_library(rekordbox_xml_path: str, include_loose_songs: bool) -> RekordboxLibrary:
+def get_rekordbox_library(
+    rekordbox_xml_path: str, include_loose_songs: bool
+) -> RekordboxLibrary:
     """get user's rekordbox library from filepath and convert it into internal data structures
 
     Args:
@@ -17,7 +23,9 @@ def get_rekordbox_library(rekordbox_xml_path: str, include_loose_songs: bool) ->
         RekordboxLibrary: data structure containing a representation of the library
     """
 
-    logging.info(f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}")
+    logging.info(
+        f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
+    )
 
     tree = ET.parse(rekordbox_xml_path)
     root = tree.getroot()
@@ -38,7 +46,9 @@ def get_rekordbox_library(rekordbox_xml_path: str, include_loose_songs: bool) ->
     while len(nodes) >= 1:
         node = nodes[0]
         node_type = (
-            RekordboxNodeType.FOLDER if node.get("Type") == "0" else RekordboxNodeType.PLAYLIST
+            RekordboxNodeType.FOLDER
+            if node.get("Type") == "0"
+            else RekordboxNodeType.PLAYLIST
         )
 
         logging.debug(f"running loop with nodes: {nodes}, " + f"nodes[0]: {nodes[0]}, ")

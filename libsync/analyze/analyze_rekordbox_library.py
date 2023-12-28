@@ -2,8 +2,7 @@
 
 import logging
 
-from analyze.generate_rekordbox_library_report import \
-    generate_rekordbox_library_report
+from analyze.generate_rekordbox_library_report import generate_rekordbox_library_report
 from analyze.get_rekordbox_library import get_rekordbox_library
 
 
@@ -26,7 +25,9 @@ def analyze_rekordbox_library(
 
     # get rekordbox db from xml
     try:
-        rekordbox_library = get_rekordbox_library(rekordbox_xml_path, include_loose_songs)
+        rekordbox_library = get_rekordbox_library(
+            rekordbox_xml_path, include_loose_songs
+        )
         logging.debug(f"got rekordbox library: {rekordbox_library}")
     except FileNotFoundError as error:
         logging.exception(error)
@@ -34,7 +35,9 @@ def analyze_rekordbox_library(
         return
     except TypeError as error:
         logging.exception(error)
-        print(f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again")
+        print(
+            f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
+        )
         return
 
     generate_rekordbox_library_report(rekordbox_library)

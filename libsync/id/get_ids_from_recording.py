@@ -6,11 +6,13 @@ import pickle
 from datetime import timedelta
 
 from id.download_audio import download_mp3_from_youtube_url
-from id.youtube_dl_utils import (get_mp3_output_path,
-                                 get_youtube_video_id_from_url)
+from id.youtube_dl_utils import get_mp3_output_path, get_youtube_video_id_from_url
 from ShazamAPI import Shazam
-from utils.constants import (FORCE_REDO_SHAZAM, NUM_SHAZAM_MATCHES_THRESHOLD,
-                             SHOW_URL_IN_SHAZAM_OUTPUT)
+from utils.constants import (
+    FORCE_REDO_SHAZAM,
+    NUM_SHAZAM_MATCHES_THRESHOLD,
+    SHOW_URL_IN_SHAZAM_OUTPUT,
+)
 
 
 def get_track_ids_from_youtube_link(youtube_url: str) -> None:
@@ -25,7 +27,9 @@ def get_track_ids_from_youtube_link(youtube_url: str) -> None:
 
     youtube_video_id = get_youtube_video_id_from_url(youtube_url)
     mp3_output_path = get_mp3_output_path(youtube_video_id)
-    logging.info(f"using youtube_video_id: {youtube_video_id}, mp3_output_path: {mp3_output_path}")
+    logging.info(
+        f"using youtube_video_id: {youtube_video_id}, mp3_output_path: {mp3_output_path}"
+    )
 
     if not os.path.isfile(mp3_output_path):
         logging.info("couldn't find file, downloading from youtube")
@@ -65,12 +69,10 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
                 cache["shazam_urls_in_order"],
             )
 
-    except FileNotFoundError as error:
-        logging.exception(error)
-        print(f"no cache found. creating cache at '{libsync_cache_path}'.")
-    except KeyError as error:
-        logging.exception(error)
-        print(f"error parsing cache at '{libsync_cache_path}'. clearing cache.")
+    except FileNotFoundError:
+        logging.info(f"no cache found. creating cache at '{libsync_cache_path}'.")
+    except KeyError:
+        logging.info(f"error parsing cache at '{libsync_cache_path}'. clearing cache.")
 
     input_file = open(recording_audio_file_path, "rb").read()
     shazam = Shazam(input_file)
@@ -88,7 +90,9 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
                     url = track["url"]
                     if url not in shazam_matches_by_url:
                         shazam_urls_in_order.append(url)
-                        print(f"{str(timestamp)} {subtitle:40} - {title:80} {url}")
+                        logging.info(
+                            f"{format_shazam_result(timestamp, subtitle, title, url)}"
+                        )
                         shazam_matches_by_url[url] = {
                             "timestamps": [timestamp],
                             "subtitle": subtitle,
@@ -120,5 +124,11 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
         subtitle = match["subtitle"]
         title = match["title"]
         if num_matches >= NUM_SHAZAM_MATCHES_THRESHOLD:
-            url_component = f'{url:30}' if SHOW_URL_IN_SHAZAM_OUTPUT else ""
-            print(f"{num_matches:3} {str(timestamp)} {subtitle:30} - {title:30}{url_component}")
+            print(
+                f"{num_matches:3} {format_shazam_result(timestamp, subtitle, title, url)}"
+            )
+
+
+def format_shazam_result(timestamp: timedelta, subtitle: str, title: str, url: str):
+    url_component = f"{url:30}" if SHOW_URL_IN_SHAZAM_OUTPUT else ""
+    return f"{str(timestamp)} {subtitle:30} - {title:30}{url_component}"

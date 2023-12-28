@@ -82,4 +82,8 @@ python libsync/libsync.py id file \
 
 # TODO
 
-* add timestamps to auto-shazam output
+- multithread shazam process
+- connect id tool to spotify mapper and playlist creator
+- add editor step before uploading spotify playlist
+  - maybe just save mappings in a human readable file instead of pickled
+  - remember mappings from rekordbox ids and youtube ids

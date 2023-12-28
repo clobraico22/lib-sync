@@ -5,10 +5,11 @@ import time
 
 from analyze.analyze_rekordbox_library import analyze_rekordbox_library
 from dotenv import load_dotenv
-from id.get_ids_from_recording import (get_track_ids_from_audio_file,
-                                       get_track_ids_from_youtube_link)
+from id.get_ids_from_recording import (
+    get_track_ids_from_audio_file,
+    get_track_ids_from_youtube_link,
+)
 from spotify.sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
-from utils.constants import LOGGING_LEVEL
 from utils.parser_utils import get_cli_argparser
 from utils.rekordbox_library import LibsyncCommand
 
@@ -18,10 +19,16 @@ def main():
     parse command line args, call other components
     """
 
-    logging.info("running main()")
     load_dotenv()
     parser = get_cli_argparser()
     args = parser.parse_args()
+    verbose = args.verbose
+    if verbose:
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.ERROR)
+
+    logging.info("running main()")
     command = args.command
 
     if command == LibsyncCommand.SYNC:
@@ -58,7 +65,6 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=LOGGING_LEVEL)
     start_time = time.time()
     main()
     logging.info(f"total runtime: {(time.time() - start_time):.3f} seconds")
