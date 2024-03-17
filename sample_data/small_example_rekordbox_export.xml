@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<DJ_PLAYLISTS Version="1.0.0">
+  <PRODUCT Name="rekordbox" Version="6.7.1" Company="AlphaTheta"/>
+  <COLLECTION Entries="4">
+    <TRACK TrackID="214856896" Name="Hold On (Original Mix)" Artist="Taiki Nulight" Composer="" Album="Beatport Top 100 House Sept 2020" Grouping="" Genre="House" Kind="MP3 File" Size="12548779" TotalTime="311" DiscNumber="0" TrackNumber="1" Year="2020" AverageBpm="124.00" DateAdded="2023-01-19" BitRate="320" SampleRate="44100" Comments="" PlayCount="3" Rating="0" Location="file://localhost/Users/joshlebed/Music/soulseek/Taiki%20Nulight%20-%20Hold%20On%20(Original%20Mix).mp3" Remixer="" Tonality="7A" Label="Orient Records" Mix="">
+      <TEMPO Inizio="0.054" Bpm="124.00" Metro="4/4" Battito="1"/>
+      <POSITION_MARK Name="" Type="4" Start="77.473" End="85.215" Num="-1"/>
+    </TRACK>
+    <TRACK TrackID="44216344" Name="Whatever (Original Mix)" Artist="Kreech" Composer="" Album="" Grouping="" Genre="" Kind="MP3 File" Size="16416597" TotalTime="404" DiscNumber="0" TrackNumber="0" Year="0" AverageBpm="129.00" DateAdded="2023-01-19" BitRate="320" SampleRate="44100" Comments="" PlayCount="2" Rating="0" Location="file://localhost/Users/joshlebed/Music/soulseek/Kreech%20-%20Whatever%20(Original%20Mix).mp3" Remixer="" Tonality="5A" Label="" Mix="">
+      <TEMPO Inizio="0.055" Bpm="129.00" Metro="4/4" Battito="1"/>
+      <TEMPO Inizio="1.451" Bpm="129.00" Metro="4/4" Battito="4"/>
+    </TRACK>
+  </COLLECTION>
+  <PLAYLISTS>
+    <NODE Type="0" Name="ROOT" Count="2">
+      <NODE Name="playlist 1 (root)" Type="1" KeyType="0" Entries="3">
+        <TRACK Key="44216344"/>
+      </NODE>
+    </NODE>
+  </PLAYLISTS>
+</DJ_PLAYLISTS>
