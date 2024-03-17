@@ -167,13 +167,18 @@ def get_spotify_search_results(
     search_result_tracks = {}
     queries = get_spotify_queries_from_rekordbox_track(rekordbox_track)
     for query in queries:
-        results = spotify_client.search(
-            q=query, limit=NUMBER_OF_RESULTS_PER_QUERY, offset=0, type="track"
-        )["tracks"]["items"]
-        if DEBUG_SIMILARITY:
-            print(f"query: {query} got # of results: {len(results)}")
-        for track in results:
-            search_result_tracks[track["uri"]] = track
+        try:
+            results = spotify_client.search(
+                q=query, limit=NUMBER_OF_RESULTS_PER_QUERY, offset=0, type="track"
+            )["tracks"]["items"]
+            if DEBUG_SIMILARITY:
+                print(f"query: {query} got # of results: {len(results)}")
+            for track in results:
+                search_result_tracks[track["uri"]] = track
+        except requests.exceptions.ConnectionError as error:
+            # maybe catch this at a lower level
+            logging.exception(error)
+            print(f"error connecting to spotify. fix your internet connection and try again.")
 
     return search_result_tracks
 

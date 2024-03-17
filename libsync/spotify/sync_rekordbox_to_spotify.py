@@ -2,7 +2,9 @@
 
 import logging
 import pickle
+from pprint import pprint
 
+import requests
 from analyze.get_rekordbox_library import get_rekordbox_library
 from spotify.create_spotify_playlists import create_spotify_playlists
 from spotify.get_spotify_matches import get_spotify_matches
@@ -23,7 +25,7 @@ def sync_rekordbox_to_spotify(
         include_loose_songs (bool): _description_
     """
 
-    libsync_cache_path = f"data/{rekordbox_xml_path}_libsync_sync_cache.db"
+    libsync_cache_path = f"data/{rekordbox_xml_path.replace('/', '_')}_libsync_sync_cache.db"
     logging.info(
         "running sync_rekordbox_to_spotify.py with args: "
         + f"rekordbox_xml_path={rekordbox_xml_path}, "
@@ -50,12 +52,15 @@ def sync_rekordbox_to_spotify(
                 cache["playlist_id_map"],
                 cache["cached_search_search_results"],
             )
+            pprint(rekordbox_to_spotify_map)
+            # TODO: store rekordbox_to_spotify_map in a csv for better visibility and manual editing
     except FileNotFoundError as error:
         logging.exception(error)
         print(f"no cache found. creating cache at '{libsync_cache_path}'.")
     except KeyError as error:
         logging.exception(error)
         print(f"error parsing cache at '{libsync_cache_path}'. clearing cache.")
+        # TODO actually clear cache, also centralize this duplicated caching logic
 
     # get rekordbox db from xml
     try:
@@ -78,13 +83,19 @@ def sync_rekordbox_to_spotify(
     )
 
     # create a playlist in the user's account for each rekordbox playlist
-    create_spotify_playlists(
-        playlist_id_map=playlist_id_map,
-        rekordbox_playlists=rekordbox_library.playlists,
-        rekordbox_to_spotify_map=rekordbox_to_spotify_map,
-        create_collection_playlist=create_collection_playlist,
-        make_playlists_public=make_playlists_public,
-    )
+    try:
+        create_spotify_playlists(
+            playlist_id_map=playlist_id_map,
+            rekordbox_playlists=rekordbox_library.playlists,
+            rekordbox_to_spotify_map=rekordbox_to_spotify_map,
+            create_collection_playlist=create_collection_playlist,
+            make_playlists_public=make_playlists_public,
+        )
+        logging.debug(f"succeeded in writing ## playlists")
+    except requests.exceptions.ConnectionError as error:
+        # maybe catch this at a lower level
+        logging.exception(error)
+        print(f"error connecting to spotify. fix your internet connection and try again.")
 
     with open(libsync_cache_path, "wb") as handle:
         pickle.dump(
