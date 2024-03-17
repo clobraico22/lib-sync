@@ -6,11 +6,13 @@ import pickle
 from datetime import timedelta
 
 from id.download_audio import download_mp3_from_youtube_url
-from id.youtube_dl_utils import (get_mp3_output_path,
-                                 get_youtube_video_id_from_url)
+from id.youtube_dl_utils import get_mp3_output_path, get_youtube_video_id_from_url
 from ShazamAPI import Shazam
-from utils.constants import (FORCE_REDO_SHAZAM, NUM_SHAZAM_MATCHES_THRESHOLD,
-                             SHOW_URL_IN_SHAZAM_OUTPUT)
+from utils.constants import (
+    FORCE_REDO_SHAZAM,
+    NUM_SHAZAM_MATCHES_THRESHOLD,
+    SHOW_URL_IN_SHAZAM_OUTPUT,
+)
 
 
 def get_track_ids_from_youtube_link(youtube_url: str) -> None:
@@ -19,9 +21,7 @@ def get_track_ids_from_youtube_link(youtube_url: str) -> None:
     Args:
         youtube_url (str): URL of youtube video to analyze
     """
-    logging.info(
-        "get_track_ids_from_audio_file with args " + f"youtube_url: {youtube_url}"
-    )
+    logging.info("get_track_ids_from_audio_file with args " + f"youtube_url: {youtube_url}")
 
     youtube_video_id = get_youtube_video_id_from_url(youtube_url)
     mp3_output_path = get_mp3_output_path(youtube_video_id)
@@ -71,6 +71,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
     except KeyError as error:
         logging.exception(error)
         print(f"error parsing cache at '{libsync_cache_path}'. clearing cache.")
+        # TODO actually clear cache, also centralize this duplicated caching logic
 
     input_file = open(recording_audio_file_path, "rb").read()
     shazam = Shazam(input_file)
@@ -120,5 +121,5 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
         subtitle = match["subtitle"]
         title = match["title"]
         if num_matches >= NUM_SHAZAM_MATCHES_THRESHOLD:
-            url_component = f'{url:30}' if SHOW_URL_IN_SHAZAM_OUTPUT else ""
+            url_component = f"{url:30}" if SHOW_URL_IN_SHAZAM_OUTPUT else ""
             print(f"{num_matches:3} {str(timestamp)} {subtitle:30} - {title:30}{url_component}")

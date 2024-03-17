@@ -6,19 +6,25 @@ import logging
 import pprint
 import urllib.parse
 
+import requests
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from utils.constants import (DEBUG_SIMILARITY, MINIMUM_SIMILARITY_THRESHOLD,
-                             NUMBER_OF_RESULTS_PER_QUERY,
-                             RESOLVE_FAILED_MATCHES,
-                             USE_RB_TO_SPOTIFY_MATCHES_CACHE)
+from utils.constants import (
+    DEBUG_SIMILARITY,
+    MINIMUM_SIMILARITY_THRESHOLD,
+    NUMBER_OF_RESULTS_PER_QUERY,
+    RESOLVE_FAILED_MATCHES,
+    USE_RB_TO_SPOTIFY_MATCHES_CACHE,
+)
 from utils.file_utils import export_failed_matches_to_file
 from utils.rekordbox_library import RekordboxCollection, RekordboxTrack
 from utils.similarity_utils import calculate_similarities
-from utils.string_utils import (check_if_spotify_url_is_valid,
-                                get_artists_from_rekordbox_track,
-                                get_name_varieties_from_track_name,
-                                strip_punctuation)
+from utils.string_utils import (
+    check_if_spotify_url_is_valid,
+    get_artists_from_rekordbox_track,
+    get_name_varieties_from_track_name,
+    strip_punctuation,
+)
 
 
 def get_spotify_matches(
@@ -71,9 +77,7 @@ def get_spotify_matches(
             rekordbox_to_spotify_map[rb_track_id] = best_match_uri
 
     if RESOLVE_FAILED_MATCHES:
-        rekordbox_to_spotify_map = resolve_failed_matches(
-            failed_matches, rekordbox_to_spotify_map
-        )
+        rekordbox_to_spotify_map = resolve_failed_matches(failed_matches, rekordbox_to_spotify_map)
     else:
         export_failed_matches_to_file(failed_matches)
 
@@ -187,9 +191,7 @@ def get_spotify_queries_from_rekordbox_track(
             # try artist first, then song name first
             for ordered_search_terms in [search_terms, reversed(search_terms)]:
                 # remove punctuation
-                ordered_search_terms = [
-                    strip_punctuation(term) for term in ordered_search_terms
-                ]
+                ordered_search_terms = [strip_punctuation(term) for term in ordered_search_terms]
                 # build query
                 query = urllib.parse.quote(" ".join(ordered_search_terms))
                 queries.append(query)
@@ -197,9 +199,7 @@ def get_spotify_queries_from_rekordbox_track(
     return queries
 
 
-def find_best_track_match_uri(
-    rekordbox_track: RekordboxTrack, spotify_search_results: dict
-):
+def find_best_track_match_uri(rekordbox_track: RekordboxTrack, spotify_search_results: dict):
     """pick best track out of spotify search results.
     If best track is above similarity threshold, return it to client. Otherwise, return none.
 

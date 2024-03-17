@@ -25,11 +25,6 @@ pip install -r requirements.txt  # install dependencies
 python libsync/libsync.py -h
 python libsync/libsync.py sync -h
 python libsync/libsync.py analyze -h
-
-# run script
-python libsync/libsync.py \
---rekordbox_xml_path <path to your XML file>
---libsync_db_path ${HOME}/libsync.db
 ```
 
 ## dev quickstart
