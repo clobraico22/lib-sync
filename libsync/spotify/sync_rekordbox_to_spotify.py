@@ -13,7 +13,7 @@ def sync_rekordbox_to_spotify(
     create_collection_playlist: bool,
     make_playlists_public: bool,
     include_loose_songs: bool,
-):
+) -> None:
     """sync a user's rekordbox playlists to their spotify account
 
     Args:
