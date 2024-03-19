@@ -21,11 +21,15 @@ def get_track_ids_from_youtube_link(youtube_url: str) -> None:
     Args:
         youtube_url (str): URL of youtube video to analyze
     """
-    logging.info("get_track_ids_from_audio_file with args " + f"youtube_url: {youtube_url}")
+    logging.info(
+        "get_track_ids_from_audio_file with args " + f"youtube_url: {youtube_url}"
+    )
 
     youtube_video_id = get_youtube_video_id_from_url(youtube_url)
     mp3_output_path = get_mp3_output_path(youtube_video_id)
-    logging.info(f"using youtube_video_id: {youtube_video_id}, mp3_output_path: {mp3_output_path}")
+    logging.info(
+        f"using youtube_video_id: {youtube_video_id}, mp3_output_path: {mp3_output_path}"
+    )
 
     if not os.path.isfile(mp3_output_path):
         logging.info("couldn't find file, downloading from youtube")
@@ -122,4 +126,6 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
         title = match["title"]
         if num_matches >= NUM_SHAZAM_MATCHES_THRESHOLD:
             url_component = f"{url:30}" if SHOW_URL_IN_SHAZAM_OUTPUT else ""
-            print(f"{num_matches:3} {str(timestamp)} {subtitle:30} - {title:30}{url_component}")
+            print(
+                f"{num_matches:3} {str(timestamp)} {subtitle:30} - {title:30}{url_component}"
+            )

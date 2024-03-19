@@ -64,7 +64,9 @@ def create_spotify_playlists(
     logging.debug("fetching user playlists")
     while True:
         logging.debug(f"fetching next page of user playlists, with offset {offset}")
-        result = spotify.user_playlists(user=user_id, limit=SPOTIFY_PLAYLISTS_LIMIT, offset=offset)
+        result = spotify.user_playlists(
+            user=user_id, limit=SPOTIFY_PLAYLISTS_LIMIT, offset=offset
+        )
         user_playlists.update([item["id"] for item in result["items"]])
         if result["next"] is None:
             break
@@ -95,13 +97,18 @@ def create_spotify_playlists(
                 offset = 0
                 logging.info("fetching tracks")
                 while True:
-                    logging.debug(f"fetching next page of playlist tracks, with offset {offset}")
+                    logging.debug(
+                        f"fetching next page of playlist tracks, with offset {offset}"
+                    )
 
                     playlist_tracks_result = spotify.playlist_tracks(
                         playlist_id, limit=SPOTIFY_TRACKS_LIMIT, offset=offset
                     )
                     existing_track_uris.extend(
-                        [item["track"]["uri"] for item in playlist_tracks_result["items"]]
+                        [
+                            item["track"]["uri"]
+                            for item in playlist_tracks_result["items"]
+                        ]
                     )
                     if playlist_tracks_result["next"] is None:
                         break
@@ -143,12 +150,16 @@ def create_spotify_playlists(
                 logging.info(f'cleared playlist "{playlist.name}"')
                 pages = [
                     tracks_uris_to_add[i : i + ITEMS_PER_PAGE_SPOTIFY_API]
-                    for i in range(0, len(tracks_uris_to_add), ITEMS_PER_PAGE_SPOTIFY_API)
+                    for i in range(
+                        0, len(tracks_uris_to_add), ITEMS_PER_PAGE_SPOTIFY_API
+                    )
                 ]
                 for page in pages:
                     spotify.playlist_add_items(playlist_id=playlist_id, items=page)
 
-                logging.info(f'successfully added tracks to spotify playlist "{playlist.name}"')
+                logging.info(
+                    f'successfully added tracks to spotify playlist "{playlist.name}"'
+                )
 
         except spotipy.exceptions.SpotifyException as error:
             logging.exception(error)
