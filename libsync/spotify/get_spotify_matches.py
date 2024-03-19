@@ -13,14 +13,12 @@ from utils.constants import (
     DEBUG_SIMILARITY,
     MINIMUM_SIMILARITY_THRESHOLD,
     NUMBER_OF_RESULTS_PER_QUERY,
-    RESOLVE_FAILED_MATCHES,
     USE_RB_TO_SPOTIFY_MATCHES_CACHE,
+    USE_SPOTIFY_SEARCH_RESULTS_CACHE,
 )
-from utils.file_utils import export_failed_matches_to_file
 from utils.rekordbox_library import RekordboxCollection, RekordboxTrack
 from utils.similarity_utils import calculate_similarities
 from utils.string_utils import (
-    check_if_spotify_url_is_valid,
     get_artists_from_rekordbox_track,
     get_name_varieties_from_track_name,
     strip_punctuation,
@@ -48,106 +46,64 @@ def get_spotify_matches(
         + f"{pprint.pformat(rekordbox_collection)}"
     )
 
-    failed_matches = []
-
     scope = ["user-library-read", "playlist-modify-private"]
     spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
-    for rb_track_id, rb_track in rekordbox_collection.items():
-        # if already in db, skip it
-        if USE_RB_TO_SPOTIFY_MATCHES_CACHE and rb_track_id in rekordbox_to_spotify_map:
-            logging.debug("found a match in libsync db, skipping this spotify query")
-            continue
+    logging.info(f"{len(rekordbox_collection)} total tracks in collection")
 
-        if rb_track_id in cached_search_search_results:
+    rb_track_ids_to_look_up = []
+    unmatched_tracks = []
+
+    for rb_track_id in rekordbox_collection:
+        if USE_RB_TO_SPOTIFY_MATCHES_CACHE and rb_track_id in rekordbox_to_spotify_map:
+            if (
+                rekordbox_to_spotify_map[rb_track_id] == ""
+                or rekordbox_to_spotify_map[rb_track_id] is None
+            ):
+                logging.debug("libsync db has this track, but with no match")
+                unmatched_tracks.append(rb_track_id)
+            else:
+                logging.debug("found a match in libsync db, skipping this spotify query")
+
+        else:
+            logging.debug("not found, adding to list")
+            rb_track_ids_to_look_up.append(rb_track_id)
+
+    logging.info(
+        f"{len(unmatched_tracks)} unmatched tracks. currently ignoring "
+        + "(update in csv if you want to match these)"
+    )
+    # TODO: add CLI flag to add these tracks to rb_track_ids_to_look_up
+    # so we can try to find matches again
+
+    spotify_search_cache_hit_count = 0
+    spotify_search_cache_miss_count = 0
+
+    logging.info(f"{len(rb_track_ids_to_look_up)} tracks to match on spotify")
+    for i, rb_track_id in enumerate(rb_track_ids_to_look_up):
+        logging.debug(f"matching {i}/{len(rb_track_ids_to_look_up)}")
+
+        rb_track = rekordbox_collection[rb_track_id]
+
+        if USE_SPOTIFY_SEARCH_RESULTS_CACHE and rb_track_id in cached_search_search_results:
+            spotify_search_cache_hit_count += 1
+            logging.debug("found cached search results")
             spotify_search_results = cached_search_search_results[rb_track_id]
         else:
+            spotify_search_cache_miss_count += 1
+            logging.debug("couldn't find cached search results, searching spotify")
             spotify_search_results = get_spotify_search_results(spotify, rb_track)
             cached_search_search_results[rb_track_id] = spotify_search_results
 
-        logging.debug(
-            f"Search results for track {rb_track}: "
-            + f"{pprint.pformat([track['name'] for track in spotify_search_results.values()])}"
-        )
+        # logging.debug(
+        #     f"Search results for track {rb_track}: "
+        #     + f"{pprint.pformat([track['name'] for track in spotify_search_results.values()])}"
+        # )
 
         best_match_uri = find_best_track_match_uri(rb_track, spotify_search_results)
-        if best_match_uri is None:
-            failed_matches.append(rb_track)
-        else:
-            rekordbox_to_spotify_map[rb_track_id] = best_match_uri
-
-    if RESOLVE_FAILED_MATCHES:
-        rekordbox_to_spotify_map = resolve_failed_matches(failed_matches, rekordbox_to_spotify_map)
-    else:
-        export_failed_matches_to_file(failed_matches)
+        rekordbox_to_spotify_map[rb_track_id] = best_match_uri
 
     return rekordbox_to_spotify_map
-
-
-def resolve_failed_matches(
-    failed_matches: list[RekordboxTrack],
-    rekordbox_to_spotify_map: dict[str, str],
-):
-    """get user input to fix failed automatic matches
-
-    Args:
-        failed_matches (list[RekordboxTrack]): list of tracks that couldn't be automatically matched
-        rekordbox_to_spotify_map (dict[str, str]): map from rekordbox song ID to spotify URI.
-            passed by reference, modified in place
-
-    Returns:
-        _type_: _description_
-    """
-    for rb_track in failed_matches:
-        correct_uri = get_correct_spotify_url_from_user(rb_track)
-        if correct_uri:
-            # correct_url = convert_uri_to_url(correct_uri)
-            rekordbox_to_spotify_map[rb_track.id] = correct_uri
-
-        elif check_if_track_should_be_ignored_in_future_from_user(rb_track):
-            rekordbox_to_spotify_map[rb_track.id] = None
-
-    return rekordbox_to_spotify_map
-
-
-def get_correct_spotify_url_from_user(rb_track):
-    # TODO: consider using click for user input https://click.palletsprojects.com/en/8.1.x/
-    correct_spotify_url_input = input(
-        f"Couldn't find a good match for {rb_track}. Please paste the matching spotify link here (press 'Enter' to skip): "
-    ).strip(" ")
-    print(f"Entered {correct_spotify_url_input=}")
-    while True:
-        if correct_spotify_url_input == "" or check_if_spotify_url_is_valid(
-            correct_spotify_url_input
-        ):
-            return correct_spotify_url_input
-
-        correct_spotify_url_input = input(
-            "The given response is invalid. Please try again (press 'Enter' to skip): "
-        ).strip("")
-
-
-def check_if_track_should_be_ignored_in_future_from_user(rb_track):
-    ignore_track_in_future_input = (
-        input(
-            "No link entered. Would you like lib-sync to ignore this track in the future? [y/n]: "
-        )
-        .lower()
-        .strip(" ")
-    )
-    while True:
-        if ignore_track_in_future_input in {"y", "yes", "ye"}:
-            return True
-        elif ignore_track_in_future_input in {"n", "no"}:
-            return False
-
-        ignore_track_in_future_input = (
-            input(
-                "The given response is invalid. Please enter 'y' or 'n'.\nWould you like lib-sync to ignore this track in the future? [y/n]: "
-            )
-            .lower()
-            .strip(" ")
-        )
 
 
 def get_spotify_search_results(
@@ -178,7 +134,7 @@ def get_spotify_search_results(
         except requests.exceptions.ConnectionError as error:
             # maybe catch this at a lower level
             logging.exception(error)
-            print(f"error connecting to spotify. fix your internet connection and try again.")
+            print("error connecting to spotify. fix your internet connection and try again.")
 
     return search_result_tracks
 
@@ -215,9 +171,9 @@ def find_best_track_match_uri(rekordbox_track: RekordboxTrack, spotify_search_re
     Returns:
         str | None: spotify URI if one is found, otherwise None
     """
-    logging.debug(
-        f"running find_best_track_match_uri with rekordbox_track:\n{pprint.pformat(rekordbox_track)}"
-    )
+    # logging.debug(
+    #     f"running find_best_track_match_uri with rekordbox_track:\n{pprint.pformat(rekordbox_track)}"
+    # )
 
     if len(spotify_search_results) < 1:
         logging.debug("spotify_search_results is empty. Returning None...")

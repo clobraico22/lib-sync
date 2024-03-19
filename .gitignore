@@ -8,3 +8,5 @@ data/failed_matches_*
 data/*.mp3
 data/*.db
 data/*.part
+data/*.csv
+.cache-*

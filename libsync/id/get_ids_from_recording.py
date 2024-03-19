@@ -66,7 +66,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
             )
 
     except FileNotFoundError as error:
-        logging.exception(error)
+        logging.debug(error)
         print(f"no cache found. creating cache at '{libsync_cache_path}'.")
     except KeyError as error:
         logging.exception(error)

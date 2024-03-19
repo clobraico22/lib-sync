@@ -9,14 +9,16 @@ import logging
 # in dev, run with logging level info or warn
 # LOGGING_LEVEL = logging.WARN
 LOGGING_LEVEL = logging.INFO
+# LOGGING_LEVEL = logging.DEBUG
 
 # --- sync command ---
 ARTIST_LIST_DELIMITERS = r",| & |vs\.|\n|ft\.|feat\.|featuring| / |; "
 NUMBER_OF_RESULTS_PER_QUERY = 5
 USE_RB_TO_SPOTIFY_MATCHES_CACHE = True
+USE_SPOTIFY_SEARCH_RESULTS_CACHE = True
 DEBUG_SIMILARITY = False
 MINIMUM_SIMILARITY_THRESHOLD = 0.95
-RESOLVE_FAILED_MATCHES = True
+RESOLVE_FAILED_MATCHES = False
 
 # --- id command ---
 FORCE_REDO_SHAZAM = False
