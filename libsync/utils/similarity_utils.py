@@ -3,9 +3,11 @@
 from difflib import SequenceMatcher
 
 from utils.constants import DEBUG_SIMILARITY
-from utils.string_utils import (get_artists_from_rekordbox_track,
-                                get_name_varieties_from_track_name,
-                                strip_punctuation)
+from utils.string_utils import (
+    get_artists_from_rekordbox_track,
+    get_name_varieties_from_track_name,
+    strip_punctuation,
+)
 
 
 def calculate_similarity_metric(similarity_matrix: dict):
@@ -71,5 +73,7 @@ def calculate_similarities(rekordbox_track, spotify_search_results) -> dict:
                 + f"rekordbox_artists: {rekordbox_artist_list}, "
                 + f"spotify_name: {spotify_artist_list}, "
             )
+
+    return similarities
 
     return similarities

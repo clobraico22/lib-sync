@@ -26,7 +26,9 @@ def sync_rekordbox_to_spotify(
         include_loose_songs (bool): _description_
     """
 
-    libsync_cache_path = f"data/{rekordbox_xml_path.replace('/', '_')}_libsync_sync_cache.db"
+    libsync_cache_path = (
+        f"data/{rekordbox_xml_path.replace('/', '_')}_libsync_sync_cache.db"
+    )
     libsync_song_mapping_csv = (
         f"data/{rekordbox_xml_path.replace('/', '_')}_libsync_song_mapping_cache.csv"
     )
@@ -98,7 +100,9 @@ def sync_rekordbox_to_spotify(
 
     # get rekordbox db from xml
     try:
-        rekordbox_library = get_rekordbox_library(rekordbox_xml_path, include_loose_songs)
+        rekordbox_library = get_rekordbox_library(
+            rekordbox_xml_path, include_loose_songs
+        )
         logging.debug(f"got rekordbox library: {rekordbox_library}")
     except FileNotFoundError as error:
         logging.debug(error)
@@ -106,7 +110,9 @@ def sync_rekordbox_to_spotify(
         return
     except TypeError as error:
         logging.exception(error)
-        print(f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again")
+        print(
+            f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
+        )
         # TODO: convert print statements to logging.info(),
         # except for stuff that should actually be printed
         return
@@ -132,7 +138,9 @@ def sync_rekordbox_to_spotify(
     except requests.exceptions.ConnectionError as error:
         # maybe catch this at a lower level
         logging.exception(error)
-        print("error connecting to spotify. fix your internet connection and try again.")
+        print(
+            "error connecting to spotify. fix your internet connection and try again."
+        )
 
     with open(libsync_cache_path, "wb") as handle:
         pickle.dump(

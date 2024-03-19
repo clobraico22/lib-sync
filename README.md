@@ -40,6 +40,7 @@ activate python virtual environment and update dependencies (after each pull):
 ```bash
 source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
+pre-commit install
 ```
 
 to run with sample data:
@@ -82,4 +83,8 @@ python libsync/libsync.py id youtube \
 
 # TODO
 
-- add timestamps to auto-shazam output
+- multithread shazam process
+- connect id tool to spotify mapper and playlist creator
+- add editor step before uploading sjpotify playlist
+  - maybe just save mappings in a human readable file instead of pickled
+  - remember mappings from rekordbox ids and youtube ids

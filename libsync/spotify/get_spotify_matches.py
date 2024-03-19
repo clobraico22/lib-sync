@@ -63,7 +63,9 @@ def get_spotify_matches(
                 logging.debug("libsync db has this track, but with no match")
                 unmatched_tracks.append(rb_track_id)
             else:
-                logging.debug("found a match in libsync db, skipping this spotify query")
+                logging.debug(
+                    "found a match in libsync db, skipping this spotify query"
+                )
 
         else:
             logging.debug("not found, adding to list")
@@ -85,7 +87,10 @@ def get_spotify_matches(
 
         rb_track = rekordbox_collection[rb_track_id]
 
-        if USE_SPOTIFY_SEARCH_RESULTS_CACHE and rb_track_id in cached_search_search_results:
+        if (
+            USE_SPOTIFY_SEARCH_RESULTS_CACHE
+            and rb_track_id in cached_search_search_results
+        ):
             spotify_search_cache_hit_count += 1
             logging.debug("found cached search results")
             spotify_search_results = cached_search_search_results[rb_track_id]
@@ -134,7 +139,9 @@ def get_spotify_search_results(
         except requests.exceptions.ConnectionError as error:
             # maybe catch this at a lower level
             logging.exception(error)
-            print("error connecting to spotify. fix your internet connection and try again.")
+            print(
+                "error connecting to spotify. fix your internet connection and try again."
+            )
 
     return search_result_tracks
 
@@ -152,7 +159,9 @@ def get_spotify_queries_from_rekordbox_track(
             # try artist first, then song name first
             for ordered_search_terms in [search_terms, reversed(search_terms)]:
                 # remove punctuation
-                ordered_search_terms = [strip_punctuation(term) for term in ordered_search_terms]
+                ordered_search_terms = [
+                    strip_punctuation(term) for term in ordered_search_terms
+                ]
                 # build query
                 query = urllib.parse.quote(" ".join(ordered_search_terms))
                 queries.append(query)
@@ -160,7 +169,9 @@ def get_spotify_queries_from_rekordbox_track(
     return queries
 
 
-def find_best_track_match_uri(rekordbox_track: RekordboxTrack, spotify_search_results: dict):
+def find_best_track_match_uri(
+    rekordbox_track: RekordboxTrack, spotify_search_results: dict
+):
     """pick best track out of spotify search results.
     If best track is above similarity threshold, return it to client. Otherwise, return none.
 
