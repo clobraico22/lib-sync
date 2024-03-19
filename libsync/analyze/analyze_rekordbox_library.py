@@ -2,8 +2,7 @@
 
 import logging
 
-from analyze.generate_rekordbox_library_report import \
-    generate_rekordbox_library_report
+from analyze.generate_rekordbox_library_report import generate_rekordbox_library_report
 from analyze.get_rekordbox_library import get_rekordbox_library
 
 
@@ -29,7 +28,7 @@ def analyze_rekordbox_library(
         rekordbox_library = get_rekordbox_library(rekordbox_xml_path, include_loose_songs)
         logging.debug(f"got rekordbox library: {rekordbox_library}")
     except FileNotFoundError as error:
-        logging.exception(error)
+        logging.debug(error)
         print(f"couldn't find '{rekordbox_xml_path}'. check the path and try again")
         return
     except TypeError as error:

@@ -9,7 +9,7 @@ rekordbox -> spotify playlists
 - [python 3.10](https://www.python.org/downloads/release/python-31010/) installed locally
 - `.env` file in the root directory with client ID and secret
   - go to the [Spotify developers dashboard](https://developer.spotify.com/dashboard) and go to Create App to get a client ID and secret
-  - copy .example.env from this directory into a new file .env in the same directory and add your `id` and `secret`
+  - copy `.example.env` from this directory into a new file `.env` in the same directory and add your `id` and `secret`
 
 ### steps
 
@@ -25,11 +25,6 @@ pip install -r requirements.txt  # install dependencies
 python libsync/libsync.py -h
 python libsync/libsync.py sync -h
 python libsync/libsync.py analyze -h
-
-# run script
-python libsync/libsync.py \
---rekordbox_xml_path <path to your XML file>
---libsync_db_path ${HOME}/libsync.db
 ```
 
 ## dev quickstart
@@ -80,6 +75,11 @@ python libsync/libsync.py id file \
 --recording_audio_file_path sample_data/file.mp3 \
 ```
 
+```bash
+python libsync/libsync.py id youtube \
+--youtube_url https://www.youtube.com/watch\?v\=6qSnO5U95yU \
+```
+
 # TODO
 
-* add timestamps to auto-shazam output
+- add timestamps to auto-shazam output

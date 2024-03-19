@@ -7,3 +7,6 @@ data/failed_matches_*
 *.pyc
 data/*.mp3
 data/*.db
+data/*.part
+data/*.csv
+.cache-*

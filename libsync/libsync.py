@@ -5,8 +5,7 @@ import time
 
 from analyze.analyze_rekordbox_library import analyze_rekordbox_library
 from dotenv import load_dotenv
-from id.get_ids_from_recording import (get_track_ids_from_audio_file,
-                                       get_track_ids_from_youtube_link)
+from id.get_ids_from_recording import get_track_ids_from_audio_file, get_track_ids_from_youtube_link
 from spotify.sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
 from utils.constants import LOGGING_LEVEL
 from utils.parser_utils import get_cli_argparser
