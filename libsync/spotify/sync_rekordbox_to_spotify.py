@@ -32,7 +32,7 @@ def sync_rekordbox_to_spotify(
     libsync_song_mapping_csv = (
         f"data/{rekordbox_xml_path.replace('/', '_')}_libsync_song_mapping_cache.csv"
     )
-    logging.info(
+    logging.debug(
         "running sync_rekordbox_to_spotify.py with args: "
         + f"rekordbox_xml_path={rekordbox_xml_path}, "
         + f"libsync_cache_path={libsync_cache_path}, "
@@ -40,10 +40,12 @@ def sync_rekordbox_to_spotify(
         + f"make_playlists_public={make_playlists_public}, "
         + f"include_loose_songs={include_loose_songs}"
     )
+    print("syncing rekordbox => spotify")
 
     rekordbox_to_spotify_map = {}
     playlist_id_map = {}
     cached_search_search_results = {}
+    rb_track_ids_flagged_for_rematch = set()
 
     # get libsync cache from file
     try:
@@ -56,10 +58,6 @@ def sync_rekordbox_to_spotify(
                 cache["playlist_id_map"],
                 cache["cached_search_search_results"],
             )
-            # pprint(rekordbox_to_spotify_map)
-            logging.info(
-                f"len(rekordbox_to_spotify_map) (before reading from csv): {len(rekordbox_to_spotify_map)}"
-            )
     except FileNotFoundError as error:
         logging.debug(error)
         print(f"no cache found. will create cache at '{libsync_cache_path}'.")
@@ -71,23 +69,32 @@ def sync_rekordbox_to_spotify(
     try:
         with open(libsync_song_mapping_csv, mode="r", encoding="utf-8") as file:
             reader = csv.reader(file)
-            print("PRINTING MAPPING:")
             next(reader, None)  # skip the headers
             csv_lines = [line for line in reader]
-            logging.info(f"len(csv_lines): {len(csv_lines)}")
+            logging.debug(f"len(csv_lines): {len(csv_lines)}")
             for line in csv_lines:
-                rb_track_id, spotify_uri, spotify_url = line[0], line[3], line[4]
-                if spotify_url != "":
+                rb_track_id, spotify_uri, spotify_url, flag_for_rematch = (
+                    line[0],
+                    line[3],
+                    line[4],
+                    line[5],
+                )
+                if spotify_url == "libsync:NOT_ON_SPOTIFY":
+                    spotify_uri = "libsync:NOT_ON_SPOTIFY"
+                elif spotify_url != "":
                     logging.debug(
                         "found a spotify URL manually input into the CSV by the user, "
                         + "trying to parse now"
                     )
                     # TODO: save logs to a file instead of stdout
+                    # TODO: check for valid spotify url, or catch exception from underlying library
                     spotify_uri = get_spotify_uri_from_url(spotify_url)
 
                 rekordbox_to_spotify_map[rb_track_id] = spotify_uri
+                if flag_for_rematch != "":
+                    rb_track_ids_flagged_for_rematch.add(rb_track_id)
 
-        logging.info(
+        logging.debug(
             "len(rekordbox_to_spotify_map) (after reading from csv): "
             + f"{len(rekordbox_to_spotify_map)}"
         )
@@ -122,6 +129,7 @@ def sync_rekordbox_to_spotify(
         rekordbox_to_spotify_map,
         cached_search_search_results,
         rekordbox_library.collection,
+        rb_track_ids_flagged_for_rematch,
     )
 
     # TODO: add CLI flag to skip creating playlists for debugging
@@ -145,10 +153,10 @@ def sync_rekordbox_to_spotify(
     with open(libsync_cache_path, "wb") as handle:
         pickle.dump(
             {
-                "rekordbox_to_spotify_map": rekordbox_to_spotify_map,
                 "playlist_id_map": playlist_id_map,
                 "cached_search_search_results": cached_search_search_results,
             },
+            # TODO: add ops script to clear individual caches, or break caches out into individual files
             handle,
             protocol=pickle.HIGHEST_PROTOCOL,
         )
@@ -163,17 +171,23 @@ def sync_rekordbox_to_spotify(
                 "Song title",
                 "Spotify URI (don't touch)",
                 "Spotify URL (input)",
+                "Retry auto match (input)",
             ]
         )
         write.writerows(
-            [
+            sorted(
                 [
-                    rekordbox_id,
-                    rekordbox_library.collection[rekordbox_id].artist,
-                    rekordbox_library.collection[rekordbox_id].name,
-                    spotify_uri,
-                    "",
-                ]
-                for rekordbox_id, spotify_uri in rekordbox_to_spotify_map.items()
-            ]
+                    [
+                        rb_track_id,
+                        rekordbox_library.collection[rb_track_id].artist,
+                        rekordbox_library.collection[rb_track_id].name,
+                        spotify_uri,
+                        "",
+                        "1" if rb_track_id in rb_track_ids_flagged_for_rematch else "",
+                    ]
+                    for rb_track_id, spotify_uri in rekordbox_to_spotify_map.items()
+                ],
+                key=lambda row: str(row[3]),
+                reverse=True,
+            )
         )

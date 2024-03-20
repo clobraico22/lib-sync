@@ -23,7 +23,9 @@ def main():
     parser = get_cli_argparser()
     args = parser.parse_args()
     verbose = args.verbose
-    if verbose:
+    if verbose >= 2:
+        logging.basicConfig(level=logging.DEBUG)
+    elif verbose == 1:
         logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.ERROR)
@@ -66,6 +68,7 @@ def main():
 
 if __name__ == "__main__":
     start_time = time.time()
-    print("Running libsync...")
+    print("running libsync...")
     main()
+    print("done running libsync.")
     logging.info(f"total runtime: {(time.time() - start_time):.3f} seconds")

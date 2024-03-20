@@ -10,7 +10,7 @@ def get_cli_argparser():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-v", "--verbose", help="increase output verbosity", action="store_true"
+        "-v", "--verbose", action="count", default=0, help="increase output verbosity"
     )
 
     subparsers = parser.add_subparsers(

@@ -26,7 +26,7 @@ def get_rekordbox_library(
     logging.debug(
         f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
     )
-    print("reading rekordbox library...")
+    print("  reading rekordbox library...")
 
     tree = ET.parse(rekordbox_xml_path)
     root = tree.getroot()
@@ -83,7 +83,7 @@ def get_rekordbox_library(
         )
 
     logging.debug("done with get_rekordbox_library")
-    print("done reading rekordbox library.")
+    print("  done reading rekordbox library.")
 
     return RekordboxLibrary(
         collection={track.id: track for track in rekordbox_collection_list},

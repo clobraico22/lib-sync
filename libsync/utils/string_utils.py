@@ -23,28 +23,50 @@ def get_spotify_uri_from_url(spotify_url: str) -> str:
 
 
 def remove_original_mix(song_title: str) -> str:
-    trimmed_song_title = re.sub(
+    song_title = re.sub(
         r"[\(\[]original mix[\)\]]", "", song_title, flags=re.IGNORECASE
     )
-    return trimmed_song_title
+    song_title = re.sub(
+        r"[\(\[]original version[\)\]]", "", song_title, flags=re.IGNORECASE
+    )
+    song_title = re.sub(r"[\(\[]original[\)\]]", "", song_title, flags=re.IGNORECASE)
+    return song_title
 
 
 def remove_extended_mix(song_title: str) -> str:
-    trimmed_song_title = re.sub(
+    song_title = re.sub(
         r"[\(\[]extended mix[\)\]]", "", song_title, flags=re.IGNORECASE
     )
-    return trimmed_song_title
+    # TODO: do something about case sensitivity throughout the app
+    song_title = re.sub(r"extended mix", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"extended", "", song_title, flags=re.IGNORECASE)
+    return song_title
+
+
+def remove_radio_mix(song_title: str) -> str:
+    song_title = re.sub(r"[\(\[]radio mix[\)\]]", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"[\(\[]radio edit[\)\]]", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"radio mix", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"radio edit", "", song_title, flags=re.IGNORECASE)
+    return song_title
+
+
+def remove_bootleg(song_title: str) -> str:
+    song_title = re.sub(r"[\(\[]bootleg[\)\]]", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"bootleg", "", song_title, flags=re.IGNORECASE)
+    return song_title
+
+
+def remove_suffixes(song_title: str) -> str:
+    song_title = remove_original_mix(song_title)
+    song_title = remove_extended_mix(song_title)
+    song_title = remove_radio_mix(song_title)
+    song_title = remove_bootleg(song_title)
+    return song_title
 
 
 def get_name_varieties_from_track_name(name: str):
-    return set(
-        title.strip()
-        for title in [
-            name,
-            remove_original_mix(name),
-            remove_extended_mix(name),
-        ]
-    )
+    return list(set(title.strip() for title in [name, remove_suffixes(name)]))
 
 
 def get_artists_from_rekordbox_track(
