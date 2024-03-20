@@ -23,9 +23,10 @@ def get_rekordbox_library(
         RekordboxLibrary: data structure containing a representation of the library
     """
 
-    logging.info(
+    logging.debug(
         f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
     )
+    print("reading rekordbox library...")
 
     tree = ET.parse(rekordbox_xml_path)
     root = tree.getroot()
@@ -81,11 +82,9 @@ def get_rekordbox_library(
             )
         )
 
-    logging.info("done getting rekordbox library")
-    return RekordboxLibrary(
-        collection={track.id: track for track in rekordbox_collection_list},
-        playlists=rekordbox_playlists,
-    )
+    logging.debug("done with get_rekordbox_library")
+    print("done reading rekordbox library.")
+
     return RekordboxLibrary(
         collection={track.id: track for track in rekordbox_collection_list},
         playlists=rekordbox_playlists,

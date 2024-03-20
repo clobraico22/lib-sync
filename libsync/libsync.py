@@ -19,7 +19,6 @@ def main():
     parse command line args, call other components
     """
 
-    logging.info("running main()")
     load_dotenv()
     parser = get_cli_argparser()
     args = parser.parse_args()
@@ -67,5 +66,6 @@ def main():
 
 if __name__ == "__main__":
     start_time = time.time()
+    print("Running libsync...")
     main()
     logging.info(f"total runtime: {(time.time() - start_time):.3f} seconds")
