@@ -1,6 +1,6 @@
+import logging
 import sys
 
-import spotipy
 import spotipy.util as util
 
 scope = ["user-library-read"]
@@ -43,21 +43,15 @@ else:
 token = util.prompt_for_user_token(username, scope)
 
 if token:
-    spotify = spotipy.Spotify(auth=token)
-    results = spotify.current_user_saved_tracks()
-    for item in results["items"]:
-        track = item["track"]
-        print(track["name"] + " - " + track["artists"][0]["name"])
-    # spotify.pause_playback()
-    user_id = spotify.current_user()["id"]
-
-    spotify_playlist_data = spotify.user_playlist_create(
-        user=user_id, name="TESTTT", public=True, collaborative=True
+    print(token)
+    print(
+        "https://api-partner.spotify.com/pathfinder/v1/query?operationName=searchDesktop&variables=%7B%22searchTerm%22%3A%22mystringuniquestring%22%2C%22offset%22%3A0%2C%22limit%22%3A10%2C%22numberOfTopResults%22%3A5%2C%22includeAudiobooks%22%3Atrue%2C%22includeArtistHasConcertsField%22%3Afalse%2C%22includePreReleases%22%3Afalse%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22339dfbacfc823a4b720b2c42dda51cc5b302966652b823958a6bdddbe914fa41%22%7D%7D"
     )
-
-    id = spotify_playlist_data["id"]
-
-    spotify.playlist_change_details(id, name="updated", public=False)
+    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.ERROR)
+    logging.debug("info")
+    logging.info("info")
+    logging.error("info")
 
     exit()
 
