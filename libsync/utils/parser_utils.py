@@ -30,6 +30,23 @@ def get_cli_argparser():
         required=True,
     )
     parser_sync.add_argument(
+        "--interactive_mode",
+        action="store_true",
+        help="interactively fix matches",
+    )
+    parser_sync.add_argument(
+        "--ignore_spotify_search_cache",
+        action="store_true",
+        help="ignore libsync's local cache of spotify search results. "
+        + "use this to search for new spotify uploads or use new libsync search logic",
+    )
+    parser_sync.add_argument(
+        "--skip_create_spotify_playlists",
+        action="store_true",
+        help="skip creating/updating spotify playlists - this is useful when doing a lot of "
+        + "manual mapping corrections or testing libsync features",
+    )
+    parser_sync.add_argument(
         "--create_collection_playlist",
         action="store_true",
         help="make a playlist of the total rekordbox collection",

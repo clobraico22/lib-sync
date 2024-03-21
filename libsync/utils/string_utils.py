@@ -69,14 +69,25 @@ def get_name_varieties_from_track_name(name: str):
     return list(set(title.strip() for title in [name, remove_suffixes(name)]))
 
 
-def get_artists_from_rekordbox_track(
-    rekordbox_track: RekordboxTrack,
+def get_artists_from_rb_track(
+    rb_track: RekordboxTrack,
 ):
     return [
-        artist.strip()
-        for artist in re.split(ARTIST_LIST_DELIMITERS, rekordbox_track.artist)
+        artist.strip() for artist in re.split(ARTIST_LIST_DELIMITERS, rb_track.artist)
     ]
 
 
 def strip_punctuation(name: str) -> str:
     return name.translate(str.maketrans("", "", string.punctuation))
+
+
+def pretty_print_spotify_track(track: object, include_url: bool = False):
+    if track["artists"] is None or track["name"] is None:
+        return "invalid spotify track"
+
+    return (
+        ((track["external_urls"]["spotify"][8:] + "  ") if include_url else "")
+        + ", ".join([artist["name"] for artist in track["artists"]])
+        + " - "
+        + track["name"]
+    )

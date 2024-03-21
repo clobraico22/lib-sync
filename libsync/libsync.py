@@ -13,37 +13,38 @@ from spotify.sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
 from utils.parser_utils import get_cli_argparser
 from utils.rekordbox_library import LibsyncCommand
 
+logger = logging.getLogger("libsync")
+
 
 def main():
     """
     parse command line args, call other components
     """
+    setup_logger(logger)
 
     load_dotenv()
     parser = get_cli_argparser()
     args = parser.parse_args()
     verbose = args.verbose
     if verbose >= 2:
-        logging.basicConfig(level=logging.DEBUG)
+        logger.setLevel(level=logging.DEBUG)
     elif verbose == 1:
-        logging.basicConfig(level=logging.INFO)
+        logger.setLevel(level=logging.INFO)
     else:
-        logging.basicConfig(level=logging.ERROR)
+        logger.setLevel(level=logging.ERROR)
 
-    logging.info("running main()")
+    logger.info("running main()")
     command = args.command
 
     if command == LibsyncCommand.SYNC:
-        rekordbox_xml_path = args.rekordbox_xml_path
-        create_collection_playlist = args.create_collection_playlist
-        make_playlists_public = args.make_playlists_public
-        include_loose_songs = args.include_loose_songs
-
         sync_rekordbox_to_spotify(
-            rekordbox_xml_path,
-            create_collection_playlist,
-            make_playlists_public,
-            include_loose_songs,
+            rekordbox_xml_path=args.rekordbox_xml_path,
+            create_collection_playlist=args.create_collection_playlist,
+            make_playlists_public=args.make_playlists_public,
+            include_loose_songs=args.include_loose_songs,
+            ignore_spotify_search_cache=args.ignore_spotify_search_cache,
+            interactive_mode=args.interactive_mode,
+            skip_create_spotify_playlists=args.skip_create_spotify_playlists,
         )
 
     elif command == LibsyncCommand.ANALYZE:
@@ -71,4 +72,23 @@ if __name__ == "__main__":
     print("running libsync...")
     main()
     print("done running libsync.")
-    logging.info(f"total runtime: {(time.time() - start_time):.3f} seconds")
+    logger.info(f"total runtime: {(time.time() - start_time):.3f} seconds")
+
+
+def setup_logger(logger):
+    logger.setLevel(logging.DEBUG)
+
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    # add formatter to ch
+    ch.setFormatter(formatter)
+
+    # add ch to logger
+    logger.addHandler(ch)

@@ -10,6 +10,8 @@ from utils.rekordbox_library import (
     RekordboxTrack,
 )
 
+logger = logging.getLogger("libsync")
+
 
 def get_rekordbox_library(
     rekordbox_xml_path: str, include_loose_songs: bool
@@ -23,14 +25,25 @@ def get_rekordbox_library(
         RekordboxLibrary: data structure containing a representation of the library
     """
 
-    logging.debug(
+    logger.debug(
         f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
     )
     print("  reading rekordbox library...")
 
-    tree = ET.parse(rekordbox_xml_path)
+    try:
+        tree = ET.parse(rekordbox_xml_path)
+    except FileNotFoundError as error:
+        logger.debug(error)
+        print(f"couldn't find '{rekordbox_xml_path}'. check the path and try again")
+        exit(1)
+    except TypeError as error:
+        logger.exception(error)
+        print(
+            f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
+        )
+        exit(1)
+
     root = tree.getroot()
-    # xml = RekordboxXml(rekordbox_xml_path)
     rekordbox_collection_list = [
         RekordboxTrack(
             id=track.get("TrackID"),
@@ -52,9 +65,9 @@ def get_rekordbox_library(
             else RekordboxNodeType.PLAYLIST
         )
 
-        logging.debug(f"running loop with nodes: {nodes}, " + f"nodes[0]: {nodes[0]}, ")
+        logger.debug(f"running loop with nodes: {nodes}, " + f"nodes[0]: {nodes[0]}, ")
         if node_type == RekordboxNodeType.PLAYLIST:
-            logging.debug("found playlist")
+            logger.debug("found playlist")
             rekordbox_playlists.append(
                 RekordboxPlaylist(
                     name=node.get("Name"),
@@ -65,11 +78,11 @@ def get_rekordbox_library(
                 tracks_found_on_at_least_one_playlist.add(track)
 
         elif node_type == RekordboxNodeType.FOLDER:
-            logging.debug("found folder")
+            logger.debug("found folder")
             nodes.extend(node.findall("NODE"))
 
         else:
-            logging.debug("breaking")
+            logger.debug("breaking")
             break
 
         nodes.pop(0)
@@ -82,7 +95,7 @@ def get_rekordbox_library(
             )
         )
 
-    logging.debug("done with get_rekordbox_library")
+    logger.debug("done with get_rekordbox_library")
     print("  done reading rekordbox library.")
 
     return RekordboxLibrary(
