@@ -24,7 +24,7 @@ class RekordboxTrack:
         self.album = album
 
     def __repr__(self) -> str:
-        return f"[{self.id}] {self.name} - {self.artist} - " + (
+        return f"[{self.id}] {self.artist} - {self.name} - " + (
             self.album if self.album else "<no album>"
         )
 

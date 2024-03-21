@@ -4,6 +4,7 @@ import logging
 from urllib.parse import parse_qs, urlparse
 
 OUTPUT_TEMPLATE = "data/%(id)s_audio_download"
+logger = logging.getLogger("libsync")
 
 
 class YoutubeDLLogger(object):
@@ -14,12 +15,12 @@ class YoutubeDLLogger(object):
         pass
 
     def error(self, msg):
-        logging.info(f"YoutubeDL error: {msg}")
+        logger.info(f"YoutubeDL error: {msg}")
 
 
 def youtube_dl_progress_hook(d):
     if d["status"] == "finished":
-        logging.info("Done downloading, now converting to mp3.")
+        logger.info("Done downloading, now converting to mp3.")
 
 
 def get_mp3_output_path(youtube_video_id):

@@ -14,6 +14,8 @@ from utils.constants import (
     SHOW_URL_IN_SHAZAM_OUTPUT,
 )
 
+logger = logging.getLogger("libsync")
+
 
 def get_track_ids_from_youtube_link(youtube_url: str) -> None:
     """analyze audio file to find track IDs
@@ -21,21 +23,21 @@ def get_track_ids_from_youtube_link(youtube_url: str) -> None:
     Args:
         youtube_url (str): URL of youtube video to analyze
     """
-    logging.info(
+    logger.info(
         "get_track_ids_from_audio_file with args " + f"youtube_url: {youtube_url}"
     )
 
     youtube_video_id = get_youtube_video_id_from_url(youtube_url)
     mp3_output_path = get_mp3_output_path(youtube_video_id)
-    logging.info(
+    logger.info(
         f"using youtube_video_id: {youtube_video_id}, mp3_output_path: {mp3_output_path}"
     )
 
     if not os.path.isfile(mp3_output_path):
-        logging.info("couldn't find file, downloading from youtube")
+        logger.info("couldn't find file, downloading from youtube")
         download_mp3_from_youtube_url(youtube_url)
     else:
-        logging.info("found file, skipping download")
+        logger.info("found file, skipping download")
 
     # run shazam script
     get_track_ids_from_audio_file(mp3_output_path)
@@ -49,7 +51,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
     """
 
     libsync_cache_path = f"{recording_audio_file_path}_libsync_shazam_cache.db"
-    logging.info(
+    logger.info(
         "get_track_ids_from_audio_file with args "
         + f"recording_audio_file_path: {recording_audio_file_path}, "
         + f"libsync_cache_path: {libsync_cache_path}"
@@ -70,10 +72,10 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
             )
 
     except FileNotFoundError as error:
-        logging.debug(error)
+        logger.debug(error)
         print(f"no cache found. creating cache at '{libsync_cache_path}'.")
     except KeyError as error:
-        logging.exception(error)
+        logger.exception(error)
         print(f"error parsing cache at '{libsync_cache_path}'. clearing cache.")
         # TODO actually clear cache, also centralize this duplicated caching logic
 
@@ -103,7 +105,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
                         shazam_matches_by_url[url]["timestamps"].append(timestamp)
 
             except StopIteration as _:
-                logging.info("reached end of file.")
+                logger.info("reached end of file.")
                 break
 
     # save matches

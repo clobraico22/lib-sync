@@ -6,10 +6,13 @@ from difflib import SequenceMatcher
 
 from utils.constants import DEBUG_SIMILARITY
 from utils.string_utils import (
-    get_artists_from_rekordbox_track,
+    get_artists_from_rb_track,
     get_name_varieties_from_track_name,
+    remove_suffixes,
     strip_punctuation,
 )
+
+logger = logging.getLogger("libsync")
 
 
 def calculate_similarity_metric(similarity_matrix: dict):
@@ -26,7 +29,7 @@ def calculate_similarity_metric(similarity_matrix: dict):
 
 def get_string_similarity(string_1: str, string_2: str) -> float:
     result = SequenceMatcher(None, string_1.lower(), string_2.lower()).ratio()
-    logging.debug(
+    logger.debug(
         f" - get_string_similarity: {result:3} for '{string_1}' vs '{string_2}'"
     )
     return result
@@ -38,12 +41,15 @@ def remove_accents(input_str):
     return str(only_ascii)
 
 
-def calculate_similarities(rekordbox_track, spotify_search_results) -> dict:
+def calculate_similarities(rb_track, spotify_search_results) -> dict:
     similarities = {}
     for spotify_track_uri, spotify_track_option in spotify_search_results.items():
         # normalize and clean up for best comparison
         spotify_song_name = remove_accents(
             strip_punctuation(spotify_track_option["name"])
+        )
+        spotify_song_name = remove_accents(
+            strip_punctuation(remove_suffixes(spotify_song_name))
         )
         # TODO: should we remove_suffixes from the spotify name? to get radio edits, etc
         # need to add logic to catch radio edits when nothing else is there,
@@ -51,7 +57,7 @@ def calculate_similarities(rekordbox_track, spotify_search_results) -> dict:
         # Maybe also add something to remove (feat. Artist Name)
         rekordbox_song_names = [
             remove_accents(strip_punctuation(name))
-            for name in get_name_varieties_from_track_name(rekordbox_track.name)
+            for name in get_name_varieties_from_track_name(rb_track.name)
         ]
 
         # name similarity
@@ -64,9 +70,7 @@ def calculate_similarities(rekordbox_track, spotify_search_results) -> dict:
         spotify_artist_list = [
             artist["name"] for artist in spotify_track_option["artists"]
         ]
-        rekordbox_artist_list = get_artists_from_rekordbox_track(
-            rekordbox_track=rekordbox_track
-        )
+        rekordbox_artist_list = get_artists_from_rb_track(rb_track=rb_track)
 
         artist_similarities = [
             get_string_similarity(spotify_artist, rekordbox_artist)

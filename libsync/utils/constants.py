@@ -1,13 +1,29 @@
 """contains constants used across modules"""
 
+# TODO: clean up some of these global flags, move the useful ones into cli args
+
 # --- sync command ---
 ARTIST_LIST_DELIMITERS = r",| & |vs\.|\n|ft\.|feat\.|featuring| / |; "
 NUMBER_OF_RESULTS_PER_QUERY = 5
 USE_RB_TO_SPOTIFY_MATCHES_CACHE = True
-USE_SPOTIFY_SEARCH_RESULTS_CACHE = True
 DEBUG_SIMILARITY = False
 MINIMUM_SIMILARITY_THRESHOLD = 0.95
 RESOLVE_FAILED_MATCHES = False
+NOT_ON_SPOTIFY_FLAG = "libsync:NOT_ON_SPOTIFY"
+EXIT_AND_SAVE_FLAG = "libsync:EXIT_AND_SAVE"
+SKIP_TRACK_FLAG = "libsync:SKIP_TRACK_FLAG"
+CANCEL_FLAG = "libsync:CANCEL_FLAG"
+
+# --- create playlists ---
+ITEMS_PER_PAGE_SPOTIFY_API = 100
+# shouldn't need this flag anymore.
+# can just delete playlists manually on spotify
+FORCE_CREATE_NEW_PLAYLISTS = False
+# TODO: keep track of all created playlists in local db (cumulative list) so we can
+# write an ops script to delete all libsync playlists (and eventually to add them to a folder)
+SPOTIFY_PLAYLISTS_LIMIT = 50
+SPOTIFY_TRACKS_LIMIT = 100
+
 
 # --- id command ---
 FORCE_REDO_SHAZAM = False

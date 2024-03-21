@@ -10,3 +10,4 @@ data/*.db
 data/*.part
 data/*.csv
 .cache-*
+data/*_libsync_spotify_playlists.txt
