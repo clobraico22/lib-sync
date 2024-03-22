@@ -12,7 +12,7 @@ logger = logging.getLogger("libsync")
 def save_cached_sync_data(
     libsync_cache_path: str,
     playlist_id_map: dict[str, str],
-    cached_search_search_results: dict[str, object],
+    cached_spotify_search_results: dict[str, object],
     libsync_song_mapping_csv_path: str,
     rekordbox_library: RekordboxLibrary,
     rb_track_ids_flagged_for_rematch: set[str],
@@ -23,7 +23,7 @@ def save_cached_sync_data(
     Args:
         libsync_cache_path (str): _description_
         playlist_id_map (dict[str, str]): _description_
-        cached_search_search_results (dict[str, object]): _description_
+        cached_spotify_search_results (dict[str, object]): _description_
         libsync_song_mapping_csv_path (str): _description_
         rekordbox_library (RekordboxLibrary): _description_
         rb_track_ids_flagged_for_rematch (set[str]): _description_
@@ -34,7 +34,7 @@ def save_cached_sync_data(
         pickle.dump(
             {
                 "playlist_id_map": playlist_id_map,
-                "cached_search_search_results": cached_search_search_results,
+                "cached_spotify_search_results": cached_spotify_search_results,
             },
             # TODO: add ops script to clear individual caches, or break caches out into individual files
             handle,
@@ -67,6 +67,7 @@ def save_cached_sync_data(
                         "1" if rb_track_id in rb_track_ids_flagged_for_rematch else "",
                     ]
                     for rb_track_id, spotify_uri in rekordbox_to_spotify_map.items()
+                    if rb_track_id in rekordbox_library.collection
                 ],
                 key=lambda row: str(row[3]),
                 reverse=True,
@@ -98,7 +99,7 @@ def get_user_spotify_playlists_list_db_path() -> str:
     auth_manager = SpotifyOAuth(scope=scope)
     spotify = spotipy.Spotify(auth_manager=auth_manager)
     user_id = spotify.current_user()["id"]
-    return f"data/{user_id}_libsync_spotify_playlists.txt"
+    return f"data/libsync_spotify_playlists_cache_{user_id}.txt"
 
 
 def get_list_from_file(list_file_path) -> set[str]:

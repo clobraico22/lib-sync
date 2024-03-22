@@ -23,6 +23,7 @@ from utils.similarity_utils import calculate_similarities
 from utils.string_utils import (
     get_artists_from_rb_track,
     get_name_varieties_from_track_name,
+    get_spotify_uri_from_url,
     pretty_print_spotify_track,
     strip_punctuation,
 )
@@ -32,7 +33,7 @@ logger = logging.getLogger("libsync")
 
 def get_spotify_matches(
     rekordbox_to_spotify_map: dict[str, str],
-    cached_search_search_results: dict,
+    cached_spotify_search_results: dict,
     rekordbox_collection: RekordboxCollection,
     rb_track_ids_flagged_for_rematch: set[str],
     ignore_spotify_search_cache: bool,
@@ -43,7 +44,7 @@ def get_spotify_matches(
     Args:
         rekordbox_to_spotify_map (dict[str, str]): map from rekordbox song ID to spotify URI.
             passed by reference, modified in place
-        cached_search_search_results (dict): [TODO: docs]
+        cached_spotify_search_results (dict): [TODO: docs]
         rekordbox_collection (RekordboxCollection): dict of songs indexed by rekordbox track id
         ignore_spotify_search_cache (bool): hit spotify apis to fetch songs
             instead of relying on local libsync cache
@@ -53,7 +54,7 @@ def get_spotify_matches(
     Returns:
         rekordbox_to_spotify_map (dict[str, str]): reference to rekordbox_to_spotify_map argument
             which is modified in place
-        cached_search_search_results (dict[str, object]): cache of spotify search results to save
+        cached_spotify_search_results (dict[str, object]): cache of spotify search results to save
     """
     logger.debug(
         "running get_spotify_matches with rekordbox_collection:\n"
@@ -65,7 +66,7 @@ def get_spotify_matches(
         + ", ".join(
             [
                 # f"rekordbox_to_spotify_map={rekordbox_to_spotify_map}",
-                # f"cached_search_search_results={cached_search_search_results}",
+                # f"cached_spotify_search_results={cached_spotify_search_results}",
                 # f"rekordbox_collection={rekordbox_collection}",
                 f"rb_track_ids_flagged_for_rematch={rb_track_ids_flagged_for_rematch}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
@@ -108,11 +109,7 @@ def get_spotify_matches(
         + "(update in csv if you want to match these)"
     )
 
-    # TODO: add CLI flag to add these tracks to rb_track_ids_to_look_up
-    # so we can try to find matches again
-
-    spotify_search_cache_hit_count = 0
-    spotify_search_cache_miss_count = 0
+    # TODO: improve UX for retrying matching
 
     logger.info(f"{len(rb_track_ids_to_look_up)} tracks to match on spotify")
     for i, rb_track_id in enumerate(rb_track_ids_to_look_up):
@@ -120,18 +117,9 @@ def get_spotify_matches(
 
         rb_track = rekordbox_collection[rb_track_id]
 
-        if (
-            not ignore_spotify_search_cache
-            and rb_track_id in cached_search_search_results
-        ):
-            spotify_search_cache_hit_count += 1
-            logger.debug("found cached search results")
-            spotify_search_results = cached_search_search_results[rb_track_id]
-        else:
-            spotify_search_cache_miss_count += 1
-            logger.debug("couldn't find cached search results, searching spotify")
-            spotify_search_results = get_spotify_search_results(spotify, rb_track)
-            cached_search_search_results[rb_track_id] = spotify_search_results
+        spotify_search_results = get_spotify_search_results(
+            spotify, rb_track, cached_spotify_search_results
+        )
 
         best_match_uri = find_best_track_match_uri(
             rb_track, spotify_search_results, interactive_mode
@@ -145,7 +133,7 @@ def get_spotify_matches(
         elif best_match_uri == EXIT_AND_SAVE_FLAG:
             return (
                 rekordbox_to_spotify_map,
-                cached_search_search_results,
+                cached_spotify_search_results,
             )
 
         elif best_match_uri == CANCEL_FLAG:
@@ -165,13 +153,14 @@ def get_spotify_matches(
     print("  done searching for spotify matches.")
     return (
         rekordbox_to_spotify_map,
-        cached_search_search_results,
+        cached_spotify_search_results,
     )
 
 
 def get_spotify_search_results(
     spotify_client: spotipy.Spotify,
     rb_track: RekordboxTrack,
+    cached_spotify_search_results: dict,
 ) -> list:
     """search spotify for a given rekordbox track.
 
@@ -186,19 +175,24 @@ def get_spotify_search_results(
     search_result_tracks = {}
     queries = get_spotify_queries_from_rb_track(rb_track)
     for query in queries:
-        try:
-            # TODO: caching should be here, not at the rb_track level
-            results = spotify_client.search(
-                q=query, limit=NUMBER_OF_RESULTS_PER_QUERY, offset=0, type="track"
-            )["tracks"]["items"]
-            for track in results:
-                search_result_tracks[track["uri"]] = track
-        except requests.exceptions.ConnectionError as error:
-            # maybe catch this at a lower level
-            logger.exception(error)
-            print(
-                "error connecting to spotify. fix your internet connection and try again."
-            )
+        if query in cached_spotify_search_results:
+            results = cached_spotify_search_results[query]
+        else:
+            try:
+                results = spotify_client.search(
+                    q=query, limit=NUMBER_OF_RESULTS_PER_QUERY, offset=0, type="track"
+                )["tracks"]["items"]
+                cached_spotify_search_results[query] = results
+
+            except requests.exceptions.ConnectionError as error:
+                # maybe catch this at a lower level
+                logger.exception(error)
+                print(
+                    "error connecting to spotify. fix your internet connection and try again."
+                )
+
+        for track in results:
+            search_result_tracks[track["uri"]] = track
 
     return search_result_tracks
 
@@ -290,9 +284,6 @@ def get_interactive_input(rb_track, list_of_spotify_tracks: list):
 
     # cut off list at 10 results for UX
     list_of_spotify_tracks = list_of_spotify_tracks[:10]
-    print("INTERACTIVE MODE")
-    print("not implemented yet")
-    print(rb_track)
     # key to save and exit
     # link to spotify search url to get the track url yourself and paste it in
     # maybe also link to the song itself - opening it in finder?
@@ -300,15 +291,7 @@ def get_interactive_input(rb_track, list_of_spotify_tracks: list):
     # but that doesn't scale to a web app architecture
     # type a number 1-10 to select a high ranking track (also include link)
     selection = get_valid_interactive_input(rb_track, list_of_spotify_tracks)
-    if selection.isdigit():
-        index = int(selection) - 1
-        spotify_track = list_of_spotify_tracks[int(selection) - 1][0]
-        logger.debug(
-            f"selected track index: {index}, track: {pretty_print_spotify_track(spotify_track)}"
-        )
-        return spotify_track["uri"]
-
-    elif selection == "s":
+    if selection == "s":
         print("skipping this track")
         return SKIP_TRACK_FLAG
 
@@ -324,6 +307,17 @@ def get_interactive_input(rb_track, list_of_spotify_tracks: list):
         print("exiting without saving")
         return CANCEL_FLAG
 
+    elif selection.isdigit():
+        index = int(selection) - 1
+        spotify_track = list_of_spotify_tracks[int(selection) - 1][0]
+        logger.debug(
+            f"selected track index: {index}, track: {pretty_print_spotify_track(spotify_track)}"
+        )
+        return spotify_track["uri"]
+
+    elif "spotify" in selection:
+        return selection
+
     return None
 
 
@@ -338,7 +332,10 @@ def get_valid_interactive_input(rb_track, list_of_spotify_tracks: list):
     """
     search_query = urllib.parse.quote(f"{rb_track.artist} - {rb_track.name}")
     web_search_url = f"https://open.spotify.com/search/{search_query}"
-    print("---------------------------------------------------")
+    print(
+        "---------------------------------------------------"
+        + "-------------------------------------------------"
+    )
     print(f"looking for a match for rekordbox track with id: {rb_track}")
     print(f"url to search spotify for this song: {web_search_url}")
 
@@ -350,17 +347,29 @@ def get_valid_interactive_input(rb_track, list_of_spotify_tracks: list):
 
     while True:
         user_input = input(
-            'enter "s" to skip, "m" to mark a song as missing on Spotify, '
+            'enter "s" to skip, "m" to mark a song as missing on spotify, '
             + '"x" to exit and save matches, "cancel" to exit without saving, '
-            + f"or a number between 1 and {len(list_of_spotify_tracks)} to select "
-            + "one of the results from the list above: "
+            + f"any number between 1 and {len(list_of_spotify_tracks)} to select "
+            + "one of the results from the list above, or paste a spotify link to "
+            + "the track to save it: "
         )
         user_input = user_input.strip()
         if user_input.lower() in ("s", "m", "x", "cancel"):
             return user_input
+
         elif user_input.isdigit() and 1 <= int(user_input) <= len(
             list_of_spotify_tracks
         ):
             return user_input
+
+        elif "spotify" in user_input:
+            try:
+                spotify_uri = get_spotify_uri_from_url(user_input.strip())
+                return spotify_uri
+
+            except Exception as e:
+                logger.debug(e)
+                print("Invalid spotify link. Try again.")
+
         else:
             print("Invalid input. Try again.")

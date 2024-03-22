@@ -36,9 +36,7 @@ def get_string_similarity(string_1: str, string_2: str) -> float:
 
 
 def remove_accents(input_str):
-    nfkd_form = unicodedata.normalize("NFKD", input_str)
-    only_ascii = nfkd_form.encode("ASCII", "ignore")
-    return str(only_ascii)
+    return unicodedata.normalize("NFKD", input_str)
 
 
 def calculate_similarities(rb_track, spotify_search_results) -> dict:
@@ -46,18 +44,16 @@ def calculate_similarities(rb_track, spotify_search_results) -> dict:
     for spotify_track_uri, spotify_track_option in spotify_search_results.items():
         # normalize and clean up for best comparison
         spotify_song_name = remove_accents(
-            strip_punctuation(spotify_track_option["name"])
-        )
-        spotify_song_name = remove_accents(
-            strip_punctuation(remove_suffixes(spotify_song_name))
-        )
-        # TODO: should we remove_suffixes from the spotify name? to get radio edits, etc
-        # need to add logic to catch radio edits when nothing else is there,
+            strip_punctuation(remove_suffixes(spotify_track_option["name"]))
+        ).strip()
+        # TODO: test out remove_suffixes from the spotify name to get radio edits, etc
+        # ideally, add logic to catch radio edits when nothing else is there,
         # but prefer the version that you have on rekordbox
-        # Maybe also add something to remove (feat. Artist Name)
+        # TODO: handle (feat. Artist Name)
+        # TODO: handle '&' in artist names (at the spotify search level)
         rekordbox_song_names = [
-            remove_accents(strip_punctuation(name))
-            for name in get_name_varieties_from_track_name(rb_track.name)
+            remove_accents(strip_punctuation(name)).strip()
+            for name in get_name_varieties_from_track_name(rb_track.name.lower())
         ]
 
         # name similarity
@@ -70,7 +66,9 @@ def calculate_similarities(rb_track, spotify_search_results) -> dict:
         spotify_artist_list = [
             artist["name"] for artist in spotify_track_option["artists"]
         ]
-        rekordbox_artist_list = get_artists_from_rb_track(rb_track=rb_track)
+        rekordbox_artist_list = [
+            artist.lower() for artist in get_artists_from_rb_track(rb_track=rb_track)
+        ]
 
         artist_similarities = [
             get_string_similarity(spotify_artist, rekordbox_artist)

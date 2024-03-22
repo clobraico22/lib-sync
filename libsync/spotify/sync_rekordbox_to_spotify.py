@@ -34,10 +34,10 @@ def sync_rekordbox_to_spotify(
     """
 
     libsync_cache_path = (
-        f"data/{rekordbox_xml_path.replace('/', '_')}_libsync_sync_cache.db"
+        f"data/libsync_sync_cache_{rekordbox_xml_path.replace('/', '_')}.db"
     )
     libsync_song_mapping_csv_path = (
-        f"data/{rekordbox_xml_path.replace('/', '_')}_libsync_song_mapping_cache.csv"
+        f"data/libsync_song_mapping_cache_{rekordbox_xml_path.replace('/', '_')}.csv"
     )
     logger.debug(
         "running sync_rekordbox_to_spotify.py with args: "
@@ -60,7 +60,7 @@ def sync_rekordbox_to_spotify(
     (
         rekordbox_to_spotify_map,
         playlist_id_map,
-        cached_search_search_results,
+        cached_spotify_search_results,
         rb_track_ids_flagged_for_rematch,
     ) = get_cached_sync_data(
         libsync_cache_path,
@@ -74,10 +74,10 @@ def sync_rekordbox_to_spotify(
     # map songs from the user's rekordbox library onto spotify search results
     (
         rekordbox_to_spotify_map,
-        cached_search_search_results,
+        cached_spotify_search_results,
     ) = get_spotify_matches(
         rekordbox_to_spotify_map,
-        cached_search_search_results,
+        cached_spotify_search_results,
         rekordbox_library.collection,
         rb_track_ids_flagged_for_rematch,
         ignore_spotify_search_cache,
@@ -106,7 +106,7 @@ def sync_rekordbox_to_spotify(
     save_cached_sync_data(
         libsync_cache_path,
         playlist_id_map,
-        cached_search_search_results,
+        cached_spotify_search_results,
         libsync_song_mapping_csv_path,
         rekordbox_library,
         rb_track_ids_flagged_for_rematch,
