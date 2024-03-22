@@ -9,5 +9,5 @@ data/*.mp3
 data/*.db
 data/*.part
 data/*.csv
+data/*.txt
 .cache-*
-data/*_libsync_spotify_playlists.txt

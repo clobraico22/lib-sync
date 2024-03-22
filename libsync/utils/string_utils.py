@@ -30,6 +30,8 @@ def remove_original_mix(song_title: str) -> str:
         r"[\(\[]original version[\)\]]", "", song_title, flags=re.IGNORECASE
     )
     song_title = re.sub(r"[\(\[]original[\)\]]", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"original mix", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"original version", "", song_title, flags=re.IGNORECASE)
     return song_title
 
 
@@ -37,8 +39,11 @@ def remove_extended_mix(song_title: str) -> str:
     song_title = re.sub(
         r"[\(\[]extended mix[\)\]]", "", song_title, flags=re.IGNORECASE
     )
-    # TODO: do something about case sensitivity throughout the app
     song_title = re.sub(r"extended mix", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(
+        r"[\(\[]extended version[\)\]]", "", song_title, flags=re.IGNORECASE
+    )
+    song_title = re.sub(r"extended version", "", song_title, flags=re.IGNORECASE)
     song_title = re.sub(r"extended", "", song_title, flags=re.IGNORECASE)
     return song_title
 

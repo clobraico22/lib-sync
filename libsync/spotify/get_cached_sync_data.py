@@ -24,7 +24,7 @@ def get_cached_sync_data(
 
     rekordbox_to_spotify_map = {}
     playlist_id_map = {}
-    cached_search_search_results = {}
+    cached_spotify_search_results = {}
     rb_track_ids_flagged_for_rematch = set()
 
     # get libsync cache from file
@@ -33,10 +33,10 @@ def get_cached_sync_data(
             cache = pickle.load(handle)
             (
                 playlist_id_map,
-                cached_search_search_results,
+                cached_spotify_search_results,
             ) = (
                 cache["playlist_id_map"],
-                cache["cached_search_search_results"],
+                cache["cached_spotify_search_results"],
             )
     except FileNotFoundError as error:
         logger.debug(error)
@@ -66,7 +66,7 @@ def get_cached_sync_data(
                         "found a spotify URL manually input into the CSV by the user, "
                         + "trying to parse now"
                     )
-                    # TODO: save logs to a file instead of stdout
+                    # TODO: save debug level logs to file
                     # TODO: check for valid spotify url, or catch exception from underlying library
                     spotify_uri = get_spotify_uri_from_url(spotify_url)
 
@@ -88,6 +88,6 @@ def get_cached_sync_data(
     return (
         rekordbox_to_spotify_map,
         playlist_id_map,
-        cached_search_search_results,
+        cached_spotify_search_results,
         rb_track_ids_flagged_for_rematch,
     )

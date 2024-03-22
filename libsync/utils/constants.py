@@ -19,8 +19,6 @@ ITEMS_PER_PAGE_SPOTIFY_API = 100
 # shouldn't need this flag anymore.
 # can just delete playlists manually on spotify
 FORCE_CREATE_NEW_PLAYLISTS = False
-# TODO: keep track of all created playlists in local db (cumulative list) so we can
-# write an ops script to delete all libsync playlists (and eventually to add them to a folder)
 SPOTIFY_PLAYLISTS_LIMIT = 50
 SPOTIFY_TRACKS_LIMIT = 100
 

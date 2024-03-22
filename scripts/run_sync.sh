@@ -17,16 +17,14 @@ if false; then
 fi
 
 
-# standard run
+# testing interactive mode
 if true; then
   python libsync/libsync.py \
-  -v \
-  -v \
   sync \
   --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
   --create_collection_playlist \
-  # --interactive_mode \
-  # --skip_create_spotify_playlists \
+  --skip_create_spotify_playlists \
+  --interactive_mode \
 
 
 fi
