@@ -1,7 +1,9 @@
 {
   "[python]": {
     "editor.formatOnType": true,
-    "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.codeActionsOnSave": ["source.organizeImports"]
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#770000"
   }
 }
