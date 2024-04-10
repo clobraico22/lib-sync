@@ -62,6 +62,13 @@ one time setup:
 python3.10 -m venv .venv
 ```
 
+add the following to your `.bashrc` or `.zshrc`:
+
+```bash
+LIBSYNC_REPO_DIRECTORY='/Users/joshlebed/code/lib-sync' # update to the path to the repo on your machine
+alias libsync-dev="${LIBSYNC_REPO_DIRECTORY}/.venv/bin/python ${LIBSYNC_REPO_DIRECTORY}/libsync/libsync.py"
+```
+
 activate python virtual environment and update dependencies (after each pull):
 
 ```bash

@@ -5,6 +5,7 @@ import unicodedata
 from difflib import SequenceMatcher
 
 from utils.constants import DEBUG_SIMILARITY
+from utils.rekordbox_library import RekordboxTrack
 from utils.string_utils import (
     get_artists_from_rb_track,
     get_name_varieties_from_track_name,
@@ -39,7 +40,18 @@ def remove_accents(input_str):
     return unicodedata.normalize("NFKD", input_str)
 
 
-def calculate_similarities(rb_track, spotify_search_results) -> dict:
+def calculate_similarities(
+    rb_track: RekordboxTrack, spotify_search_results: dict
+) -> dict:
+    """calculate similarity to rb_track for each result in spotify_search_results
+
+    Args:
+        rb_track (RekordboxTrack): rekordbox track to compare with
+        spotify_search_results (dict): dict of search results (spotify track URI mapped to song details)
+
+    Returns:
+        dict: spotify track URI mapped to similarity value
+    """
     similarities = {}
     for spotify_track_uri, spotify_track_option in spotify_search_results.items():
         # normalize and clean up for best comparison
