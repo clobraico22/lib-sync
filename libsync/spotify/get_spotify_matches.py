@@ -175,6 +175,8 @@ def get_spotify_search_results(
     search_result_tracks = {}
     queries = get_spotify_queries_from_rb_track(rb_track)
     for query in queries:
+        if not query: #TODO: figure out what is causing empty queries and remove them from the list
+            continue
         if query in cached_spotify_search_results:
             results = cached_spotify_search_results[query]
         else:
