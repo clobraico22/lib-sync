@@ -39,11 +39,13 @@ def main():
     """
     parse command line args, call other components
     """
-    setup_logger(logger)
 
+    setup_logger(logger)
     load_dotenv()
+
     parser = get_cli_argparser()
     args = parser.parse_args()
+
     verbose = args.verbose
     if verbose >= 2:
         logger.setLevel(level=logging.DEBUG)

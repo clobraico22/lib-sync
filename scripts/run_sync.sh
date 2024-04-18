@@ -26,5 +26,4 @@ if true; then
   --skip_create_spotify_playlists \
   --interactive_mode \
 
-
 fi
