@@ -2,7 +2,7 @@ import csv
 import logging
 import pickle
 
-from db import db_utils
+from db import db_read_operations, db_utils
 from utils.rekordbox_library import RekordboxLibrary
 
 logger = logging.getLogger("libsync")
@@ -37,7 +37,9 @@ def save_list_of_user_playlists(playlist_id_map: str) -> None:
     )
     playlists = set()
     try:
-        playlists = set(get_list_from_file(user_spotify_playlists_list_db_path))
+        playlists = set(
+            db_read_operations.get_list_from_file(user_spotify_playlists_list_db_path)
+        )
     except FileNotFoundError as error:
         logger.debug(error)
         logger.info(
@@ -46,9 +48,7 @@ def save_list_of_user_playlists(playlist_id_map: str) -> None:
         )
 
     playlists.update(playlist_id_map.values())
-    save_libsync_spotify_playlists_for_current_user(
-        user_spotify_playlists_list_db_path, list(playlists)
-    )
+    write_text_file_from_list(user_spotify_playlists_list_db_path, list(playlists))
 
 
 def save_song_mappings_csv(
@@ -121,34 +121,6 @@ def save_playlist_id_map(rekordbox_xml_path: str, playlist_id_map: dict[str, str
         )
 
 
-def get_list_from_file(list_file_path) -> set[str]:
-    """get list from file path stored as plain text, line separated
-
-    Args:
-        list_file_path (_type_): _description_
-
-    Returns:
-        set[str]: _description_
-    """
-
-    lines = []
-    try:
-        with open(list_file_path, "r", encoding="utf-8") as handle:
-            for line in handle.readlines():
-                lines.append(line.strip())
-
-    except FileNotFoundError as error:
-        logger.debug(error)
-        logger.info(
-            "no playlist data stored for this user previously. "
-            + f"creating data file at '{list_file_path}'."
-        )
-
-    return lines
-
-
-def save_libsync_spotify_playlists_for_current_user(
-    user_spotify_playlists_list_db_path: str, playlists: list[str]
-) -> set[str]:
-    with open(user_spotify_playlists_list_db_path, "w", encoding="utf-8") as handle:
-        handle.writelines([f"{playlist}\n" for playlist in playlists])
+def write_text_file_from_list(path: str, data_list: list[str]) -> set[str]:
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.writelines([f"{item}\n" for item in data_list])

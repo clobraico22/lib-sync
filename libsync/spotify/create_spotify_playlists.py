@@ -4,7 +4,7 @@ import logging
 import pprint
 
 import spotipy
-from db import db_utils, db_write_operations
+from db import db_read_operations, db_utils, db_write_operations
 from spotipy.oauth2 import SpotifyOAuth
 from utils.constants import (
     FORCE_CREATE_NEW_PLAYLISTS,
@@ -20,7 +20,6 @@ logger = logging.getLogger("libsync")
 
 def create_spotify_playlists(
     rekordbox_xml_path: str,
-    playlist_id_map: dict[str, str],
     rekordbox_playlists: list[RekordboxPlaylist],
     rekordbox_to_spotify_map: dict[str, str],
     create_collection_playlist: bool,
@@ -32,8 +31,6 @@ def create_spotify_playlists(
     Args:
         rekordbox_xml_path (str): xml path used for this run -
           this will be used to determine cache and csv paths
-        playlist_id_map (dict[str, str]): map from rekordbox playlist name to spotify playlist id.
-            passed by reference, modified in place
         rekordbox_playlists (list[RekordboxPlaylist]): user's playlists from rekordbox
             (list of rekordbox track IDs)
         rekordbox_to_spotify_map (dict[str, str]): mapping from rekordbox track IDs to spotify URIs
@@ -49,6 +46,8 @@ def create_spotify_playlists(
 
     # if skip_create_spotify_playlists:
     #     return
+
+    playlist_id_map = db_read_operations.get_playlist_id_map(rekordbox_xml_path)
 
     logger.debug(
         "running create_spotify_playlists with\n"

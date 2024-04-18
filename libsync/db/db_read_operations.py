@@ -49,7 +49,6 @@ def get_cached_spotify_search_results(
     return {}
 
 
-# TODO: use this instead of the main function
 def get_playlist_id_map(
     rekordbox_xml_path: str,
 ):
@@ -93,7 +92,7 @@ def get_playlist_id_map(
     return {}
 
 
-# deprecate this
+# deprecate this... maybe
 def get_cached_sync_data(
     rekordbox_xml_path: str,
 ):
@@ -109,8 +108,6 @@ def get_cached_sync_data(
 
     rekordbox_to_spotify_map = {}
     rb_track_ids_flagged_for_rematch = set()
-
-    playlist_id_map = get_playlist_id_map(rekordbox_xml_path)
 
     # get song mappings data from csv
     libsync_song_mapping_csv_path = db_utils.get_libsync_song_mapping_csv_path(
@@ -155,8 +152,30 @@ def get_cached_sync_data(
             f"no song mapping file found. will create mapping file at '{libsync_song_mapping_csv_path}'."
         )
 
-    return (
-        rekordbox_to_spotify_map,
-        playlist_id_map,
-        rb_track_ids_flagged_for_rematch,
-    )
+    return (rekordbox_to_spotify_map, rb_track_ids_flagged_for_rematch)
+
+
+def get_list_from_file(list_file_path) -> set[str]:
+    """get list from file path stored as plain text, line separated
+
+    Args:
+        list_file_path (_type_): _description_
+
+    Returns:
+        set[str]: _description_
+    """
+
+    lines = []
+    try:
+        with open(list_file_path, "r", encoding="utf-8") as handle:
+            for line in handle.readlines():
+                lines.append(line.strip())
+
+    except FileNotFoundError as error:
+        logger.debug(error)
+        logger.info(
+            "no playlist data stored for this user previously. "
+            + f"creating data file at '{list_file_path}'."
+        )
+
+    return lines

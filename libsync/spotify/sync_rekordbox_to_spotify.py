@@ -38,11 +38,9 @@ def sync_rekordbox_to_spotify(
     print("syncing rekordbox => spotify")
 
     # get cached data
-    (
-        rekordbox_to_spotify_map,
-        playlist_id_map,
-        rb_track_ids_flagged_for_rematch,
-    ) = db_read_operations.get_cached_sync_data(rekordbox_xml_path)
+    (rekordbox_to_spotify_map, rb_track_ids_flagged_for_rematch) = (
+        db_read_operations.get_cached_sync_data(rekordbox_xml_path)
+    )
 
     # get rekordbox db from xml
     rekordbox_library = get_rekordbox_library(rekordbox_xml_path, include_loose_songs)
@@ -61,7 +59,6 @@ def sync_rekordbox_to_spotify(
     try:
         create_spotify_playlists(
             rekordbox_xml_path=rekordbox_xml_path,
-            playlist_id_map=playlist_id_map,
             rekordbox_playlists=rekordbox_library.playlists,
             rekordbox_to_spotify_map=rekordbox_to_spotify_map,
             create_collection_playlist=create_collection_playlist,
