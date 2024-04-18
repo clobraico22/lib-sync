@@ -52,15 +52,18 @@ class RekordboxPlaylist:
 class RekordboxLibrary:
     def __init__(
         self,
+        xml_path: str,
         collection: RekordboxCollection,
         playlists: list[RekordboxPlaylist],
     ) -> None:
+        self.xml_path = xml_path
         self.collection = collection
         self.playlists = playlists
 
     def __repr__(self) -> str:
         return (
             "RekordboxLibrary object\n  "
+            + f"xml_path:\n{self.xml_path}\n  "
             + f"collection:\n{pprint.pformat(self.collection)}\n  "
             + f"playlists:\n{pprint.pformat(self.playlists)}"
         )

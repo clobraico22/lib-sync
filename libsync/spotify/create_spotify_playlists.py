@@ -4,6 +4,7 @@ import logging
 import pprint
 
 import spotipy
+from db import db_utils, db_write_operations
 from spotipy.oauth2 import SpotifyOAuth
 from utils.constants import (
     FORCE_CREATE_NEW_PLAYLISTS,
@@ -18,6 +19,7 @@ logger = logging.getLogger("libsync")
 
 
 def create_spotify_playlists(
+    rekordbox_xml_path: str,
     playlist_id_map: dict[str, str],
     rekordbox_playlists: list[RekordboxPlaylist],
     rekordbox_to_spotify_map: dict[str, str],
@@ -28,6 +30,8 @@ def create_spotify_playlists(
     """creates playlists in the user's account with the matched songs
 
     Args:
+        rekordbox_xml_path (str): xml path used for this run -
+          this will be used to determine cache and csv paths
         playlist_id_map (dict[str, str]): map from rekordbox playlist name to spotify playlist id.
             passed by reference, modified in place
         rekordbox_playlists (list[RekordboxPlaylist]): user's playlists from rekordbox
@@ -43,8 +47,8 @@ def create_spotify_playlists(
         dict[str, str]: reference to playlist_id_map argument which is modified in place
     """
 
-    if skip_create_spotify_playlists:
-        return
+    # if skip_create_spotify_playlists:
+    #     return
 
     logger.debug(
         "running create_spotify_playlists with\n"
@@ -52,6 +56,8 @@ def create_spotify_playlists(
         + f"rekordbox_to_spotify_map:\n{pprint.pformat(rekordbox_to_spotify_map)}"
     )
     print("  creating spotify playlists...")
+
+    user_playlists = get_user_playlists()
 
     scope = [
         "user-library-read",
@@ -64,21 +70,6 @@ def create_spotify_playlists(
     spotify = spotipy.Spotify(auth_manager=auth_manager)
     user_id = spotify.current_user()["id"]
 
-    # get user playlists to check against deleted playlists
-    offset = 0
-    user_playlists = set()
-    logger.debug("fetching user playlists")
-    while True:
-        logger.debug(f"fetching next page of user playlists, with offset {offset}")
-        result = spotify.user_playlists(
-            user=user_id, limit=SPOTIFY_PLAYLISTS_LIMIT, offset=offset
-        )
-        user_playlists.update([item["id"] for item in result["items"]])
-        if result["next"] is None:
-            break
-        offset += SPOTIFY_PLAYLISTS_LIMIT
-    logger.info(f"done fetching {len(user_playlists)} user playlists")
-
     if create_collection_playlist:
         logger.debug("adding Collection playlist")
         rekordbox_playlists.append(
@@ -89,6 +80,9 @@ def create_spotify_playlists(
         )
 
     for playlist in rekordbox_playlists:
+        if skip_create_spotify_playlists:
+            continue
+
         try:
             existing_track_uris = []
             # get or create playlist
@@ -175,5 +169,41 @@ def create_spotify_playlists(
             logger.exception(error)
             print(f"failed to create playlist {playlist.name}")
 
+    # save mapping of playlists in a readable csv
+    db_write_operations.save_playlist_id_map(rekordbox_xml_path, playlist_id_map)
+
+    # TODO: deprecate this (might still be useful for testing)
+    # save playlists to db of playlists libsync owns for the current spotify user id
+    db_write_operations.save_list_of_user_playlists(playlist_id_map)
+
     print("  done creating spotify playlists.")
     return playlist_id_map
+
+
+def get_user_playlists():
+    # get user playlists to check against deleted playlists
+
+    scope = [
+        "user-library-read",
+        "playlist-read-private",
+        "playlist-read-collaborative",
+    ]
+    auth_manager = SpotifyOAuth(scope=scope)
+    spotify = spotipy.Spotify(auth_manager=auth_manager)
+
+    offset = 0
+    user_playlists = set()
+    logger.debug("fetching user playlists")
+    while True:
+        logger.debug(f"fetching next page of user playlists, with offset {offset}")
+        result = spotify.user_playlists(
+            user=db_utils.get_spotify_user_id(),
+            limit=SPOTIFY_PLAYLISTS_LIMIT,
+            offset=offset,
+        )
+        user_playlists.update([item["id"] for item in result["items"]])
+        if result["next"] is None:
+            break
+        offset += SPOTIFY_PLAYLISTS_LIMIT
+    logger.info(f"done fetching {len(user_playlists)} user playlists")
+    return user_playlists

@@ -13,6 +13,13 @@ from utils.rekordbox_library import (
 logger = logging.getLogger("libsync")
 
 
+def should_keep_track_in_collection(track):
+    if track.get("Kind") == "Unknown Format":
+        return False
+
+    return True
+
+
 def get_rekordbox_library(
     rekordbox_xml_path: str, include_loose_songs: bool
 ) -> RekordboxLibrary:
@@ -52,6 +59,7 @@ def get_rekordbox_library(
             album=track.get("Album"),
         )
         for track in root.findall("./COLLECTION/TRACK")
+        if should_keep_track_in_collection(track)
     ]
     tracks_found_on_at_least_one_playlist = set()
     # flatten playlist structure into one folder
@@ -99,6 +107,7 @@ def get_rekordbox_library(
     print("  done reading rekordbox library.")
 
     return RekordboxLibrary(
+        xml_path=rekordbox_xml_path,
         collection={track.id: track for track in rekordbox_collection_list},
         playlists=rekordbox_playlists,
     )

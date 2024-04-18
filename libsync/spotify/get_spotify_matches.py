@@ -8,6 +8,7 @@ import urllib.parse
 
 import requests
 import spotipy
+from db import db_read_operations, db_write_operations
 from spotipy.oauth2 import SpotifyOAuth
 from utils.constants import (
     CANCEL_FLAG,
@@ -18,7 +19,7 @@ from utils.constants import (
     SKIP_TRACK_FLAG,
     USE_RB_TO_SPOTIFY_MATCHES_CACHE,
 )
-from utils.rekordbox_library import RekordboxCollection, RekordboxTrack
+from utils.rekordbox_library import RekordboxLibrary, RekordboxTrack
 from utils.similarity_utils import calculate_similarities
 from utils.string_utils import (
     get_artists_from_rb_track,
@@ -33,8 +34,7 @@ logger = logging.getLogger("libsync")
 
 def get_spotify_matches(
     rekordbox_to_spotify_map: dict[str, str],
-    cached_spotify_search_results: dict,
-    rekordbox_collection: RekordboxCollection,
+    rekordbox_library: RekordboxLibrary,
     rb_track_ids_flagged_for_rematch: set[str],
     ignore_spotify_search_cache: bool,
     interactive_mode: bool,
@@ -44,8 +44,7 @@ def get_spotify_matches(
     Args:
         rekordbox_to_spotify_map (dict[str, str]): map from rekordbox song ID to spotify URI.
             passed by reference, modified in place
-        cached_spotify_search_results (dict): [TODO: docs]
-        rekordbox_collection (RekordboxCollection): dict of songs indexed by rekordbox track id
+        rekordbox_library (RekordboxLibrary): rekordbox library to match with spotify
         ignore_spotify_search_cache (bool): hit spotify apis to fetch songs
             instead of relying on local libsync cache
         interactive_mode (bool): run searching + matching process
@@ -54,11 +53,10 @@ def get_spotify_matches(
     Returns:
         rekordbox_to_spotify_map (dict[str, str]): reference to rekordbox_to_spotify_map argument
             which is modified in place
-        cached_spotify_search_results (dict[str, object]): cache of spotify search results to save
     """
     logger.debug(
-        "running get_spotify_matches with rekordbox_collection:\n"
-        + f"{pprint.pformat(rekordbox_collection)}"
+        "running get_spotify_matches with rekordbox_library:\n"
+        + f"{pprint.pformat(rekordbox_library)}"
     )
 
     logger.debug(
@@ -67,7 +65,7 @@ def get_spotify_matches(
             [
                 # f"rekordbox_to_spotify_map={rekordbox_to_spotify_map}",
                 # f"cached_spotify_search_results={cached_spotify_search_results}",
-                # f"rekordbox_collection={rekordbox_collection}",
+                # f"rekordbox_library={rekordbox_library}",
                 f"rb_track_ids_flagged_for_rematch={rb_track_ids_flagged_for_rematch}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
                 f"interactive_mode={interactive_mode}",
@@ -80,12 +78,12 @@ def get_spotify_matches(
     scope = ["user-library-read", "playlist-modify-private"]
     spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
-    logger.info(f"{len(rekordbox_collection)} total tracks in collection")
+    logger.info(f"{len(rekordbox_library.collection)} total tracks in collection")
 
     rb_track_ids_to_look_up = []
     unmatched_tracks = []
 
-    for rb_track_id in rekordbox_collection:
+    for rb_track_id in rekordbox_library.collection:
         if USE_RB_TO_SPOTIFY_MATCHES_CACHE and rb_track_id in rekordbox_to_spotify_map:
             if rb_track_id in rb_track_ids_flagged_for_rematch:
                 rb_track_ids_to_look_up.append(rb_track_id)
@@ -112,10 +110,14 @@ def get_spotify_matches(
     # TODO: improve UX for retrying matching
 
     logger.info(f"{len(rb_track_ids_to_look_up)} tracks to match on spotify")
+    cached_spotify_search_results = (
+        db_read_operations.get_cached_spotify_search_results(rekordbox_library.xml_path)
+    )
+
     for i, rb_track_id in enumerate(rb_track_ids_to_look_up):
         logger.debug(f"matching track {i + 1}/{len(rb_track_ids_to_look_up)}")
 
-        rb_track = rekordbox_collection[rb_track_id]
+        rb_track = rekordbox_library.collection[rb_track_id]
 
         spotify_search_results = get_spotify_search_results(
             spotify, rb_track, cached_spotify_search_results
@@ -150,11 +152,20 @@ def get_spotify_matches(
         else:
             logger.info(f"couldn't find a match for track {rb_track}")
 
-    print("  done searching for spotify matches.")
-    return (
-        rekordbox_to_spotify_map,
-        cached_spotify_search_results,
+    # cache spotify search results
+    db_write_operations.save_cached_spotify_search_results(
+        cached_spotify_search_results, rekordbox_library.xml_path
     )
+
+    # cache rekordbox -> spotify mappings
+    db_write_operations.save_song_mappings_csv(
+        rekordbox_library,
+        rb_track_ids_flagged_for_rematch,
+        rekordbox_to_spotify_map,
+    )
+
+    print("  done searching for spotify matches.")
+    return rekordbox_to_spotify_map
 
 
 def get_spotify_search_results(
