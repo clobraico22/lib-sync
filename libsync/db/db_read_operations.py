@@ -51,7 +51,7 @@ def get_cached_spotify_search_results(
 
 def get_playlist_id_map(
     rekordbox_xml_path: str,
-):
+) -> dict[str, str]:
     logger.debug("running get_playlist_id_map")
     user_spotify_playlist_mapping_db_path = (
         db_utils.get_spotify_playlist_mapping_db_path(

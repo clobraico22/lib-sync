@@ -4,13 +4,13 @@ import logging
 import pprint
 
 import spotipy
-from db import db_read_operations, db_utils, db_write_operations
+from db import db_read_operations, db_write_operations
+from spotify import spotify_api_utils
 from spotipy.oauth2 import SpotifyOAuth
 from utils.constants import (
     FORCE_CREATE_NEW_PLAYLISTS,
     ITEMS_PER_PAGE_SPOTIFY_API,
     NOT_ON_SPOTIFY_FLAG,
-    SPOTIFY_PLAYLISTS_LIMIT,
     SPOTIFY_TRACKS_LIMIT,
 )
 from utils.rekordbox_library import RekordboxPlaylist
@@ -47,17 +47,29 @@ def create_spotify_playlists(
     # if skip_create_spotify_playlists:
     #     return
 
-    playlist_id_map = db_read_operations.get_playlist_id_map(rekordbox_xml_path)
-
     logger.debug(
         "running create_spotify_playlists with\n"
         + f"rekordbox_playlists:\n{pprint.pformat(rekordbox_playlists)},\n"
         + f"rekordbox_to_spotify_map:\n{pprint.pformat(rekordbox_to_spotify_map)}"
     )
+
+    print("  fetching your playlists...")
+
+    playlist_id_map = db_read_operations.get_playlist_id_map(rekordbox_xml_path)
+    libsync_owned_spotify_playlists = spotify_api_utils.get_user_playlists(
+        playlist_id_map
+    )
+    all_user_playlists = spotify_api_utils.get_all_user_playlists()
+    spotify_playlists = {
+        playlist_id: track_list
+        for playlist_id, track_list in libsync_owned_spotify_playlists.items()
+        if playlist_id in all_user_playlists
+    }
+
+    print("  done fetching your playlists.")
     print("  creating spotify playlists...")
 
-    user_playlists = get_user_playlists()
-
+    # TODO: centralize all this auth logic into a singleton class to avoid repeated auth
     scope = [
         "user-library-read",
         "playlist-read-private",
@@ -68,9 +80,11 @@ def create_spotify_playlists(
     auth_manager = SpotifyOAuth(scope=scope)
     spotify = spotipy.Spotify(auth_manager=auth_manager)
     user_id = spotify.current_user()["id"]
+    # TODO: working here on reverse sync
 
     if create_collection_playlist:
         logger.debug("adding Collection playlist")
+        # TODO: currently no mechanism for removing deleted songs from rekordbox_to_spotify_map
         rekordbox_playlists.append(
             RekordboxPlaylist(
                 name="Collection",
@@ -87,7 +101,7 @@ def create_spotify_playlists(
             # get or create playlist
             if (
                 playlist.name in playlist_id_map
-                and playlist_id_map[playlist.name] in user_playlists
+                and playlist_id_map[playlist.name] in spotify_playlists
                 and not FORCE_CREATE_NEW_PLAYLISTS
             ):
                 playlist_id = playlist_id_map[playlist.name]
@@ -177,32 +191,3 @@ def create_spotify_playlists(
 
     print("  done creating spotify playlists.")
     return playlist_id_map
-
-
-def get_user_playlists():
-    # get user playlists to check against deleted playlists
-
-    scope = [
-        "user-library-read",
-        "playlist-read-private",
-        "playlist-read-collaborative",
-    ]
-    auth_manager = SpotifyOAuth(scope=scope)
-    spotify = spotipy.Spotify(auth_manager=auth_manager)
-
-    offset = 0
-    user_playlists = set()
-    logger.debug("fetching user playlists")
-    while True:
-        logger.debug(f"fetching next page of user playlists, with offset {offset}")
-        result = spotify.user_playlists(
-            user=db_utils.get_spotify_user_id(),
-            limit=SPOTIFY_PLAYLISTS_LIMIT,
-            offset=offset,
-        )
-        user_playlists.update([item["id"] for item in result["items"]])
-        if result["next"] is None:
-            break
-        offset += SPOTIFY_PLAYLISTS_LIMIT
-    logger.info(f"done fetching {len(user_playlists)} user playlists")
-    return user_playlists

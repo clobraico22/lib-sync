@@ -31,7 +31,7 @@ def save_cached_spotify_search_results(
         )
 
 
-def save_list_of_user_playlists(playlist_id_map: str) -> None:
+def save_list_of_user_playlists(playlist_id_map: dict[str, str]) -> None:
     user_spotify_playlists_list_db_path = (
         db_utils.get_user_spotify_playlists_list_db_path(db_utils.get_spotify_user_id())
     )
