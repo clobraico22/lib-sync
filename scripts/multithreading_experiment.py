@@ -850,6 +850,16 @@ artist_ids = [
     "6wbsiIvg0rsbL9JlLAH9GA",
 ]  # Replace with actual artist IDs
 
+
+artist_ids = [
+    "0XRU3hfrxwicmk4wRkqs8B",
+    "3csPCeXsj2wezyvkRFzvmV",
+    "5zbQoW1WWTzvITE8w4ckoC",
+    "2IDtMW47SEAptw9RwNREm0",
+    "6TILJrqby5UzMV1EemkxtN",
+    "7mC3RkNNTV6p2j9w4F8Ip4",
+]
+
 start_time = time.time()
 
 # Use ThreadPoolExecutor to parallelize requests
@@ -896,3 +906,5 @@ end_time_asyncio = time.time()
 
 print(f"total runtime threads: {(end_time-start_time):.3f} seconds")
 print(f"total runtime asyncio: {(end_time_asyncio-start_time_asyncio):.3f} seconds")
+
+# asyncio much faster

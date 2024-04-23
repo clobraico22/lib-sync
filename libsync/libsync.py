@@ -39,11 +39,13 @@ def main():
     """
     parse command line args, call other components
     """
-    setup_logger(logger)
 
+    setup_logger(logger)
     load_dotenv()
+
     parser = get_cli_argparser()
     args = parser.parse_args()
+
     verbose = args.verbose
     if verbose >= 2:
         logger.setLevel(level=logging.DEBUG)
@@ -63,7 +65,7 @@ def main():
             include_loose_songs=args.include_loose_songs,
             ignore_spotify_search_cache=args.ignore_spotify_search_cache,
             interactive_mode=args.interactive_mode,
-            skip_create_spotify_playlists=args.skip_create_spotify_playlists,
+            skip_spotify_playlist_sync=args.skip_spotify_playlist_sync,
         )
 
     elif command == LibsyncCommand.ANALYZE:
@@ -88,7 +90,5 @@ def main():
 
 if __name__ == "__main__":
     start_time = time.time()
-    print("running libsync...")
     main()
-    print("done running libsync.")
     logger.info(f"total runtime: {(time.time() - start_time):.3f} seconds")

@@ -4,8 +4,9 @@ import re
 import string
 
 import spotipy.client
-from utils.constants import ARTIST_LIST_DELIMITERS
-from utils.rekordbox_library import RekordboxTrack
+from colorama import Fore, Style
+from utils.constants import ARTIST_LIST_DELIMITERS, SPOTIFY_TRACK_URI_PREFIX
+from utils.rekordbox_library import RekordboxPlaylist, RekordboxTrack
 
 
 def get_spotify_uri_from_url(spotify_url: str) -> str:
@@ -20,6 +21,14 @@ def get_spotify_uri_from_url(spotify_url: str) -> str:
     spotify = spotipy.Spotify()
     spotify_uri = spotify._get_uri(type="track", id=spotify_url)
     return spotify_uri
+
+
+def get_spotify_uri_from_id(spotify_track_id: str) -> str:
+    return SPOTIFY_TRACK_URI_PREFIX + spotify_track_id
+
+
+def is_spotify_uri(value: str) -> bool:
+    return value.startswith(SPOTIFY_TRACK_URI_PREFIX)
 
 
 def remove_original_mix(song_title: str) -> str:
@@ -95,4 +104,33 @@ def pretty_print_spotify_track(track: object, include_url: bool = False):
         + ", ".join([artist["name"] for artist in track["artists"]])
         + " - "
         + track["name"]
+    )
+
+
+def generate_spotify_playlist_name(rb_playlist: RekordboxPlaylist) -> str:
+    return f"[ls] {rb_playlist.name}"
+
+
+def print_libsync_status(
+    status_message, level=0, arrow_color=Fore.BLUE, text_color=Fore.WHITE
+):
+    print(
+        "  " * (level - 1)
+        + ((arrow_color + "==> " + Style.RESET_ALL) if level >= 1 else "")
+        + Style.BRIGHT
+        + text_color
+        + status_message
+        + Style.RESET_ALL,
+    )
+
+
+def print_libsync_status_success(status_message, level=0):
+    return print_libsync_status(
+        status_message, level, arrow_color=Fore.GREEN, text_color=Fore.GREEN
+    )
+
+
+def print_libsync_status_error(error_message, level=0):
+    return print_libsync_status(
+        error_message, level, arrow_color=Fore.RED, text_color=Fore.WHITE
     )

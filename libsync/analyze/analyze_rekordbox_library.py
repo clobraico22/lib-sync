@@ -28,7 +28,7 @@ def analyze_rekordbox_library(
     # get rekordbox db from xml
     try:
         rekordbox_library = get_rekordbox_library(
-            rekordbox_xml_path, include_loose_songs
+            rekordbox_xml_path, include_loose_songs, False
         )
         logger.debug(f"got rekordbox library: {rekordbox_library}")
     except FileNotFoundError as error:
