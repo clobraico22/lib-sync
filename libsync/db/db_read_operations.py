@@ -3,6 +3,7 @@ import logging
 import pickle
 
 from db import db_utils, db_write_operations
+from utils import string_utils
 from utils.constants import NOT_ON_SPOTIFY_FLAG
 from utils.string_utils import get_spotify_uri_from_url
 
@@ -36,11 +37,11 @@ def get_cached_spotify_search_results(
 
     except FileNotFoundError as error:
         logger.debug(error)
-        print(f"no cache found. creating cache at '{spotify_search_cache_path}'.")
+        logger.info(f"no cache found. creating cache at '{spotify_search_cache_path}'.")
 
     except AssertionError as error:
         logger.debug(error)
-        print(
+        string_utils.print_libsync_status_error(
             f"error parsing cache at '{spotify_search_cache_path}'. replacing cache file."
         )
 
@@ -84,7 +85,7 @@ def get_playlist_id_map(
 
     except FileNotFoundError as error:
         logger.debug(error)
-        print(
+        logger.info(
             "no playlist mapping file found. will create mapping file at "
             + f"'{user_spotify_playlist_mapping_db_path}'."
         )
@@ -92,7 +93,6 @@ def get_playlist_id_map(
     return {}
 
 
-# deprecate this... maybe
 def get_cached_sync_data(
     rekordbox_xml_path: str,
 ):
@@ -148,7 +148,7 @@ def get_cached_sync_data(
 
     except FileNotFoundError as error:
         logger.debug(error)
-        print(
+        logger.info(
             f"no song mapping file found. will create mapping file at '{libsync_song_mapping_csv_path}'."
         )
 

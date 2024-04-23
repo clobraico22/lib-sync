@@ -3,6 +3,7 @@
 import logging
 import xml.etree.ElementTree as ET
 
+from utils import string_utils
 from utils.rekordbox_library import (
     RekordboxLibrary,
     RekordboxNodeType,
@@ -21,7 +22,7 @@ def should_keep_track_in_collection(track):
 
 
 def get_rekordbox_library(
-    rekordbox_xml_path: str, include_loose_songs: bool
+    rekordbox_xml_path: str, include_loose_songs: bool, create_collection_playlist: bool
 ) -> RekordboxLibrary:
     """get user's rekordbox library from filepath and convert it into internal data structures
 
@@ -35,7 +36,7 @@ def get_rekordbox_library(
     logger.debug(
         f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
     )
-    print("  reading rekordbox library...")
+    string_utils.print_libsync_status("Reading Rekordbox library", level=1)
 
     try:
         tree = ET.parse(rekordbox_xml_path)
@@ -96,15 +97,23 @@ def get_rekordbox_library(
         nodes.pop(0)
 
     if not include_loose_songs:
-        rekordbox_collection_list = list(
-            filter(
-                lambda track: track.id in tracks_found_on_at_least_one_playlist,
-                rekordbox_collection_list,
+        rekordbox_collection_list = [
+            track
+            for track in rekordbox_collection_list
+            if track.id in tracks_found_on_at_least_one_playlist
+        ]
+
+    if create_collection_playlist:
+        logger.debug("adding Collection playlist")
+        rekordbox_playlists.append(
+            RekordboxPlaylist(
+                name="Collection",
+                tracks=rekordbox_collection_list,
             )
         )
 
     logger.debug("done with get_rekordbox_library")
-    print("  done reading rekordbox library.")
+    string_utils.print_libsync_status_success("Done", level=1)
 
     return RekordboxLibrary(
         xml_path=rekordbox_xml_path,

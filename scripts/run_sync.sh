@@ -10,7 +10,6 @@ if true; then
   sync \
   --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
   --create_collection_playlist \
-  --skip_create_spotify_playlists \
   --interactive_mode \
 
 fi
@@ -24,7 +23,7 @@ if false; then
   --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
   --interactive_mode \
   --create_collection_playlist \
-  --skip_create_spotify_playlists \
+  --skip_spotify_playlist_sync \
   --include_loose_songs \
 
 fi

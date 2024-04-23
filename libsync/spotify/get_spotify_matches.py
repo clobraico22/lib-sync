@@ -10,6 +10,7 @@ import requests
 import spotipy
 from db import db_read_operations, db_write_operations
 from spotipy.oauth2 import SpotifyOAuth
+from utils import string_utils
 from utils.constants import (
     CANCEL_FLAG,
     EXIT_AND_SAVE_FLAG,
@@ -73,7 +74,7 @@ def get_spotify_matches(
         )
     )
 
-    print("  searching for spotify matches...")
+    string_utils.print_libsync_status("Searching for Spotify matches", level=1)
 
     scope = ["user-library-read", "playlist-modify-private"]
     spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
@@ -164,7 +165,8 @@ def get_spotify_matches(
         rekordbox_to_spotify_map,
     )
 
-    print("  done searching for spotify matches.")
+    string_utils.print_libsync_status_success("Done", level=1)
+
     return rekordbox_to_spotify_map
 
 

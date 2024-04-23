@@ -41,7 +41,7 @@ def get_cli_argparser():
         + "use this to search for new spotify uploads or use new libsync search logic",
     )
     parser_sync.add_argument(
-        "--skip_create_spotify_playlists",
+        "--skip_spotify_playlist_sync",
         action="store_true",
         help="skip creating/updating spotify playlists - this is useful when doing a lot of "
         + "manual mapping corrections or testing libsync features",
