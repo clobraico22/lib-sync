@@ -6,7 +6,7 @@ import string
 import spotipy.client
 from colorama import Fore, Style
 from utils.constants import ARTIST_LIST_DELIMITERS, SPOTIFY_TRACK_URI_PREFIX
-from utils.rekordbox_library import RekordboxPlaylist, RekordboxTrack
+from utils.rekordbox_library import RekordboxTrack
 
 
 def get_spotify_uri_from_url(spotify_url: str) -> str:
@@ -25,6 +25,11 @@ def get_spotify_uri_from_url(spotify_url: str) -> str:
 
 def get_spotify_uri_from_id(spotify_track_id: str) -> str:
     return SPOTIFY_TRACK_URI_PREFIX + spotify_track_id
+
+
+def get_spotify_id_from_uri(spotify_track_uri: str) -> str:
+    assert is_spotify_uri(spotify_track_uri)
+    return spotify_track_uri[len(SPOTIFY_TRACK_URI_PREFIX) :]
 
 
 def is_spotify_uri(value: str) -> bool:
@@ -107,8 +112,8 @@ def pretty_print_spotify_track(track: object, include_url: bool = False):
     )
 
 
-def generate_spotify_playlist_name(rb_playlist: RekordboxPlaylist) -> str:
-    return f"[ls] {rb_playlist.name}"
+def generate_spotify_playlist_name(rb_playlist_name: str) -> str:
+    return f"[ls] {rb_playlist_name}"
 
 
 def print_libsync_status(

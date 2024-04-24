@@ -43,7 +43,6 @@ def sync_spotify_playlists(
     )
 
     string_utils.print_libsync_status("Fetching your Spotify playlists", level=1)
-
     playlist_id_map = db_read_operations.get_playlist_id_map(rekordbox_xml_path)
     libsync_owned_spotify_playlists = spotify_api_utils.get_user_playlists_details(
         playlist_id_map.values()
@@ -82,7 +81,7 @@ def sync_spotify_playlists(
     user_id = spotify.current_user()["id"]
 
     if len(spotify_playlist_ids_to_delete) < 1:
-        string_utils.print_libsync_status("No playlists to delete", level=1)
+        string_utils.print_libsync_status("No Spotify playlists to delete", level=1)
     else:
         string_utils.print_libsync_status("Deleting old Spotify playlists", level=1)
 
@@ -100,20 +99,21 @@ def sync_spotify_playlists(
         for rb_playlist in rekordbox_playlists
         if rb_playlist.name not in playlist_id_map
     ]
+    logger.debug(f"playlist_names_to_create: {playlist_names_to_create}")
 
     if len(playlist_names_to_create) < 1:
-        string_utils.print_libsync_status("No playlists to create", level=1)
+        string_utils.print_libsync_status("No Spotify playlists to create", level=1)
     else:
         string_utils.print_libsync_status("Creating new Spotify playlists", level=1)
 
         # TODO: parallelize this if necessary, shouldn't be a very hot path.
-        for rb_playlist in playlist_names_to_create:
+        for rb_playlist_name in playlist_names_to_create:
             # TODO: need better error handling for spotify API calls
             #   (network failures, bad IDs, etc)
             #   catch aiohttp.client_exceptions.ServerDisconnectedError in asyncio workers
             playlist_create_result = spotify.user_playlist_create(
                 user=user_id,
-                name=string_utils.generate_spotify_playlist_name(rb_playlist),
+                name=string_utils.generate_spotify_playlist_name(rb_playlist_name),
                 # TODO: private playlists don't work! read here:
                 # https://community.spotify.com/t5/Spotify-for-Developers/Api-to-create-a-private-playlist-doesn-t-work/td-p/5407807
                 public=make_playlists_public,
@@ -123,7 +123,7 @@ def sync_spotify_playlists(
                 f"created spotify playlist: {playlist_create_result['name']}"
                 + f" with id: {playlist_create_result['id']}"
             )
-            playlist_id_map[rb_playlist.name] = playlist_create_result["id"]
+            playlist_id_map[rb_playlist_name] = playlist_create_result["id"]
 
         string_utils.print_libsync_status_success("Done", level=1)
 
@@ -140,6 +140,8 @@ def sync_spotify_playlists(
         playlist_id_map,
         libsync_owned_spotify_playlists,
     )
+    logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
+    logger.debug(f"new_spotify_additions: {new_spotify_additions}")
 
     if len(spotify_playlist_write_jobs) < 1:
         string_utils.print_libsync_status("No Spotify playlists to update", level=1)
@@ -151,13 +153,23 @@ def sync_spotify_playlists(
     if constants.IGNORE_SP_NEW_TRACKS or len(new_spotify_additions) < 1:
         string_utils.print_libsync_status("No Rekordbox playlists to update", level=1)
     else:
+        spotify_song_details = spotify_api_utils.get_spotify_song_details(
+            [
+                sp_uri
+                for tracklist in new_spotify_additions.values()
+                for sp_uri in tracklist
+            ]
+        )
         string_utils.print_libsync_status(
             "Add these songs to your Rekordbox playlists:", level=1
         )
-        for rb_playlist_name, songs_to_add in new_spotify_additions.items():
+        for rb_playlist_name, sp_track_uris_to_add in new_spotify_additions.items():
             print(f"      {rb_playlist_name}")
-            for song in songs_to_add:
-                print(f"        {song}")
+            for sp_uri in sp_track_uris_to_add:
+                print(
+                    f"        {sp_uri} "
+                    + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
+                )
         string_utils.print_libsync_status_success("Done", level=1)
 
     # TODO: deprecate this (might still be useful for testing)
@@ -184,13 +196,14 @@ def get_playlist_diffs(
     playlist_id_map,
     libsync_owned_spotify_playlists,
 ):
+    logger.debug("running get_playlist_diffs")
     spotify_playlist_write_jobs = []
     new_spotify_additions = {}
 
     # figure out which playlists need to be updated
     for rb_playlist in rekordbox_playlists:
-        sp_uris_from_rb = get_filtered_spotify_uris_from_rekordbox_playlist(
-            rb_playlist, rekordbox_to_spotify_map
+        logger.debug(
+            f"get_playlist_diffs for rekordbox playlist with name: {rb_playlist.name}"
         )
 
         if rb_playlist.name not in playlist_id_map:
@@ -199,8 +212,14 @@ def get_playlist_diffs(
             )
             continue
 
+        sp_uris_from_rb = get_filtered_spotify_uris_from_rekordbox_playlist(
+            rb_playlist, rekordbox_to_spotify_map
+        )
+        logger.debug(f"spotify uris from rekordbox playlist: {sp_uris_from_rb}")
+
         spotify_playlist_id = playlist_id_map[rb_playlist.name]
         if spotify_playlist_id not in libsync_owned_spotify_playlists:
+            logger.debug("fresh playlist, need to add full list")
             # this should only happen for playlists we just created
             spotify_playlist_write_jobs.append([spotify_playlist_id, sp_uris_from_rb])
             continue
@@ -209,23 +228,39 @@ def get_playlist_diffs(
             string_utils.get_spotify_uri_from_id(spotify_track_id)
             for spotify_track_id in libsync_owned_spotify_playlists[spotify_playlist_id]
         ]
+        logger.debug(f"spotify uris from spotify playlist: {sp_uris_from_sp}")
         sp_new_tracks = [
             uri for uri in sp_uris_from_sp if uri not in set(sp_uris_from_rb)
         ]
         if len(sp_new_tracks) >= 1:
             # TODO: get details on tracks to add to spotify (artist, title, etc)
+            # can probably do this from rekordbox library/collection in the output function
             new_spotify_additions[rb_playlist.name] = sp_new_tracks
 
         # this is what we want the spotify playlist to look like
         if constants.IGNORE_SP_NEW_TRACKS:
-            print("NO NEW TRACKS")
+            logger.debug(
+                "ignoring new tracks from spotify playlist (overwriting with rekordbox playlist)"
+            )
             target_uri_list = sp_uris_from_rb
         else:
-            print("NEW TRACKS")
+            logger.debug(
+                "appending unrecognized tracks from spotify playlist to the end of rekordbox playlist"
+            )
             target_uri_list = sp_uris_from_rb + sp_new_tracks
 
         # if doesn't match what we expect, then add a job
         if target_uri_list != sp_uris_from_sp:
+            logger.debug(
+                "goal state for playlist doesn't match current state. overwriting spotify playlist"
+            )
+            logger.debug(
+                f"set(target_uri_list) - set(sp_uris_from_sp): {set(target_uri_list) - set(sp_uris_from_sp)}"
+            )
+            logger.debug(
+                f"set(sp_uris_from_sp) - set(target_uri_list): {set(sp_uris_from_sp) - set(target_uri_list)}"
+            )
+
             spotify_playlist_write_jobs.append([spotify_playlist_id, target_uri_list])
             continue
 

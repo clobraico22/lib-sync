@@ -8,6 +8,7 @@ from datetime import timedelta
 from id.download_audio import download_mp3_from_youtube_url
 from id.youtube_dl_utils import get_mp3_output_path, get_youtube_video_id_from_url
 from ShazamAPI import Shazam
+from utils import string_utils
 from utils.constants import (
     FORCE_REDO_SHAZAM,
     NUM_SHAZAM_MATCHES_THRESHOLD,
@@ -73,10 +74,14 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
 
     except FileNotFoundError as error:
         logger.debug(error)
-        print(f"no cache found. creating cache at '{libsync_cache_path}'.")
+        string_utils.print_libsync_status_error(
+            f"no cache found. creating cache at '{libsync_cache_path}'."
+        )
     except KeyError as error:
         logger.exception(error)
-        print(f"error parsing cache at '{libsync_cache_path}'. clearing cache.")
+        string_utils.print_libsync_status_error(
+            f"error parsing cache at '{libsync_cache_path}'. clearing cache."
+        )
         # TODO actually clear cache, also centralize this duplicated caching logic
 
     input_file = open(recording_audio_file_path, "rb").read()
