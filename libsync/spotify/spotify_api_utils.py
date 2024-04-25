@@ -102,7 +102,7 @@ async def fetch_spotify_song_details_worker(
     list_of_sp_ids = [
         string_utils.get_spotify_id_from_uri(sp_uri) for sp_uri in list_of_sp_uris
     ]
-    url = f"https://api.spotify.com/v1/tracks?ids={'%'.join(list_of_sp_ids)}"
+    url = f"https://api.spotify.com/v1/tracks?ids={'%2C'.join(list_of_sp_ids)}"
     async with session.get(url, headers=headers) as response:
         if not response.ok:
             logger.debug(response)
