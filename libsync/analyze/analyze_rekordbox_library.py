@@ -4,6 +4,7 @@ import logging
 
 from analyze.generate_rekordbox_library_report import generate_rekordbox_library_report
 from analyze.get_rekordbox_library import get_rekordbox_library
+from utils import string_utils
 
 logger = logging.getLogger("libsync")
 
@@ -33,11 +34,13 @@ def analyze_rekordbox_library(
         logger.debug(f"got rekordbox library: {rekordbox_library}")
     except FileNotFoundError as error:
         logger.debug(error)
-        print(f"couldn't find '{rekordbox_xml_path}'. check the path and try again")
+        string_utils.print_libsync_status_error(
+            f"couldn't find '{rekordbox_xml_path}'. check the path and try again"
+        )
         return
     except TypeError as error:
         logger.exception(error)
-        print(
+        string_utils.print_libsync_status_error(
             f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
         )
         return

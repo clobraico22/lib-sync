@@ -14,16 +14,8 @@ EXIT_AND_SAVE_FLAG = "libsync:EXIT_AND_SAVE"
 SKIP_TRACK_FLAG = "libsync:SKIP_TRACK_FLAG"
 CANCEL_FLAG = "libsync:CANCEL_FLAG"
 SPOTIFY_TRACK_URI_PREFIX = "spotify:track:"
-IGNORE_SP_NEW_TRACKS = True
-
-# --- create playlists ---
-ITEMS_PER_PAGE_SPOTIFY_API = 100
-# shouldn't need this flag anymore.
-# can just delete playlists manually on spotify
-FORCE_CREATE_NEW_PLAYLISTS = False
-SPOTIFY_PLAYLISTS_LIMIT = 50
-SPOTIFY_TRACKS_LIMIT = 100
-
+IGNORE_SP_NEW_TRACKS = False
+SPOTIFY_API_ITEMS_PER_PAGE = 100
 
 # --- id command ---
 FORCE_REDO_SHAZAM = False

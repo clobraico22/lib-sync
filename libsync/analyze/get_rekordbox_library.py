@@ -42,11 +42,13 @@ def get_rekordbox_library(
         tree = ET.parse(rekordbox_xml_path)
     except FileNotFoundError as error:
         logger.debug(error)
-        print(f"couldn't find '{rekordbox_xml_path}'. check the path and try again")
+        string_utils.print_libsync_status_error(
+            f"couldn't find '{rekordbox_xml_path}'. check the path and try again"
+        )
         exit(1)
     except TypeError as error:
         logger.exception(error)
-        print(
+        string_utils.print_libsync_status_error(
             f"the file at '{rekordbox_xml_path}' is the wrong format. try exporting again"
         )
         exit(1)
@@ -108,7 +110,7 @@ def get_rekordbox_library(
         rekordbox_playlists.append(
             RekordboxPlaylist(
                 name="Collection",
-                tracks=rekordbox_collection_list,
+                tracks=[track.id for track in rekordbox_collection_list],
             )
         )
 

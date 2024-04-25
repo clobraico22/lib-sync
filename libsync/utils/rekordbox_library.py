@@ -43,7 +43,7 @@ class RekordboxPlaylist:
         self.tracks = tracks
 
     def __repr__(self) -> str:
-        return f"Playlist object with name: {self.name}\n{pprint.pformat(self.tracks)}"
+        return f"Playlist object with name: {self.name}, tracks: {self.tracks}"
 
     def __str__(self) -> str:
         return self.__repr__()

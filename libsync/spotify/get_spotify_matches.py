@@ -84,7 +84,8 @@ def get_spotify_matches(
     rb_track_ids_to_look_up = []
     unmatched_tracks = []
 
-    for rb_track_id in rekordbox_library.collection:
+    for rb_track_id in rekordbox_library.collection.keys():
+        logger.debug(f"checking db for matches for track_id: {rb_track_id}")
         if USE_RB_TO_SPOTIFY_MATCHES_CACHE and rb_track_id in rekordbox_to_spotify_map:
             if rb_track_id in rb_track_ids_flagged_for_rematch:
                 rb_track_ids_to_look_up.append(rb_track_id)
