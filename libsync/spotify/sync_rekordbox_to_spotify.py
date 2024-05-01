@@ -45,7 +45,7 @@ def sync_rekordbox_to_spotify(
 
     # get rekordbox db from xml
     rekordbox_library = get_rekordbox_library(
-        rekordbox_xml_path, include_loose_songs, create_collection_playlist
+        rekordbox_xml_path, create_collection_playlist
     )
     # TODO: this muddies up the logs quite a bit - might be worth removing
     logger.debug(f"got rekordbox library: {rekordbox_library}")
