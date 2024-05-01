@@ -4,7 +4,7 @@ import pickle
 
 from db import db_utils, db_write_operations
 from utils import string_utils
-from utils.constants import NOT_ON_SPOTIFY_FLAG
+from utils.constants import SpotifyMappingDbFlags
 from utils.string_utils import get_spotify_uri_from_url
 
 logger = logging.getLogger("libsync")
@@ -126,8 +126,8 @@ def get_cached_sync_data(
                     line[4],
                     line[5],
                 )
-                if spotify_url == NOT_ON_SPOTIFY_FLAG:
-                    spotify_uri = NOT_ON_SPOTIFY_FLAG
+                if spotify_url == SpotifyMappingDbFlags.NOT_ON_SPOTIFY:
+                    spotify_uri = SpotifyMappingDbFlags.NOT_ON_SPOTIFY
                 elif spotify_url != "":
                     logger.debug(
                         "found a spotify URL manually input into the CSV by the user, "
