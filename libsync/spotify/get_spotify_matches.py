@@ -12,13 +12,11 @@ from db import db_read_operations, db_write_operations
 from spotipy.oauth2 import SpotifyOAuth
 from utils import string_utils
 from utils.constants import (
-    CANCEL_FLAG,
-    EXIT_AND_SAVE_FLAG,
     MINIMUM_SIMILARITY_THRESHOLD,
-    NOT_ON_SPOTIFY_FLAG,
     NUMBER_OF_RESULTS_PER_QUERY,
-    SKIP_TRACK_FLAG,
     USE_RB_TO_SPOTIFY_MATCHES_CACHE,
+    InteractiveWorkflowCommands,
+    SpotifyMappingDbFlags,
 )
 from utils.rekordbox_library import RekordboxLibrary, RekordboxTrack
 from utils.similarity_utils import calculate_similarities
@@ -128,19 +126,19 @@ def get_spotify_matches(
         best_match_uri = find_best_track_match_uri(
             rb_track, spotify_search_results, interactive_mode
         )
-        if best_match_uri == SKIP_TRACK_FLAG:
+        if best_match_uri == InteractiveWorkflowCommands.SKIP_TRACK:
             rekordbox_to_spotify_map[rb_track_id] = ""
 
-        elif best_match_uri == NOT_ON_SPOTIFY_FLAG:
-            rekordbox_to_spotify_map[rb_track_id] = NOT_ON_SPOTIFY_FLAG
+        elif best_match_uri == InteractiveWorkflowCommands.NOT_ON_SPOTIFY:
+            rekordbox_to_spotify_map[rb_track_id] = SpotifyMappingDbFlags.NOT_ON_SPOTIFY
 
-        elif best_match_uri == EXIT_AND_SAVE_FLAG:
+        elif best_match_uri == InteractiveWorkflowCommands.EXIT_AND_SAVE:
             return (
                 rekordbox_to_spotify_map,
                 cached_spotify_search_results,
             )
 
-        elif best_match_uri == CANCEL_FLAG:
+        elif best_match_uri == InteractiveWorkflowCommands.CANCEL:
             exit()
 
         else:
@@ -237,7 +235,7 @@ def find_best_track_match_uri(
     rb_track: RekordboxTrack,
     spotify_search_results: dict,
     interactive_mode: bool,
-):
+) -> str:
     """pick best track out of spotify search results.
     If best track is above similarity threshold, return it to client. Otherwise, return none.
 
@@ -247,13 +245,13 @@ def find_best_track_match_uri(
         interactive_mode (bool):
 
     Returns:
-        str | None: spotify URI if one is found, otherwise None
+        str: spotify URI if one is found, otherwise SKIP_TRACK signal
     """
     logger.debug(f"running find_best_track_match_uri with rb_track: {rb_track}")
 
     if len(spotify_search_results) < 1:
         logger.debug("spotify_search_results is empty. Returning None...")
-        return SKIP_TRACK_FLAG
+        return InteractiveWorkflowCommands.SKIP_TRACK
 
     similarities = calculate_similarities(rb_track, spotify_search_results)
 
@@ -283,7 +281,7 @@ def find_best_track_match_uri(
         return get_interactive_input(rb_track, list_of_spotify_tracks)
 
     else:
-        return None
+        return InteractiveWorkflowCommands.SKIP_TRACK
 
 
 def get_interactive_input(rb_track, list_of_spotify_tracks: list):
@@ -307,19 +305,19 @@ def get_interactive_input(rb_track, list_of_spotify_tracks: list):
     selection = get_valid_interactive_input(rb_track, list_of_spotify_tracks)
     if selection == "s":
         print("skipping this track")
-        return SKIP_TRACK_FLAG
+        return InteractiveWorkflowCommands.SKIP_TRACK
 
     elif selection == "m":
         print("marking song as missing")
-        return NOT_ON_SPOTIFY_FLAG
+        return InteractiveWorkflowCommands.NOT_ON_SPOTIFY
 
     elif selection == "x":
         print("exiting and saving")
-        return EXIT_AND_SAVE_FLAG
+        return InteractiveWorkflowCommands.EXIT_AND_SAVE
 
     elif selection == "cancel":
         print("exiting without saving")
-        return CANCEL_FLAG
+        return InteractiveWorkflowCommands.CANCEL
 
     elif selection.isdigit():
         index = int(selection) - 1
