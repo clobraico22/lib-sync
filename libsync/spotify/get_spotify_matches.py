@@ -5,6 +5,7 @@ contains get_spotify_matches function and helpers
 import logging
 import pprint
 import urllib.parse
+from typing import Iterable
 
 import requests
 import spotipy
@@ -72,50 +73,72 @@ def get_spotify_matches(
         )
     )
 
-    string_utils.print_libsync_status("Searching for Spotify matches", level=1)
-
-    scope = ["user-library-read", "playlist-modify-private"]
-    spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
-
     logger.info(f"{len(rekordbox_library.collection)} total tracks in collection")
 
-    rb_track_ids_to_look_up = []
-    unmatched_tracks = []
-
-    for rb_track_id in rekordbox_library.collection.keys():
-        logger.debug(f"checking db for matches for track_id: {rb_track_id}")
-        if USE_RB_TO_SPOTIFY_MATCHES_CACHE and rb_track_id in rekordbox_to_spotify_map:
-            if rb_track_id in rb_track_ids_flagged_for_rematch:
-                rb_track_ids_to_look_up.append(rb_track_id)
-
-            elif (
-                rekordbox_to_spotify_map[rb_track_id] == ""
-                or rekordbox_to_spotify_map[rb_track_id] is None
-            ):
-                logger.debug("libsync db has this track, but with no match")
-                unmatched_tracks.append(rb_track_id)
-
-            else:
-                logger.debug("found a match in libsync db, skipping this spotify query")
-
-        else:
-            logger.debug("not found, adding to list")
-            rb_track_ids_to_look_up.append(rb_track_id)
-
-    logger.info(
-        f"{len(unmatched_tracks)} unmatched tracks. currently ignoring "
-        + "(update in csv if you want to match these)"
+    rb_track_ids_to_match = get_rb_track_ids_to_match(
+        rekordbox_library.collection.keys(),
+        rekordbox_to_spotify_map,
+        rb_track_ids_flagged_for_rematch,
     )
 
     # TODO: improve UX for retrying matching
 
-    logger.info(f"{len(rb_track_ids_to_look_up)} tracks to match on spotify")
+    logger.info(f"{len(rb_track_ids_to_match)} tracks to match on spotify")
     cached_spotify_search_results = (
         db_read_operations.get_cached_spotify_search_results(rekordbox_library.xml_path)
     )
 
-    for i, rb_track_id in enumerate(rb_track_ids_to_look_up):
-        logger.debug(f"matching track {i + 1}/{len(rb_track_ids_to_look_up)}")
+    if len(rb_track_ids_to_match) <= 0:
+        string_utils.print_libsync_status("No new Rekordbox tracks to match", level=1)
+        return rekordbox_to_spotify_map
+    else:
+        string_utils.print_libsync_status(
+            f"Searching Spotify for matches for {len(rb_track_ids_to_match)} new Rekordbox tracks",
+            level=1,
+        )
+
+        # PARALLELLIZE
+        # list_of_search_queries =
+        # run search queries in parallel, with good error handling
+        # if error is found, save all the search results we have so far, then quit
+        # if no error, save search results and keep moving
+        rekordbox_to_spotify_map = pick_best_spotify_matches(
+            rb_track_ids_to_match,
+            rekordbox_library,
+            cached_spotify_search_results,
+            rekordbox_to_spotify_map,
+            interactive_mode,
+        )
+
+        # cache spotify search results
+        db_write_operations.save_cached_spotify_search_results(
+            cached_spotify_search_results, rekordbox_library.xml_path
+        )
+
+        # cache rekordbox -> spotify mappings
+        db_write_operations.save_song_mappings_csv(
+            rekordbox_library,
+            rb_track_ids_flagged_for_rematch,
+            rekordbox_to_spotify_map,
+        )
+
+        string_utils.print_libsync_status_success("Done", level=1)
+
+        return rekordbox_to_spotify_map
+
+
+def pick_best_spotify_matches(
+    rb_track_ids_to_match: list[str],
+    rekordbox_library: RekordboxLibrary,
+    cached_spotify_search_results: dict[str, object],
+    rekordbox_to_spotify_map: dict[str, str],
+    interactive_mode: bool,
+):
+    scope = ["user-library-read", "playlist-modify-private"]
+    spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
+
+    for i, rb_track_id in enumerate(rb_track_ids_to_match):
+        logger.debug(f"matching track {i + 1}/{len(rb_track_ids_to_match)}")
 
         rb_track = rekordbox_library.collection[rb_track_id]
 
@@ -152,27 +175,54 @@ def get_spotify_matches(
         else:
             logger.info(f"couldn't find a match for track {rb_track}")
 
-    # cache spotify search results
-    db_write_operations.save_cached_spotify_search_results(
-        cached_spotify_search_results, rekordbox_library.xml_path
-    )
-
-    # cache rekordbox -> spotify mappings
-    db_write_operations.save_song_mappings_csv(
-        rekordbox_library,
-        rb_track_ids_flagged_for_rematch,
-        rekordbox_to_spotify_map,
-    )
-
-    string_utils.print_libsync_status_success("Done", level=1)
-
     return rekordbox_to_spotify_map
+
+
+def get_rb_track_ids_to_match(
+    rb_track_ids: Iterable[str],
+    rekordbox_to_spotify_map: dict[str, str],
+    rb_track_ids_flagged_for_rematch: set[str],
+) -> list[str]:
+    rb_track_ids_to_match = []
+    skipped_tracks = []
+
+    for rb_track_id in rb_track_ids:
+        logger.debug(f"checking db for matches for track_id: {rb_track_id}")
+        if (
+            not USE_RB_TO_SPOTIFY_MATCHES_CACHE
+            or rb_track_id not in rekordbox_to_spotify_map
+        ):
+            logger.debug("track not found in db, adding to list to search list")
+            rb_track_ids_to_match.append(rb_track_id)
+
+        else:
+            if rb_track_id in rb_track_ids_flagged_for_rematch:
+                logger.debug(
+                    "track manually flagged for rematch, adding to list to search list"
+                )
+                rb_track_ids_to_match.append(rb_track_id)
+
+            elif rekordbox_to_spotify_map[rb_track_id] == "":
+                logger.debug(
+                    "skipped matching this track last time, adding to list of skipped tracks"
+                )
+                skipped_tracks.append(rb_track_id)
+
+            else:
+                logger.debug("track already matched, no need for lookup")
+
+    logger.info(
+        f"{len(skipped_tracks)} skipped tracks. currently ignoring "
+        + "(update in csv if you want to match these)"
+    )
+
+    return rb_track_ids_to_match
 
 
 def get_spotify_search_results(
     spotify_client: spotipy.Spotify,
     rb_track: RekordboxTrack,
-    cached_spotify_search_results: dict,
+    cached_spotify_search_results: dict[str, object],
 ) -> list:
     """search spotify for a given rekordbox track.
 
@@ -384,4 +434,5 @@ def get_valid_interactive_input(rb_track, list_of_spotify_tracks: list):
                 print("Invalid spotify link. Try again.")
 
         else:
+            print("Invalid input. Try again.")
             print("Invalid input. Try again.")
