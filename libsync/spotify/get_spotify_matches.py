@@ -7,14 +7,11 @@ import pprint
 import urllib.parse
 from typing import Iterable
 
-import requests
-import spotipy
 from db import db_read_operations, db_write_operations
-from spotipy.oauth2 import SpotifyOAuth
+from spotify import spotify_api_utils
 from utils import string_utils
 from utils.constants import (
     MINIMUM_SIMILARITY_THRESHOLD,
-    NUMBER_OF_RESULTS_PER_QUERY,
     USE_RB_TO_SPOTIFY_MATCHES_CACHE,
     InteractiveWorkflowCommands,
     SpotifyMappingDbFlags,
@@ -64,7 +61,7 @@ def get_spotify_matches(
         + ", ".join(
             [
                 # f"rekordbox_to_spotify_map={rekordbox_to_spotify_map}",
-                # f"cached_spotify_search_results={cached_spotify_search_results}",
+                # f"spotify_search_results={spotify_search_results}",
                 # f"rekordbox_library={rekordbox_library}",
                 f"rb_track_ids_flagged_for_rematch={rb_track_ids_flagged_for_rematch}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
@@ -84,8 +81,8 @@ def get_spotify_matches(
     # TODO: improve UX for retrying matching
 
     logger.info(f"{len(rb_track_ids_to_match)} tracks to match on spotify")
-    cached_spotify_search_results = (
-        db_read_operations.get_cached_spotify_search_results(rekordbox_library.xml_path)
+    spotify_search_results = db_read_operations.get_cached_spotify_search_results(
+        rekordbox_library.xml_path
     )
 
     if len(rb_track_ids_to_match) <= 0:
@@ -97,22 +94,45 @@ def get_spotify_matches(
             level=1,
         )
 
-        # PARALLELLIZE
-        # list_of_search_queries =
-        # run search queries in parallel, with good error handling
-        # if error is found, save all the search results we have so far, then quit
-        # if no error, save search results and keep moving
-        rekordbox_to_spotify_map = pick_best_spotify_matches(
-            rb_track_ids_to_match,
-            rekordbox_library,
-            cached_spotify_search_results,
-            rekordbox_to_spotify_map,
-            interactive_mode,
+        list_of_search_queries = [
+            get_spotify_queries_from_rb_track(rekordbox_library.collection[rb_track_id])
+            for rb_track_id in rb_track_ids_to_match
+        ]
+        new_results_to_add = spotify_api_utils.get_spotify_search_results(
+            list_of_search_queries
         )
+        logger.debug(f"new_results_to_add: {new_results_to_add}")
+
+        spotify_search_results.update(
+            {
+                query: results
+                for query, results in new_results_to_add.items()
+                if results is not None
+            }
+        )
+        missing_search_results = {
+            query for query, results in new_results_to_add.items() if results is None
+        }
+        logger.debug(f"spotify_search_results: {spotify_search_results}")
+        logger.debug(f"missing_search_results: {missing_search_results}")
 
         # cache spotify search results
         db_write_operations.save_cached_spotify_search_results(
-            cached_spotify_search_results, rekordbox_library.xml_path
+            spotify_search_results, rekordbox_library.xml_path
+        )
+
+        if len(missing_search_results) >= 1:
+            string_utils.print_libsync_status_error(
+                "some search results failed to load due to a connection issue. try again"
+            )
+            exit(1)
+
+        rekordbox_to_spotify_map = pick_best_spotify_matches(
+            rb_track_ids_to_match,
+            rekordbox_library,
+            spotify_search_results,
+            rekordbox_to_spotify_map,
+            interactive_mode,
         )
 
         # cache rekordbox -> spotify mappings
@@ -130,20 +150,17 @@ def get_spotify_matches(
 def pick_best_spotify_matches(
     rb_track_ids_to_match: list[str],
     rekordbox_library: RekordboxLibrary,
-    cached_spotify_search_results: dict[str, object],
+    spotify_search_results: dict[str, object],
     rekordbox_to_spotify_map: dict[str, str],
     interactive_mode: bool,
 ):
-    scope = ["user-library-read", "playlist-modify-private"]
-    spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
-
     for i, rb_track_id in enumerate(rb_track_ids_to_match):
         logger.debug(f"matching track {i + 1}/{len(rb_track_ids_to_match)}")
 
         rb_track = rekordbox_library.collection[rb_track_id]
 
-        spotify_search_results = get_spotify_search_results(
-            spotify, rb_track, cached_spotify_search_results
+        spotify_search_results = get_cached_results_for_track(
+            rb_track, spotify_search_results
         )
 
         best_match_uri = find_best_track_match_uri(
@@ -158,7 +175,7 @@ def pick_best_spotify_matches(
         elif best_match_uri == InteractiveWorkflowCommands.EXIT_AND_SAVE:
             return (
                 rekordbox_to_spotify_map,
-                cached_spotify_search_results,
+                spotify_search_results,
             )
 
         elif best_match_uri == InteractiveWorkflowCommands.CANCEL:
@@ -219,10 +236,9 @@ def get_rb_track_ids_to_match(
     return rb_track_ids_to_match
 
 
-def get_spotify_search_results(
-    spotify_client: spotipy.Spotify,
+def get_cached_results_for_track(
     rb_track: RekordboxTrack,
-    cached_spotify_search_results: dict[str, object],
+    spotify_search_results: dict[str, object],
 ) -> list:
     """search spotify for a given rekordbox track.
 
@@ -234,29 +250,15 @@ def get_spotify_search_results(
         search_result_tracks (dict): dict top results from various searches based on
             the rekordbox track, indexed by spotify URI
     """
-    search_result_tracks = {}
-    queries = get_spotify_queries_from_rb_track(rb_track)
-    for query in queries:
-        if query in cached_spotify_search_results:
-            results = cached_spotify_search_results[query]
-        else:
-            try:
-                results = spotify_client.search(
-                    q=query, limit=NUMBER_OF_RESULTS_PER_QUERY, offset=0, type="track"
-                )["tracks"]["items"]
-                cached_spotify_search_results[query] = results
 
-            except requests.exceptions.ConnectionError as error:
-                # maybe catch this at a lower level
-                logger.exception(error)
-                print(
-                    "error connecting to spotify. fix your internet connection and try again."
-                )
-
-        for track in results:
-            search_result_tracks[track["uri"]] = track
-
-    return search_result_tracks
+    return {
+        track["uri"]: track
+        for track in [
+            spotify_search_results[query]
+            for query in get_spotify_queries_from_rb_track(rb_track)
+            if query in spotify_search_results
+        ]
+    }
 
 
 def get_spotify_queries_from_rb_track(
@@ -278,6 +280,7 @@ def get_spotify_queries_from_rb_track(
     queries = [" ".join(query_list).lower() for query_list in query_lists]
     queries = [urllib.parse.quote(query) for query in queries]
     queries = [query.replace("%20", "+") for query in queries]
+    logger.debug(f"get_spotify_queries_from_rb_track results: {queries}")
     return queries
 
 
@@ -434,5 +437,4 @@ def get_valid_interactive_input(rb_track, list_of_spotify_tracks: list):
                 print("Invalid spotify link. Try again.")
 
         else:
-            print("Invalid input. Try again.")
             print("Invalid input. Try again.")
