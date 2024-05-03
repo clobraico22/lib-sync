@@ -95,13 +95,17 @@ def get_spotify_matches(
         )
 
         list_of_search_queries = [
-            get_spotify_queries_from_rb_track(rekordbox_library.collection[rb_track_id])
+            query
             for rb_track_id in rb_track_ids_to_match
+            for query in get_spotify_queries_from_rb_track(
+                rekordbox_library.collection[rb_track_id]
+            )
+            if query not in spotify_search_results
         ]
         new_results_to_add = spotify_api_utils.get_spotify_search_results(
             list_of_search_queries
         )
-        logger.debug(f"new_results_to_add: {new_results_to_add}")
+        logger.debug(f"len(new_results_to_add): {len(new_results_to_add)}")
 
         spotify_search_results.update(
             {
@@ -113,8 +117,8 @@ def get_spotify_matches(
         missing_search_results = {
             query for query, results in new_results_to_add.items() if results is None
         }
-        logger.debug(f"spotify_search_results: {spotify_search_results}")
-        logger.debug(f"missing_search_results: {missing_search_results}")
+        logger.debug(f"len(spotify_search_results): {len(spotify_search_results)}")
+        logger.debug(f"len(missing_search_results): {len(missing_search_results)}")
 
         # cache spotify search results
         db_write_operations.save_cached_spotify_search_results(
@@ -154,6 +158,9 @@ def pick_best_spotify_matches(
     rekordbox_to_spotify_map: dict[str, str],
     interactive_mode: bool,
 ):
+    logger.debug(
+        f"running pick_best_spotify_matches for rb_track_ids_to_match: {rb_track_ids_to_match} with interactive_mode: {interactive_mode}"
+    )
     for i, rb_track_id in enumerate(rb_track_ids_to_match):
         logger.debug(f"matching track {i + 1}/{len(rb_track_ids_to_match)}")
 
@@ -162,6 +169,7 @@ def pick_best_spotify_matches(
         spotify_search_results = get_cached_results_for_track(
             rb_track, spotify_search_results
         )
+        print(f"len(spotify_search_results): {len(spotify_search_results)}")
 
         best_match_uri = find_best_track_match_uri(
             rb_track, spotify_search_results, interactive_mode
@@ -250,14 +258,14 @@ def get_cached_results_for_track(
         search_result_tracks (dict): dict top results from various searches based on
             the rekordbox track, indexed by spotify URI
     """
+    logger.debug(f"running get_cached_results_for_track for track ID: {rb_track.id}")
 
+    queries = get_spotify_queries_from_rb_track(rb_track)
     return {
         track["uri"]: track
-        for track in [
-            spotify_search_results[query]
-            for query in get_spotify_queries_from_rb_track(rb_track)
-            if query in spotify_search_results
-        ]
+        for query in queries
+        if query in spotify_search_results
+        for track in spotify_search_results[query]
     }
 
 
@@ -281,7 +289,7 @@ def get_spotify_queries_from_rb_track(
     queries = [urllib.parse.quote(query) for query in queries]
     queries = [query.replace("%20", "+") for query in queries]
     logger.debug(f"get_spotify_queries_from_rb_track results: {queries}")
-    return queries
+    return list(set(queries))
 
 
 def find_best_track_match_uri(
@@ -300,37 +308,38 @@ def find_best_track_match_uri(
     Returns:
         str: spotify URI if one is found, otherwise SKIP_TRACK signal
     """
-    logger.debug(f"running find_best_track_match_uri with rb_track: {rb_track}")
-
-    if len(spotify_search_results) < 1:
-        logger.debug("spotify_search_results is empty. Returning None...")
-        return InteractiveWorkflowCommands.SKIP_TRACK
-
-    similarities = calculate_similarities(rb_track, spotify_search_results)
-
-    # sort based on similarities
-    list_of_spotify_tracks = [
-        [spotify_track, similarities[spotify_track["uri"]]]
-        for spotify_track in spotify_search_results.values()
-    ]
-
-    list_of_spotify_tracks.sort(key=lambda entry: entry[1], reverse=True)
-
-    logger.info(
-        f"track options from spotify search, sorted by similarity to rekordbox track {rb_track}:"
+    logger.debug(
+        f"running find_best_track_match_uri with rb_track: {rb_track}, "
+        + f"interactive_mode: {interactive_mode}"
     )
-    for spotify_track, similarity in list_of_spotify_tracks:
+
+    list_of_spotify_tracks = []
+    if len(spotify_search_results) >= 1:
+        similarities = calculate_similarities(rb_track, spotify_search_results)
+
+        # sort based on similarities
+        list_of_spotify_tracks = [
+            [spotify_track, similarities[spotify_track["uri"]]]
+            for spotify_track in spotify_search_results.values()
+        ]
+
+        list_of_spotify_tracks.sort(key=lambda entry: entry[1], reverse=True)
+
         logger.info(
-            f" - {similarity:3.2f}: " + pretty_print_spotify_track(spotify_track)
+            f"track options from spotify search, sorted by similarity to rekordbox track {rb_track}:"
         )
+        for spotify_track, similarity in list_of_spotify_tracks:
+            logger.info(
+                f" - {similarity:3.2f}: " + pretty_print_spotify_track(spotify_track)
+            )
 
-    best_match = list_of_spotify_tracks[0]
-    spotify_track = best_match[0]
-    similarity = best_match[1]
-    if similarity > MINIMUM_SIMILARITY_THRESHOLD:
-        return spotify_track["uri"]
+        best_match = list_of_spotify_tracks[0]
+        spotify_track = best_match[0]
+        similarity = best_match[1]
+        if similarity > MINIMUM_SIMILARITY_THRESHOLD:
+            return spotify_track["uri"]
 
-    elif interactive_mode:
+    if interactive_mode:
         return get_interactive_input(rb_track, list_of_spotify_tracks)
 
     else:
@@ -414,8 +423,13 @@ def get_valid_interactive_input(rb_track, list_of_spotify_tracks: list):
         user_input = input(
             'enter "s" to skip, "m" to mark a song as missing on spotify, '
             + '"x" to exit and save matches, "cancel" to exit without saving, '
-            + f"any number between 1 and {len(list_of_spotify_tracks)} to select "
-            + "one of the results from the list above, or paste a spotify link to "
+            + (
+                f"any number between 1 and {len(list_of_spotify_tracks)} to select "
+                + "one of the results from the list above, "
+                if len(list_of_spotify_tracks) >= 1
+                else ""
+            )
+            + "or paste a spotify link to "
             + "the track to save it: "
         )
         user_input = user_input.strip()
