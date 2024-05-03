@@ -9,12 +9,12 @@ logger = logging.getLogger("libsync")
 
 
 def save_cached_spotify_search_results(
-    cached_spotify_search_results: dict[str, object], rekordbox_xml_path: str
+    spotify_search_results: dict[str, object], rekordbox_xml_path: str
 ):
     """save cached spotify search results in pickle format to save time next run
 
     Args:
-        cached_spotify_search_results (dict[str, object]): results from API calls,
+        spotify_search_results (dict[str, object]): results from API calls,
           indexed by spotify search API query string
         rekordbox_xml_path (str): xml path used for this run -
           this will be used to determine cache and csv paths
@@ -26,9 +26,7 @@ def save_cached_spotify_search_results(
 
     logger.debug("save_cached_spotify_search_results")
     with open(spotify_search_cache_path, "wb") as handle:
-        pickle.dump(
-            cached_spotify_search_results, handle, protocol=pickle.HIGHEST_PROTOCOL
-        )
+        pickle.dump(spotify_search_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def save_list_of_user_playlists(playlist_id_map: dict[str, str]) -> None:
