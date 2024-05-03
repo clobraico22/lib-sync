@@ -31,9 +31,9 @@ def get_cached_spotify_search_results(
 
     try:
         with open(spotify_search_cache_path, "rb") as handle:
-            cached_spotify_search_results = pickle.load(handle)
-            assert isinstance(cached_spotify_search_results, dict)
-            return cached_spotify_search_results
+            spotify_search_results = pickle.load(handle)
+            assert isinstance(spotify_search_results, dict)
+            return spotify_search_results
 
     except FileNotFoundError as error:
         logger.debug(error)

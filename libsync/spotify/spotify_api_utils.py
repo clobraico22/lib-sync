@@ -116,6 +116,23 @@ async def fetch_spotify_song_details_worker(
     return [1, 2, 3]
 
 
+async def fetch_spotify_search_results_worker(session, access_token, query):
+    headers = {"Authorization": f"Bearer {access_token}"}
+    url = f"https://api.spotify.com/v1/search?q={query}&type=track"
+
+    try:
+        async with session.get(url, headers=headers) as response:
+            if not response.ok:
+                logger.debug(response)
+                return query, None
+
+            return query, await response.json()["tracks"]["items"]
+
+    except KeyError as e:
+        logger.error(f"KeyError in fetch_spotify_search_results_worker: {e}")
+        return query, None
+
+
 # controller
 
 
@@ -230,6 +247,27 @@ async def fetch_spotify_song_details_controller(
     return spotify_song_details
 
 
+async def fetch_spotify_search_results_controller(queries):
+    access_token = get_spotify_access_token(
+        [
+            "user-library-read",
+            "playlist-read-private",
+            "playlist-read-collaborative",
+        ]
+    )
+    async with aiohttp.ClientSession() as session:
+        tasks = [
+            fetch_spotify_search_results_worker(session, access_token, query)
+            for query in queries
+        ]
+        search_results_list = await asyncio.gather(*tasks)
+        return {
+            query: results
+            for query, results in search_results_list
+            if results is not None
+        }
+
+
 # driver
 
 
@@ -327,6 +365,11 @@ def get_spotify_song_details(spotify_uris: list[str]) -> dict[str, dict[str, obj
     """
     logger.debug(f"running get_spotify_song_details with spotify_uris: {spotify_uris}")
     return asyncio.run(fetch_spotify_song_details_controller(spotify_uris))
+
+
+def get_spotify_search_results(queries):
+    logger.debug(f"running get_spotify_search_results with queries: {queries}")
+    return asyncio.run(fetch_spotify_search_results_controller(queries))
 
 
 # misc
