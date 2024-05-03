@@ -153,30 +153,73 @@ def sync_spotify_playlists(
     if constants.IGNORE_SP_NEW_TRACKS or len(new_spotify_additions) < 1:
         string_utils.print_libsync_status("No Rekordbox playlists to update", level=1)
     else:
-        spotify_song_details = spotify_api_utils.get_spotify_song_details(
-            [
-                sp_uri
-                for tracklist in new_spotify_additions.values()
-                for sp_uri in tracklist
-            ]
-        )
-        string_utils.print_libsync_status(
-            "Add these songs to your Rekordbox playlists:", level=1
-        )
-        for rb_playlist_name, sp_track_uris_to_add in new_spotify_additions.items():
-            print(f"      {rb_playlist_name}")
-            for sp_uri in sp_track_uris_to_add:
-                print(
-                    f"        {sp_uri} "
-                    + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
-                )
-        string_utils.print_libsync_status_success("Done", level=1)
+        print_rekordbox_diff_report(new_spotify_additions, rekordbox_to_spotify_map)
 
-    # TODO: deprecate this (might still be useful for testing)
     # save playlists to db of playlists libsync owns for the current spotify user id
     db_write_operations.save_list_of_user_playlists(playlist_id_map)
 
     return playlist_id_map
+
+
+def print_rekordbox_diff_report(
+    new_spotify_additions: dict[str, list[str]],
+    rekordbox_to_spotify_map: dict[str, str],
+):
+    string_utils.print_libsync_status(
+        "Calculating songs to add to Rekordbox playlists", level=1
+    )
+    spotify_song_details = spotify_api_utils.get_spotify_song_details(
+        list(
+            {
+                sp_uri
+                for tracklist in new_spotify_additions.values()
+                for sp_uri in tracklist
+            }
+        )
+    )
+
+    spotify_to_rekordbox_map = {
+        sp_uri: rb_track_id for rb_track_id, sp_uri in rekordbox_to_spotify_map.items()
+    }
+    logger.debug(f"spotify_to_rekordbox_map: {spotify_to_rekordbox_map}")
+
+    songs_to_playlists_diff_map = {}
+    for rb_playlist_name, sp_track_uris_to_add in new_spotify_additions.items():
+        for sp_uri in sp_track_uris_to_add:
+            if sp_uri not in songs_to_playlists_diff_map:
+                songs_to_playlists_diff_map[sp_uri] = []
+
+            songs_to_playlists_diff_map[sp_uri].append(rb_playlist_name)
+
+    new_songs_to_download = {
+        sp_uri
+        for sp_uri in songs_to_playlists_diff_map
+        if sp_uri not in spotify_to_rekordbox_map
+    }
+    string_utils.print_libsync_status_success("Done", level=1)
+
+    string_utils.print_libsync_status(
+        "Add these songs to your Rekordbox collection:", level=1
+    )
+    for sp_uri in new_songs_to_download:
+        print(
+            f"    {sp_uri} "
+            + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
+        )
+
+    string_utils.print_libsync_status(
+        "Add these songs to your Rekordbox playlists:", level=1
+    )
+
+    # report ordered by track
+    for sp_uri, rb_playlists in songs_to_playlists_diff_map.items():
+        print(
+            f"    {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
+        )
+        for rb_playlist_name in rb_playlists:
+            print(f"      {rb_playlist_name}")
+
+    string_utils.print_libsync_status_success("Done", level=1)
 
 
 def get_filtered_spotify_uris_from_rekordbox_playlist(

@@ -35,12 +35,17 @@ async def fetch_additional_tracks_worker(
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks?limit={limit}&offset={offset}"
     params = {"fields": "total,items(track.id,track.name),limit"}
-    async with session.get(url, headers=headers, params=params) as response:
-        if not response.ok:
-            logger.debug(response)
-            raise ConnectionError("fetching additional tracks failed")
+    try:
+        async with session.get(url, headers=headers, params=params) as response:
+            if not response.ok:
+                logger.debug(response)
+                raise ConnectionError("fetching additional tracks failed")
 
-        return playlist_id, limit, offset, await response.json()
+            return playlist_id, limit, offset, await response.json()
+
+    except ConnectionResetError as e:
+        logger.debug(e)
+        raise ConnectionError("fetching additional tracks failed") from e
 
 
 async def fetch_additional_playlists_worker(
@@ -126,7 +131,7 @@ async def fetch_spotify_search_results_worker(session, access_token, query):
                 logger.debug(response)
                 return query, None
 
-            return query, await response.json()["tracks"]["items"]
+            return query, (await response.json())["tracks"]["items"]
 
     except KeyError as e:
         logger.error(f"KeyError in fetch_spotify_search_results_worker: {e}")
