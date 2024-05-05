@@ -30,9 +30,7 @@ def calculate_similarity_metric(similarity_matrix: dict):
 
 def get_string_similarity(string_1: str, string_2: str) -> float:
     result = SequenceMatcher(None, string_1.lower(), string_2.lower()).ratio()
-    logger.debug(
-        f" - get_string_similarity: {result:3} for '{string_1}' vs '{string_2}'"
-    )
+    logger.debug(f"get_string_similarity: {result:3} for '{string_1}' vs '{string_2}'")
     return result
 
 
