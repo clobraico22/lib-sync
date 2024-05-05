@@ -372,7 +372,7 @@ def get_spotify_song_details(spotify_uris: list[str]) -> dict[str, dict[str, obj
     return asyncio.run(fetch_spotify_song_details_controller(spotify_uris))
 
 
-def get_spotify_search_results(queries):
+def get_spotify_search_results(queries: list[str]):
     logger.debug(f"running get_spotify_search_results with queries: {queries}")
     return asyncio.run(fetch_spotify_search_results_controller(queries))
 
