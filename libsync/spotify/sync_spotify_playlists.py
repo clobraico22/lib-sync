@@ -178,6 +178,14 @@ def print_rekordbox_diff_report(
         )
     )
 
+    # TODO: there's an issue with the workflow of adding songs to spotify, and then adding them to
+    # rekordbox. auto match may pick a different song than the one you added to spotify, leading to
+    # a diff that never goes away, plus two versions of the same song in all of the spotify
+    # playlists. need to fix
+    # TODO: there's also an issue with the workflow of deleting a song from a rekordbox playlist
+    # after it's been synced to spotify. libsync doesn't know it was deleted manually, so it will
+    # report that the song is missing from the rekordbox playlist. need to keep track of rekordbox
+    # collection history to track deletions
     spotify_to_rekordbox_map = {
         sp_uri: rb_track_id for rb_track_id, sp_uri in rekordbox_to_spotify_map.items()
     }
@@ -197,29 +205,59 @@ def print_rekordbox_diff_report(
         if sp_uri not in spotify_to_rekordbox_map
     }
     string_utils.print_libsync_status_success("Done", level=1)
-
-    string_utils.print_libsync_status(
-        "Add these songs to your Rekordbox collection:", level=1
-    )
-    for sp_uri in new_songs_to_download:
-        print(
-            f"    {sp_uri} "
-            + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
-        )
+    if len(new_songs_to_download) < 1:
+        string_utils.print_libsync_status("No new songs to download", level=1)
+    else:
+        string_utils.print_libsync_status("Download these songs:", level=1)
+        for sp_uri in new_songs_to_download:
+            print(
+                f"    {sp_uri} "
+                + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
+            )
 
     string_utils.print_libsync_status(
         "Add these songs to your Rekordbox playlists:", level=1
     )
+    songs_to_playlists_diff_map_new_tracks = (
+        {
+            sp_uri: rb_playlists
+            for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
+            if sp_uri in new_songs_to_download
+        },
+    )
+    songs_to_playlists_diff_map_old_tracks = (
+        {
+            sp_uri: rb_playlists
+            for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
+            if sp_uri not in new_songs_to_download
+        },
+    )
 
-    # report ordered by track
-    for sp_uri, rb_playlists in songs_to_playlists_diff_map.items():
-        print(
-            f"    {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
+    if len(songs_to_playlists_diff_map_new_tracks) >= 1:
+        print("    New tracks")
+        print_rekordbox_diff_report_by_track(
+            songs_to_playlists_diff_map_new_tracks,
+            spotify_song_details,
         )
-        for rb_playlist_name in rb_playlists:
-            print(f"      {rb_playlist_name}")
+    if len(songs_to_playlists_diff_map_old_tracks) >= 1:
+        print("\n    Tracks already in your collection")
+        print_rekordbox_diff_report_by_track(
+            songs_to_playlists_diff_map_old_tracks,
+            spotify_song_details,
+        )
 
     string_utils.print_libsync_status_success("Done", level=1)
+
+
+def print_rekordbox_diff_report_by_track(
+    songs_to_playlists_diff_map, spotify_song_details
+):
+    for sp_uri, rb_playlists in songs_to_playlists_diff_map.items():
+        print(
+            f"      {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
+        )
+        for rb_playlist_name in rb_playlists:
+            print(f"        {rb_playlist_name}")
 
 
 def get_filtered_spotify_uris_from_rekordbox_playlist(
