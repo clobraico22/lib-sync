@@ -218,20 +218,17 @@ def print_rekordbox_diff_report(
     string_utils.print_libsync_status(
         "Add these songs to your Rekordbox playlists:", level=1
     )
-    songs_to_playlists_diff_map_new_tracks = (
-        {
-            sp_uri: rb_playlists
-            for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
-            if sp_uri in new_songs_to_download
-        },
-    )
-    songs_to_playlists_diff_map_old_tracks = (
-        {
-            sp_uri: rb_playlists
-            for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
-            if sp_uri not in new_songs_to_download
-        },
-    )
+    songs_to_playlists_diff_map_new_tracks = {
+        sp_uri: rb_playlists
+        for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
+        if sp_uri in new_songs_to_download
+    }
+
+    songs_to_playlists_diff_map_old_tracks = {
+        sp_uri: rb_playlists
+        for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
+        if sp_uri not in new_songs_to_download
+    }
 
     if len(songs_to_playlists_diff_map_new_tracks) >= 1:
         print("    New tracks")
