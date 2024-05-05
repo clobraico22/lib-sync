@@ -14,11 +14,8 @@ from utils.rekordbox_library import (
 logger = logging.getLogger("libsync")
 
 
-def should_keep_track_in_collection(track):
-    if track.get("Kind") == "Unknown Format":
-        return False
-
-    return True
+# TODO: investigate if we can read/modify the rekordbox library directly
+# see https://github.com/erikrichardlarson/unbox
 
 
 def get_rekordbox_library(
@@ -136,3 +133,10 @@ def get_tree_from_xml(xml_path: str):
             f"the file at '{xml_path}' is the wrong format. try exporting again"
         )
         exit(1)
+
+
+def should_keep_track_in_collection(track):
+    if track.get("Kind") == "Unknown Format":
+        return False
+
+    return True
