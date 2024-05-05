@@ -2,6 +2,7 @@ import csv
 import logging
 import pickle
 
+import spotipy.exceptions
 from db import db_utils, db_write_operations
 from utils import string_utils
 from utils.constants import SpotifyMappingDbFlags
@@ -126,18 +127,38 @@ def get_cached_sync_data(
                     line[4],
                     line[5],
                 )
-                if spotify_url == SpotifyMappingDbFlags.NOT_ON_SPOTIFY:
-                    spotify_uri = SpotifyMappingDbFlags.NOT_ON_SPOTIFY
-                elif spotify_url != "":
-                    logger.debug(
-                        "found a spotify URL manually input into the CSV by the user, "
-                        + "trying to parse now"
-                    )
-                    # TODO: save debug level logs to file
-                    # TODO: check for valid spotify url, or catch exception from underlying library
-                    spotify_uri = get_spotify_uri_from_url(spotify_url)
+                # spotify_uri can be:
+                #   a valid spotify URI
+                #   SpotifyMappingDbFlags.NOT_ON_SPOTIFY
+                #   SpotifyMappingDbFlags.SKIP_TRACK
+                if not (
+                    string_utils.is_spotify_uri(spotify_uri)
+                    or spotify_uri == SpotifyMappingDbFlags.NOT_ON_SPOTIFY
+                    or spotify_uri == SpotifyMappingDbFlags.SKIP_TRACK
+                ):
+                    raise ValueError(f"invalid spotify URI in csv: '{spotify_uri}'")
+
+                # spotify_url can be:
+                #   empty
+                #   a valid spotify URL
+                if spotify_url != "":
+                    try:
+                        logger.debug(
+                            "found a spotify URL manually input into the CSV by the user:"
+                            + f" '{spotify_uri}', trying to parse now"
+                        )
+
+                        spotify_uri = rekordbox_to_spotify_map[rb_track_id] = (
+                            get_spotify_uri_from_url(spotify_url)
+                        )
+
+                    except spotipy.exceptions.SpotifyException as error:
+                        raise ValueError(
+                            f"invalid spotify URL in csv: '{spotify_url}'"
+                        ) from error
 
                 rekordbox_to_spotify_map[rb_track_id] = spotify_uri
+
                 if flag_for_rematch != "":
                     rb_track_ids_flagged_for_rematch.add(rb_track_id)
 
