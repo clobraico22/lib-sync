@@ -65,7 +65,7 @@ def save_song_mappings_csv(
                 "Rekordbox id",
                 "Artist",
                 "Song title",
-                "Spotify URI (don't touch)",
+                "Spotify URI",
                 "Spotify URL (input)",
                 "Retry auto match (input)",
             ]
