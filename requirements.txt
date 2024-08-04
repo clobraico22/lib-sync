@@ -4,3 +4,4 @@ ShazamAPI==0.0.2
 yt-dlp==2023.11.16
 aiohttp==3.9.3
 colorama==0.4.6
+tqdm==4.62.3

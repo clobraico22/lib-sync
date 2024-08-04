@@ -129,3 +129,4 @@ you don't have to worry
 - multithread shazam process
 - connect id tool to spotify mapper and playlist creator
 - get markdown autoformatter
+- fix structure/imports with https://github.com/jgehrcke/python-cmdline-bootstrap
