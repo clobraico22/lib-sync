@@ -89,100 +89,100 @@ def get_spotify_matches(
     if len(rb_track_ids_to_match) <= 0:
         string_utils.print_libsync_status("No new Rekordbox tracks to match", level=1)
         return rekordbox_to_spotify_map
-    else:
+
+    string_utils.print_libsync_status(
+        f"Searching Spotify for matches for {len(rb_track_ids_to_match)} new Rekordbox tracks",
+        level=1,
+    )
+
+    list_of_search_queries = {
+        query
+        for rb_track_id in rb_track_ids_to_match
+        for query in get_spotify_queries_from_rb_track(
+            rekordbox_library.collection[rb_track_id]
+        )
+        if query not in spotify_search_results
+    }
+    logger.debug(f"len(list_of_search_queries): {len(list_of_search_queries)}")
+    logger.debug(
+        f"len(set(list_of_search_queries)): {len(set(list_of_search_queries))}"
+    )
+    new_results_to_add = spotify_api_utils.get_spotify_search_results(
+        list(list_of_search_queries)
+    )
+    logger.debug(f"len(new_results_to_add): {len(new_results_to_add)}")
+
+    spotify_search_results.update(
+        {
+            query: results
+            for query, results in new_results_to_add.items()
+            if results is not None
+        }
+    )
+    missing_search_results = {
+        query for query, results in new_results_to_add.items() if results is None
+    }
+    logger.debug(f"len(spotify_search_results): {len(spotify_search_results)}")
+    logger.debug(f"len(missing_search_results): {len(missing_search_results)}")
+
+    # cache spotify search results
+    db_write_operations.save_cached_spotify_search_results(
+        spotify_search_results, rekordbox_library.xml_path
+    )
+
+    if len(missing_search_results) >= 1:
+        string_utils.print_libsync_status_error(
+            "some search results failed to load due to a connection issue. try again"
+        )
+        exit(1)
+
+    rekordbox_to_spotify_map = pick_best_spotify_matches_automatically(
+        rb_track_ids_to_match,
+        rekordbox_library,
+        spotify_search_results,
+        rekordbox_to_spotify_map,
+    )
+
+    # cache rekordbox -> spotify mappings
+    db_write_operations.save_song_mappings_csv(
+        rekordbox_library,
+        rb_track_ids_flagged_for_rematch,
+        rekordbox_to_spotify_map,
+    )
+
+    rb_track_ids_to_match = [
+        t for t in rb_track_ids_to_match if t not in rekordbox_to_spotify_map
+    ]
+
+    if not interactive_mode:
         string_utils.print_libsync_status(
-            f"Searching Spotify for matches for {len(rb_track_ids_to_match)} new Rekordbox tracks",
+            f"Skipping interactive matching for f{len(rb_track_ids_to_match)} tracks",
             level=1,
         )
 
-        list_of_search_queries = {
-            query
-            for rb_track_id in rb_track_ids_to_match
-            for query in get_spotify_queries_from_rb_track(
-                rekordbox_library.collection[rb_track_id]
-            )
-            if query not in spotify_search_results
-        }
-        logger.debug(f"len(list_of_search_queries): {len(list_of_search_queries)}")
-        logger.debug(
-            f"len(set(list_of_search_queries)): {len(set(list_of_search_queries))}"
-        )
-        new_results_to_add = spotify_api_utils.get_spotify_search_results(
-            list(list_of_search_queries)
-        )
-        logger.debug(f"len(new_results_to_add): {len(new_results_to_add)}")
-
-        spotify_search_results.update(
-            {
-                query: results
-                for query, results in new_results_to_add.items()
-                if results is not None
-            }
-        )
-        missing_search_results = {
-            query for query, results in new_results_to_add.items() if results is None
-        }
-        logger.debug(f"len(spotify_search_results): {len(spotify_search_results)}")
-        logger.debug(f"len(missing_search_results): {len(missing_search_results)}")
-
-        # cache spotify search results
-        db_write_operations.save_cached_spotify_search_results(
-            spotify_search_results, rekordbox_library.xml_path
+    elif len(rb_track_ids_to_match) == 0:
+        string_utils.print_libsync_status(
+            "No tracks left to match interactively", level=1
         )
 
-        if len(missing_search_results) >= 1:
-            string_utils.print_libsync_status_error(
-                "some search results failed to load due to a connection issue. try again"
-            )
-            exit(1)
-
-        rekordbox_to_spotify_map = pick_best_spotify_matches_automatically(
+    else:
+        rekordbox_to_spotify_map = pick_best_spotify_matches_interactively(
             rb_track_ids_to_match,
             rekordbox_library,
             spotify_search_results,
             rekordbox_to_spotify_map,
         )
 
-        # cache rekordbox -> spotify mappings
-        db_write_operations.save_song_mappings_csv(
-            rekordbox_library,
-            rb_track_ids_flagged_for_rematch,
-            rekordbox_to_spotify_map,
-        )
+    # cache rekordbox -> spotify mappings
+    db_write_operations.save_song_mappings_csv(
+        rekordbox_library,
+        rb_track_ids_flagged_for_rematch,
+        rekordbox_to_spotify_map,
+    )
 
-        rb_track_ids_to_match = [
-            t for t in rb_track_ids_to_match if t not in rekordbox_to_spotify_map
-        ]
+    string_utils.print_libsync_status_success("Done", level=1)
 
-        if not interactive_mode:
-            string_utils.print_libsync_status(
-                f"Skipping interactive matching for f{len(rb_track_ids_to_match)} tracks",
-                level=1,
-            )
-
-        elif len(rb_track_ids_to_match) == 0:
-            string_utils.print_libsync_status(
-                "No tracks left to match interactively", level=1
-            )
-
-        else:
-            rekordbox_to_spotify_map = pick_best_spotify_matches_interactively(
-                rb_track_ids_to_match,
-                rekordbox_library,
-                spotify_search_results,
-                rekordbox_to_spotify_map,
-            )
-
-        # cache rekordbox -> spotify mappings
-        db_write_operations.save_song_mappings_csv(
-            rekordbox_library,
-            rb_track_ids_flagged_for_rematch,
-            rekordbox_to_spotify_map,
-        )
-
-        string_utils.print_libsync_status_success("Done", level=1)
-
-        return rekordbox_to_spotify_map
+    return rekordbox_to_spotify_map
 
 
 def pick_best_spotify_matches_automatically(

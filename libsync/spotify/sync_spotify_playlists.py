@@ -192,12 +192,16 @@ def print_rekordbox_diff_report(
     logger.debug(f"spotify_to_rekordbox_map: {spotify_to_rekordbox_map}")
 
     songs_to_playlists_diff_map = {}
+    playlists_to_songs_diff_map = {}
     for rb_playlist_name, sp_track_uris_to_add in new_spotify_additions.items():
         for sp_uri in sp_track_uris_to_add:
             if sp_uri not in songs_to_playlists_diff_map:
                 songs_to_playlists_diff_map[sp_uri] = []
+            if rb_playlist_name not in playlists_to_songs_diff_map:
+                playlists_to_songs_diff_map[rb_playlist_name] = []
 
             songs_to_playlists_diff_map[sp_uri].append(rb_playlist_name)
+            playlists_to_songs_diff_map[rb_playlist_name].append(sp_uri)
 
     new_songs_to_download = {
         sp_uri
@@ -208,8 +212,10 @@ def print_rekordbox_diff_report(
     if len(new_songs_to_download) < 1:
         string_utils.print_libsync_status("No new songs to download", level=1)
     else:
-        string_utils.print_libsync_status("Download these songs:", level=1)
-        for sp_uri in new_songs_to_download:
+        string_utils.print_libsync_status(
+            f"Download these songs ({len(new_songs_to_download)}):", level=1
+        )
+        for sp_uri in sorted(new_songs_to_download):
             print(
                 f"    {sp_uri} "
                 + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
@@ -218,12 +224,12 @@ def print_rekordbox_diff_report(
     string_utils.print_libsync_status(
         "Add these songs to your Rekordbox playlists:", level=1
     )
+
     songs_to_playlists_diff_map_new_tracks = {
         sp_uri: rb_playlists
         for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
         if sp_uri in new_songs_to_download
     }
-
     songs_to_playlists_diff_map_old_tracks = {
         sp_uri: rb_playlists
         for sp_uri, rb_playlists in songs_to_playlists_diff_map.items()
@@ -243,18 +249,39 @@ def print_rekordbox_diff_report(
             spotify_song_details,
         )
 
+    print("\n    Sorted by playlist")
+    print_rekordbox_diff_report_by_playlist(
+        playlists_to_songs_diff_map,
+        spotify_song_details,
+    )
+
     string_utils.print_libsync_status_success("Done", level=1)
 
 
 def print_rekordbox_diff_report_by_track(
     songs_to_playlists_diff_map, spotify_song_details
 ):
-    for sp_uri, rb_playlists in songs_to_playlists_diff_map.items():
+    for sp_uri, rb_playlists in sorted(
+        songs_to_playlists_diff_map.items(), key=lambda x: x[0]
+    ):
         print(
             f"      {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
         )
-        for rb_playlist_name in rb_playlists:
+        for rb_playlist_name in sorted(rb_playlists):
             print(f"        {rb_playlist_name}")
+
+
+def print_rekordbox_diff_report_by_playlist(
+    playlists_to_songs_diff_map, spotify_song_details
+):
+    for rb_playlist_name, sp_uris in sorted(
+        playlists_to_songs_diff_map.items(), key=lambda x: x[0]
+    ):
+        print(f"      {rb_playlist_name}")
+        for sp_uri in sorted(sp_uris):
+            print(
+                f"        {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
+            )
 
 
 def get_filtered_spotify_uris_from_rekordbox_playlist(

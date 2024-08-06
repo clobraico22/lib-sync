@@ -33,7 +33,7 @@ pip install -r requirements.txt  # install dependencies
 python libsync/libsync.py sync -h   # display help page
 
 python libsync/libsync.py sync \
---rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
+--rekordbox_xml_path ${HOME}/Documents/rekordbox/rekordbox_export.xml \
 --create_collection_playlist
 ```
 
@@ -94,7 +94,7 @@ python libsync/libsync.py \
 --verbose \
 --verbose \
 sync \
---rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
+--rekordbox_xml_path ${HOME}/Documents/rekordbox/rekordbox_export.xml \
 --create_collection_playlist
 ```
 
@@ -105,7 +105,7 @@ python libsync/libsync.py analyze \
 --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
 
 python libsync/libsync.py analyze \
---rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml
+--rekordbox_xml_path ${HOME}/Documents/rekordbox/rekordbox_export.xml
 ```
 
 to run id command:
@@ -126,6 +126,9 @@ you don't have to worry
 
 # TODO
 
+- support deleting tracks from rekordbox
+- match new rekordbox IDs against pending new spotify URIs before hitting the search algo
 - multithread shazam process
 - connect id tool to spotify mapper and playlist creator
 - get markdown autoformatter
+- fix structure/imports with https://github.com/jgehrcke/python-cmdline-bootstrap

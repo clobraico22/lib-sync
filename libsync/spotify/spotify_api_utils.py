@@ -6,6 +6,7 @@ import aiohttp
 import requests
 from db import db_utils
 from spotipy.oauth2 import SpotifyOAuth
+from tqdm import tqdm
 from utils import constants, string_utils
 
 logger = logging.getLogger("libsync")
@@ -39,6 +40,7 @@ async def fetch_additional_tracks_worker(
         async with session.get(url, headers=headers, params=params) as response:
             if not response.ok:
                 logger.debug(response)
+                # TODO: swallow these errors with a custom error handler (set_exception_handler)
                 raise ConnectionError("fetching additional tracks failed")
 
             return playlist_id, limit, offset, await response.json()
@@ -118,8 +120,6 @@ async def fetch_spotify_song_details_worker(
         logger.debug(f"result: {result}")
         return [[track["uri"], track] for track in result["tracks"]]
 
-    return [1, 2, 3]
-
 
 async def fetch_spotify_search_results_worker(session, access_token, query):
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -154,11 +154,20 @@ async def fetch_playlist_details_controller(playlist_ids):
             fetch_playlist_details_worker(session, access_token, playlist_id)
             for playlist_id in playlist_ids
         ]
-        playlist_info_list = await asyncio.gather(*tasks)
+        playlist_info_list = []
+        for future in tqdm(
+            asyncio.as_completed(tasks),
+            total=len(tasks),
+            desc="Fetching Spotify playlists",
+        ):
+            playlist_info_list.append(await future)
+
         return {
             playlist_id: playlist_info
             for playlist_id, playlist_info in playlist_info_list
         }
+
+    return {}
 
 
 async def fetch_additional_tracks_controller(params_list: list[list[str, int, int]]):
@@ -176,7 +185,18 @@ async def fetch_additional_tracks_controller(params_list: list[list[str, int, in
             )
             for playlist_id, limit, offset in params_list
         ]
-        return await asyncio.gather(*tasks)
+
+        additional_track_details = []
+        for future in tqdm(
+            asyncio.as_completed(tasks),
+            total=len(tasks),
+            desc="Fetching more Spotify playlists",
+        ):
+            additional_track_details.append(await future)
+
+        return additional_track_details
+
+    return []
 
 
 async def fetch_additional_playlists_controller(params_list: list[list[str, int, int]]):
@@ -194,7 +214,18 @@ async def fetch_additional_playlists_controller(params_list: list[list[str, int,
             )
             for user_id, limit, offset in params_list
         ]
-        return await asyncio.gather(*tasks)
+
+        additional_playlists = []
+        for future in tqdm(
+            asyncio.as_completed(tasks),
+            total=len(tasks),
+            desc="Fetching more Spotify playlists",
+        ):
+            additional_playlists.append(await future)
+
+        return additional_playlists
+
+    return []
 
 
 async def overwrite_playlists_controller(params_list: list[list[str, list[str]]]):
@@ -214,21 +245,32 @@ async def overwrite_playlists_controller(params_list: list[list[str, list[str]]]
             )
             for playlist_id, track_uri_list in params_list
         ]
-        return await asyncio.gather(*tasks)
+
+        overwrite_playlists_results = []
+        for future in tqdm(
+            asyncio.as_completed(tasks),
+            total=len(tasks),
+            desc="Modifying playlists",
+        ):
+            overwrite_playlists_results.append(await future)
+
+        return overwrite_playlists_results
+
+    return []
 
 
 async def fetch_spotify_song_details_controller(
     spotify_uris: list[str],
 ) -> dict[str, dict[str, object]]:
-    # split the uris into batches of 100 - can run the batches in parallel
+    # split the uris into batches - can run the batches in parallel
     batches = [
-        spotify_uris[i : i + constants.SPOTIFY_API_ITEMS_PER_PAGE]
-        for i in range(0, len(spotify_uris), constants.SPOTIFY_API_ITEMS_PER_PAGE)
+        spotify_uris[i : i + constants.SPOTIFY_API_GET_TRACKS_ITEMS_PER_PAGE]
+        for i in range(
+            0, len(spotify_uris), constants.SPOTIFY_API_GET_TRACKS_ITEMS_PER_PAGE
+        )
     ]
     if len(batches) < 1:
         return {}
-
-    spotify_song_details = {}
 
     access_token = get_spotify_access_token(
         [
@@ -242,14 +284,18 @@ async def fetch_spotify_song_details_controller(
             fetch_spotify_song_details_worker(session, access_token, batch)
             for batch in batches
         ]
-        track_details_list = await asyncio.gather(*tasks)
+
+        track_details_list = []
+        for future in tqdm(
+            asyncio.as_completed(tasks), total=len(tasks), desc="Fetching song details"
+        ):
+            track_details_list.append(await future)
+
         return {
             track_uri: track
             for batch in track_details_list
             for track_uri, track in batch
         }
-
-    return spotify_song_details
 
 
 async def fetch_spotify_search_results_controller(queries):
@@ -265,12 +311,21 @@ async def fetch_spotify_search_results_controller(queries):
             fetch_spotify_search_results_worker(session, access_token, query)
             for query in queries
         ]
-        search_results_list = await asyncio.gather(*tasks)
+        search_results_list = []
+        for future in tqdm(
+            asyncio.as_completed(tasks),
+            total=len(tasks),
+            desc="Fetching search results",
+        ):
+            search_results_list.append(await future)
+
         return {
             query: results
             for query, results in search_results_list
             if results is not None
         }
+
+    return {}
 
 
 # driver
