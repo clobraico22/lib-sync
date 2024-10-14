@@ -138,7 +138,7 @@ async def fetch_spotify_song_details_worker(
 
         logger.debug(f"response: {response}")
         result = await response.json()
-        logger.debug(f"result: {result}")
+        # logger.debug(f"result: {result}")
         return [[track["uri"], track] for track in result["tracks"]]
 
 
@@ -162,7 +162,7 @@ async def fetch_spotify_search_results_worker(session, access_token, query):
 # controller
 
 
-async def fetch_playlist_details_controller(playlist_ids):
+async def fetch_playlist_details_controller(playlist_ids: Iterable[str]):
     access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
@@ -318,7 +318,7 @@ def get_user_playlists_details(playlists: Iterable[str]) -> dict[str, list[str]]
     """get user playlists to check against deleted playlists
 
     Args:
-        playlist_id_map (dict[str, str]): map from rekordbox playlist name to spotify playlist id
+        playlists (Iterable[str]): list of spotify playlist ids
 
     Returns:
         dict[str, list]: map from spotify playlist id to list of spotify track URIs

@@ -30,6 +30,26 @@ def save_cached_spotify_search_results(
         pickle.dump(spotify_search_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
+def save_pending_tracks_spotify_to_rekordbox(
+    rekordbox_xml_path: str,
+    new_songs_to_download: set[str],
+    spotify_song_details: dict[str, dict[str, object]],
+):
+    pending_tracks_spotify_to_rekordbox_db_path = (
+        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(
+            rekordbox_xml_path
+        )
+    )
+
+    logger.debug("save_cached_spotify_search_results")
+    pending_tracks = {
+        song_uri: spotify_song_details[song_uri] for song_uri in new_songs_to_download
+    }
+
+    with open(pending_tracks_spotify_to_rekordbox_db_path, "wb") as handle:
+        pickle.dump(pending_tracks, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def save_list_of_user_playlists(playlist_id_map: dict[str, str]) -> None:
     user_id = SpotifyAuthManager.get_user_id()
 

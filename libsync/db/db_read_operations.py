@@ -53,6 +53,44 @@ def get_cached_spotify_search_results(
     return {}
 
 
+def get_pending_tracks_spotify_to_rekordbox(
+    rekordbox_xml_path: str,
+) -> dict[str, str]:
+    """get pending tracks from spotify to rekordbox
+
+    Args:
+        rekordbox_xml_path (str): xml path used for this run -
+          this will be used to determine cache and csv paths
+
+    Returns:
+        dict[str, str]: spotify URI mapped to object - object is song details from spotify API
+    """
+
+    logger.debug("running get_pending_tracks_spotify_to_rekordbox")
+    pending_tracks_spotify_to_rekordbox_db_path = (
+        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(
+            rekordbox_xml_path
+        )
+    )
+    try:
+        with open(pending_tracks_spotify_to_rekordbox_db_path, "rb") as handle:
+            spotify_search_results = pickle.load(handle)
+            assert isinstance(spotify_search_results, dict)
+            return spotify_search_results
+
+    except FileNotFoundError as error:
+        logger.debug(error)
+        logger.info("no pending tracks found.")
+
+    except AssertionError as error:
+        logger.debug(error)
+        string_utils.print_libsync_status_error(
+            f"error parsing pending tracks at '{pending_tracks_spotify_to_rekordbox_db_path}'."
+        )
+
+    return {}
+
+
 def get_playlist_id_map(
     rekordbox_xml_path: str,
 ) -> dict[str, str]:

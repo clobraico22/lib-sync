@@ -11,8 +11,8 @@ if true; then
   --rekordbox_xml_path ${HOME}/Documents/rekordbox/rekordbox_export.xml \
   --create_collection_playlist \
   --interactive_mode \
-  --use_cached_spotify_playlist_data \
   --dry_run \
+  --use_cached_spotify_playlist_data \
   # --skip_spotify_playlist_sync \
 
 fi

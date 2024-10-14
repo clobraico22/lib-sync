@@ -198,19 +198,29 @@ def sync_spotify_playlists(
         f"time taken for save_list_of_user_playlists: {(time.time() - start_time):.3f} seconds"
     )
 
+    for playlist_id, playlist in libsync_owned_spotify_playlists.items():
+        print(f"Playlist: {playlist_id}")
+        if "spotify:track:45e8T07myBjutIx2xh8Kq5" in playlist:
+            print(f"Playlist containing track: {playlist_id}")
+
     spotify_playlist_write_jobs, new_spotify_additions = get_playlist_diffs(
         rekordbox_playlists,
         rekordbox_to_spotify_map,
         playlist_id_map,
         libsync_owned_spotify_playlists,
     )
-    logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
+    # logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
     logger.debug(f"new_spotify_additions: {new_spotify_additions}")
 
     # TODO: this isn't the best place to do the match fixing, but it might be the easiest and cleanest.
     # here we can iterate through the spotify_playlist_write_jobs to find the new tracks we're planning to add,
     # and then see if any of them should be matched with existing tracks from the new_spotify_additions.
     # need to do some digging here to find the best way to do this. might need to reorder some functions
+
+    # further review - still seems reasonable to do here
+    # start with von dutch
+
+    # for new songs, we should check if they're already in the user's library before matching against all of spotify
 
     if len(spotify_playlist_write_jobs) < 1:
         string_utils.print_libsync_status("No Spotify playlists to update", level=1)
@@ -223,8 +233,37 @@ def sync_spotify_playlists(
 
     if constants.IGNORE_SP_NEW_TRACKS or len(new_spotify_additions) < 1:
         string_utils.print_libsync_status("No Rekordbox playlists to update", level=1)
+        db_write_operations.save_pending_tracks_spotify_to_rekordbox(
+            rekordbox_xml_path, set(), {}
+        )
+
     else:
-        print_rekordbox_diff_report(new_spotify_additions, rekordbox_to_spotify_map)
+        spotify_song_details = spotify_api_utils.get_spotify_song_details(
+            list(
+                {
+                    sp_uri
+                    for tracklist in new_spotify_additions.values()
+                    for sp_uri in tracklist
+                }
+            )
+        )
+
+        (
+            new_songs_to_download,
+            songs_to_playlists_diff_map,
+            playlists_to_songs_diff_map,
+        ) = calculate_diff(new_spotify_additions, rekordbox_to_spotify_map)
+
+        db_write_operations.save_pending_tracks_spotify_to_rekordbox(
+            rekordbox_xml_path, new_songs_to_download, spotify_song_details
+        )
+
+        print_rekordbox_diff_report(
+            new_songs_to_download,
+            songs_to_playlists_diff_map,
+            playlists_to_songs_diff_map,
+            spotify_song_details,
+        )
 
     # save playlists to db of playlists libsync owns for the current spotify user id
     db_write_operations.save_list_of_user_playlists(playlist_id_map)
@@ -232,35 +271,14 @@ def sync_spotify_playlists(
     return playlist_id_map
 
 
-def print_rekordbox_diff_report(
+def calculate_diff(
     new_spotify_additions: dict[str, list[str]],
     rekordbox_to_spotify_map: dict[str, str],
 ):
-    string_utils.print_libsync_status(
-        "Calculating songs to add to Rekordbox playlists", level=1
-    )
-    spotify_song_details = spotify_api_utils.get_spotify_song_details(
-        list(
-            {
-                sp_uri
-                for tracklist in new_spotify_additions.values()
-                for sp_uri in tracklist
-            }
-        )
-    )
-
-    # TODO: there's an issue with the workflow of adding songs to spotify, and then adding them to
-    # rekordbox. auto match may pick a different song than the one you added to spotify, leading to
-    # a diff that never goes away, plus two versions of the same song in all of the spotify
-    # playlists. need to fix
-    # TODO: there's also an issue with the workflow of deleting a song from a rekordbox playlist
-    # after it's been synced to spotify. libsync doesn't know it was deleted manually, so it will
-    # report that the song is missing from the rekordbox playlist. need to keep track of rekordbox
-    # collection history to track deletions
     spotify_to_rekordbox_map = {
         sp_uri: rb_track_id for rb_track_id, sp_uri in rekordbox_to_spotify_map.items()
     }
-    logger.debug(f"spotify_to_rekordbox_map: {spotify_to_rekordbox_map}")
+    # logger.debug(f"spotify_to_rekordbox_map: {spotify_to_rekordbox_map}")
 
     songs_to_playlists_diff_map = {}
     playlists_to_songs_diff_map = {}
@@ -279,6 +297,33 @@ def print_rekordbox_diff_report(
         for sp_uri in songs_to_playlists_diff_map
         if sp_uri not in spotify_to_rekordbox_map
     }
+
+    return (
+        new_songs_to_download,
+        songs_to_playlists_diff_map,
+        playlists_to_songs_diff_map,
+    )
+
+
+def print_rekordbox_diff_report(
+    new_songs_to_download: set[str],
+    songs_to_playlists_diff_map: dict[str, list[str]],
+    playlists_to_songs_diff_map: dict[str, list[str]],
+    spotify_song_details: dict[str, dict[str, object]],
+):
+    string_utils.print_libsync_status(
+        "Calculating songs to add to Rekordbox playlists", level=1
+    )
+
+    # TODO: there's an issue with the workflow of adding songs to spotify, and then adding them to
+    # rekordbox. auto match may pick a different song than the one you added to spotify, leading to
+    # a diff that never goes away, plus two versions of the same song in all of the spotify
+    # playlists. need to fix
+    # TODO: there's also an issue with the workflow of deleting a song from a rekordbox playlist
+    # after it's been synced to spotify. libsync doesn't know it was deleted manually, so it will
+    # report that the song is missing from the rekordbox playlist. need to keep track of rekordbox
+    # collection history to track deletions
+
     string_utils.print_libsync_status_success("Done", level=1)
     if len(new_songs_to_download) < 1:
         string_utils.print_libsync_status("No new songs to download", level=1)
@@ -295,7 +340,6 @@ def print_rekordbox_diff_report(
     string_utils.print_libsync_status(
         "Add these songs to your Rekordbox playlists:", level=1
     )
-    # TODO: sort all output alphabetically
 
     songs_to_playlists_diff_map_new_tracks = {
         sp_uri: rb_playlists
@@ -405,7 +449,7 @@ def get_playlist_diffs(
             string_utils.get_spotify_uri_from_id(spotify_track_id)
             for spotify_track_id in libsync_owned_spotify_playlists[spotify_playlist_id]
         ]
-        logger.debug(f"spotify uris from spotify playlist: {sp_uris_from_sp}")
+        # logger.debug(f"spotify uris from spotify playlist: {sp_uris_from_sp}")
         sp_new_tracks = [
             uri for uri in sp_uris_from_sp if uri not in set(sp_uris_from_rb)
         ]
