@@ -8,18 +8,18 @@ import urllib.parse
 from typing import Iterable, Optional
 
 import spotipy.exceptions
-from db import db_read_operations, db_write_operations
-from spotify import spotify_api_utils
-from utils import string_utils
-from utils.constants import (
+from libsync.db import db_read_operations, db_write_operations
+from libsync.spotify import spotify_api_utils
+from libsync.utils import string_utils
+from libsync.utils.constants import (
     MINIMUM_SIMILARITY_THRESHOLD,
     USE_RB_TO_SPOTIFY_MATCHES_CACHE,
     InteractiveWorkflowCommands,
     SpotifyMappingDbFlags,
 )
-from utils.rekordbox_library import RekordboxLibrary, RekordboxTrack
-from utils.similarity_utils import calculate_similarities
-from utils.string_utils import (
+from libsync.utils.rekordbox_library import RekordboxLibrary, RekordboxTrack
+from libsync.utils.similarity_utils import calculate_similarities
+from libsync.utils.string_utils import (
     get_artists_from_rb_track,
     get_name_varieties_from_track_name,
     get_spotify_uri_from_url,

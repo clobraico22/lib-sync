@@ -4,19 +4,20 @@ source .venv/bin/activate
 
 # testing interactive mode
 if true; then
-  python libsync/libsync.py \
+  python -m libsync \
   --verbose \
   --verbose \
   sync \
-  --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
+  --rekordbox_xml_path ${HOME}/Documents/rekordbox/rekordbox_export.xml \
   --create_collection_playlist \
   --interactive_mode \
+  # --skip_spotify_playlist_sync \
 
 fi
 
-# non prod data
+# non prod data (KEEP skip_spotify_playlist_sync FLAG!)
 if false; then
-  python libsync/libsync.py \
+  python -m libsync \
   --verbose \
   --verbose \
   sync \
@@ -28,11 +29,11 @@ fi
 
 # all flags
 if false; then
-  python libsync/libsync.py \
+  python -m libsync \
   --verbose \
   --verbose \
   sync \
-  --rekordbox_xml_path ${HOME}/Documents/rekordbox_export.xml \
+  --rekordbox_xml_path ${HOME}/Documents/rekordbox/rekordbox_export.xml \
   --interactive_mode \
   --create_collection_playlist \
   --skip_spotify_playlist_sync \

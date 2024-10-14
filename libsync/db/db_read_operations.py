@@ -3,10 +3,11 @@ import logging
 import pickle
 
 import spotipy.exceptions
-from db import db_utils, db_write_operations
-from utils import string_utils
-from utils.constants import SpotifyMappingDbFlags
-from utils.string_utils import get_spotify_uri_from_url
+
+from libsync.db import db_utils, db_write_operations
+from libsync.utils import string_utils
+from libsync.utils.constants import SpotifyMappingDbFlags
+from libsync.utils.string_utils import get_spotify_uri_from_url
 
 logger = logging.getLogger("libsync")
 

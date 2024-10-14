@@ -3,8 +3,8 @@
 import logging
 import xml.etree.ElementTree as ET
 
-from utils import string_utils
-from utils.rekordbox_library import (
+from libsync.utils import string_utils
+from libsync.utils.rekordbox_library import (
     RekordboxLibrary,
     RekordboxNodeType,
     RekordboxPlaylist,

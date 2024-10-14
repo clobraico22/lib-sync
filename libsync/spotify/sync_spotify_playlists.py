@@ -5,11 +5,12 @@ import pprint
 import time
 
 import spotipy
-from db import db_read_operations, db_write_operations
-from spotify import spotify_api_utils
 from spotipy.oauth2 import SpotifyOAuth
-from utils import constants, string_utils
-from utils.rekordbox_library import RekordboxPlaylist
+
+from libsync.db import db_read_operations, db_write_operations
+from libsync.spotify import spotify_api_utils
+from libsync.utils import constants, string_utils
+from libsync.utils.rekordbox_library import RekordboxPlaylist
 
 logger = logging.getLogger("libsync")
 
@@ -143,6 +144,11 @@ def sync_spotify_playlists(
     logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
     logger.debug(f"new_spotify_additions: {new_spotify_additions}")
 
+    # TODO: this isn't the best place to do the match fixing, but it might be the easiest and cleanest.
+    # here we can iterate through the spotify_playlist_write_jobs to find the new tracks we're planning to add,
+    # and then see if any of them should be matched with existing tracks from the new_spotify_additions.
+    # need to do some digging here to find the best way to do this. might need to reorder some functions
+
     if len(spotify_playlist_write_jobs) < 1:
         string_utils.print_libsync_status("No Spotify playlists to update", level=1)
     else:
@@ -224,6 +230,7 @@ def print_rekordbox_diff_report(
     string_utils.print_libsync_status(
         "Add these songs to your Rekordbox playlists:", level=1
     )
+    # TODO: sort all output alphabetically
 
     songs_to_playlists_diff_map_new_tracks = {
         sp_uri: rb_playlists

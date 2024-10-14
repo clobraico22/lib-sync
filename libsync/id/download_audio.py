@@ -3,7 +3,8 @@
 import logging
 
 import yt_dlp
-from id.youtube_dl_utils import YDL_OPTIONS
+
+from libsync.id.youtube_dl_utils import YDL_OPTIONS
 
 logger = logging.getLogger("libsync")
 

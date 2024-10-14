@@ -3,11 +3,12 @@
 import logging
 
 import requests
-from analyze.get_rekordbox_library import get_rekordbox_library
-from db import db_read_operations
-from spotify.get_spotify_matches import get_spotify_matches
-from spotify.sync_spotify_playlists import sync_spotify_playlists
-from utils import string_utils
+
+from libsync.analyze.get_rekordbox_library import get_rekordbox_library
+from libsync.db import db_read_operations
+from libsync.spotify.get_spotify_matches import get_spotify_matches
+from libsync.spotify.sync_spotify_playlists import sync_spotify_playlists
+from libsync.utils import string_utils
 
 logger = logging.getLogger("libsync")
 

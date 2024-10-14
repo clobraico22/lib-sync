@@ -2,8 +2,8 @@ import csv
 import logging
 import pickle
 
-from db import db_read_operations, db_utils
-from utils.rekordbox_library import RekordboxLibrary
+from libsync.db import db_read_operations, db_utils
+from libsync.utils.rekordbox_library import RekordboxLibrary
 
 logger = logging.getLogger("libsync")
 

@@ -4,10 +4,11 @@ from typing import Iterable
 
 import aiohttp
 import requests
-from db import db_utils
 from spotipy.oauth2 import SpotifyOAuth
 from tqdm import tqdm
-from utils import constants, string_utils
+
+from libsync.db import db_utils
+from libsync.utils import constants, string_utils
 
 logger = logging.getLogger("libsync")
 

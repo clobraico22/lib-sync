@@ -2,8 +2,10 @@
 
 import logging
 
-from analyze.generate_rekordbox_library_report import generate_rekordbox_library_report
-from analyze.get_rekordbox_library import get_rekordbox_library
+from libsync.analyze.generate_rekordbox_library_report import (
+    generate_rekordbox_library_report,
+)
+from libsync.analyze.get_rekordbox_library import get_rekordbox_library
 
 logger = logging.getLogger("libsync")
 
