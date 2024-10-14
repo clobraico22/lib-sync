@@ -4,10 +4,9 @@ from typing import Iterable
 
 import aiohttp
 import requests
-from spotipy.oauth2 import SpotifyOAuth
 from tqdm import tqdm
 
-from libsync.db import db_utils
+from libsync.spotify.spotify_auth import SpotifyAuthManager
 from libsync.utils import constants, string_utils
 
 logger = logging.getLogger("libsync")
@@ -32,23 +31,44 @@ async def fetch_playlist_details_worker(session, access_token, playlist_id):
 
 
 async def fetch_additional_tracks_worker(
-    session, access_token, playlist_id, limit, offset
+    session: aiohttp.ClientSession, access_token, playlist_id, limit, offset
 ):
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks?limit={limit}&offset={offset}"
     params = {"fields": "total,items(track.id,track.name),limit"}
-    try:
-        async with session.get(url, headers=headers, params=params) as response:
-            if not response.ok:
-                logger.debug(response)
-                # TODO: swallow these errors with a custom error handler (set_exception_handler)
-                raise ConnectionError("fetching additional tracks failed")
 
-            return playlist_id, limit, offset, await response.json()
+    for attempt in range(constants.MAX_RETRIES):
+        try:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 429:
+                    retry_after = int(response.headers.get("Retry-After", "5"))
+                    logger.warning(
+                        f"Rate limited. Retrying after {retry_after} seconds. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
+                    )
+                    await asyncio.sleep(retry_after)
+                    continue
 
-    except ConnectionResetError as e:
-        logger.debug(e)
-        raise ConnectionError("fetching additional tracks failed") from e
+                if not response.ok:
+                    logger.debug(
+                        f"Response not OK: {response.status} - {await response.text()}"
+                    )
+                    response.raise_for_status()
+
+                return playlist_id, limit, offset, await response.json()
+
+        except aiohttp.ClientError as e:
+            logger.error(
+                f"Error fetching additional tracks: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
+            )
+            if attempt == constants.MAX_RETRIES - 1:
+                raise ConnectionError(
+                    f"Failed to fetch additional tracks after {constants.MAX_RETRIES} attempts"
+                ) from e
+            await asyncio.sleep(2**attempt)  # Exponential backoff
+
+    raise ConnectionError(
+        f"Failed to fetch additional tracks after {constants.MAX_RETRIES} attempts"
+    )
 
 
 async def fetch_additional_playlists_worker(
@@ -143,13 +163,7 @@ async def fetch_spotify_search_results_worker(session, access_token, query):
 
 
 async def fetch_playlist_details_controller(playlist_ids):
-    access_token = get_spotify_access_token(
-        [
-            "user-library-read",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-        ]
-    )
+    access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
             fetch_playlist_details_worker(session, access_token, playlist_id)
@@ -172,13 +186,7 @@ async def fetch_playlist_details_controller(playlist_ids):
 
 
 async def fetch_additional_tracks_controller(params_list: list[list[str, int, int]]):
-    access_token = get_spotify_access_token(
-        [
-            "user-library-read",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-        ]
-    )
+    access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
             fetch_additional_tracks_worker(
@@ -201,13 +209,7 @@ async def fetch_additional_tracks_controller(params_list: list[list[str, int, in
 
 
 async def fetch_additional_playlists_controller(params_list: list[list[str, int, int]]):
-    access_token = get_spotify_access_token(
-        [
-            "user-library-read",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-        ]
-    )
+    access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
             fetch_additional_playlists_worker(
@@ -230,15 +232,7 @@ async def fetch_additional_playlists_controller(params_list: list[list[str, int,
 
 
 async def overwrite_playlists_controller(params_list: list[list[str, list[str]]]):
-    access_token = get_spotify_access_token(
-        [
-            "user-library-read",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-            "playlist-modify-private",
-            "playlist-modify-public",
-        ]
-    )
+    access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
             overwrite_playlists_worker(
@@ -273,13 +267,7 @@ async def fetch_spotify_song_details_controller(
     if len(batches) < 1:
         return {}
 
-    access_token = get_spotify_access_token(
-        [
-            "user-library-read",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-        ]
-    )
+    access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
             fetch_spotify_song_details_worker(session, access_token, batch)
@@ -300,13 +288,7 @@ async def fetch_spotify_song_details_controller(
 
 
 async def fetch_spotify_search_results_controller(queries):
-    access_token = get_spotify_access_token(
-        [
-            "user-library-read",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-        ]
-    )
+    access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
             fetch_spotify_search_results_worker(session, access_token, query)
@@ -332,7 +314,7 @@ async def fetch_spotify_search_results_controller(queries):
 # driver
 
 
-def get_user_playlists_details(playlists: Iterable[str]) -> dict[str, list]:
+def get_user_playlists_details(playlists: Iterable[str]) -> dict[str, list[str]]:
     """get user playlists to check against deleted playlists
 
     Args:
@@ -373,16 +355,15 @@ def get_user_playlists_details(playlists: Iterable[str]) -> dict[str, list]:
     return user_spotify_playlists
 
 
-def get_all_user_playlists_set() -> set:
-    # get user playlists to check against deleted playlists
-    user_id = db_utils.get_spotify_user_id()
-    access_token = get_spotify_access_token(
-        [
-            "user-library-read",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-        ]
-    )
+def get_all_user_playlists_set() -> set[str]:
+    """get all user playlists to check against deleted playlists
+
+    Returns:
+        set[str]: set of spotify playlist ids
+    """
+    user_id = SpotifyAuthManager.get_user_id()
+
+    access_token = SpotifyAuthManager.get_access_token()
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/users/{user_id}/playlists"
     params = {"fields": "total,items(id,name),limit"}
@@ -431,11 +412,3 @@ def get_spotify_song_details(spotify_uris: list[str]) -> dict[str, dict[str, obj
 def get_spotify_search_results(queries: list[str]):
     logger.debug(f"running get_spotify_search_results with queries: {queries}")
     return asyncio.run(fetch_spotify_search_results_controller(queries))
-
-
-# misc
-
-
-def get_spotify_access_token(scope: list[str]) -> str:
-    auth_manager = SpotifyOAuth(scope=scope)
-    return auth_manager.get_access_token(as_dict=False)

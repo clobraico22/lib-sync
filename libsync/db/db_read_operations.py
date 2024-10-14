@@ -5,6 +5,7 @@ import pickle
 import spotipy.exceptions
 
 from libsync.db import db_utils, db_write_operations
+from libsync.spotify.spotify_auth import SpotifyAuthManager
 from libsync.utils import string_utils
 from libsync.utils.constants import SpotifyMappingDbFlags
 from libsync.utils.string_utils import get_spotify_uri_from_url
@@ -58,8 +59,7 @@ def get_playlist_id_map(
     logger.debug("running get_playlist_id_map")
     user_spotify_playlist_mapping_db_path = (
         db_utils.get_spotify_playlist_mapping_db_path(
-            rekordbox_xml_path,
-            db_utils.get_spotify_user_id(),
+            rekordbox_xml_path, SpotifyAuthManager.get_user_id()
         )
     )
     playlist_id_map = {}

@@ -55,7 +55,7 @@ def cli():
     else:
         logger.setLevel(level=logging.ERROR)
 
-    logger.info("running main()")
+    logger.info("running cli()")
     command = args.command
 
     if command == LibsyncCommand.SYNC:
@@ -67,6 +67,8 @@ def cli():
             ignore_spotify_search_cache=args.ignore_spotify_search_cache,
             interactive_mode=args.interactive_mode,
             skip_spotify_playlist_sync=args.skip_spotify_playlist_sync,
+            dry_run=args.dry_run,
+            use_cached_spotify_playlist_data=args.use_cached_spotify_playlist_data,
         )
 
     elif command == LibsyncCommand.ANALYZE:

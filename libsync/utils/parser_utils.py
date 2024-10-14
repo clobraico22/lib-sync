@@ -61,6 +61,16 @@ def get_cli_argparser():
         action="store_true",
         help="include songs not on any playlists",
     )
+    parser_sync.add_argument(
+        "--dry_run",
+        action="store_true",
+        help="dry run - don't make any changes",
+    )
+    parser_sync.add_argument(
+        "--use_cached_spotify_playlist_data",
+        action="store_true",
+        help="use cached spotify playlist data",
+    )
 
     # analyze command
     parser_analyze = subparsers.add_parser(

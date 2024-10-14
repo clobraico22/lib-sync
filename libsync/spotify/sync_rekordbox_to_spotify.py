@@ -21,6 +21,8 @@ def sync_rekordbox_to_spotify(
     ignore_spotify_search_cache: bool,
     interactive_mode: bool,
     skip_spotify_playlist_sync: bool,
+    dry_run: bool,
+    use_cached_spotify_playlist_data: bool,
 ) -> None:
     """sync a user's rekordbox playlists to their spotify account"""
 
@@ -34,6 +36,8 @@ def sync_rekordbox_to_spotify(
                 f"include_loose_songs={include_loose_songs}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
                 f"interactive_mode={interactive_mode}",
+                f"dry_run={dry_run}",
+                f"use_cached_spotify_playlist_data={use_cached_spotify_playlist_data}",
             ]
         )
     )
@@ -73,6 +77,8 @@ def sync_rekordbox_to_spotify(
                 rekordbox_playlists=rekordbox_library.playlists,
                 rekordbox_to_spotify_map=rekordbox_to_spotify_map,
                 make_playlists_public=make_playlists_public,
+                dry_run=dry_run,
+                use_cached_spotify_playlist_data=use_cached_spotify_playlist_data,
             )
             logger.debug("done writing playlists")
 
