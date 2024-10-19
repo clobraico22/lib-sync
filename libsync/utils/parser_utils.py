@@ -2,7 +2,7 @@
 
 import argparse
 
-from utils.rekordbox_library import LibsyncCommand
+from libsync.utils.rekordbox_library import LibsyncCommand
 
 
 def get_cli_argparser():
@@ -60,6 +60,16 @@ def get_cli_argparser():
         "--include_loose_songs",
         action="store_true",
         help="include songs not on any playlists",
+    )
+    parser_sync.add_argument(
+        "--dry_run",
+        action="store_true",
+        help="dry run - don't make any changes",
+    )
+    parser_sync.add_argument(
+        "--use_cached_spotify_playlist_data",
+        action="store_true",
+        help="use cached spotify playlist data",
     )
 
     # analyze command

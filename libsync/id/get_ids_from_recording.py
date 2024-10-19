@@ -5,11 +5,15 @@ import os
 import pickle
 from datetime import timedelta
 
-from id.download_audio import download_mp3_from_youtube_url
-from id.youtube_dl_utils import get_mp3_output_path, get_youtube_video_id_from_url
 from ShazamAPI import Shazam
-from utils import string_utils
-from utils.constants import (
+
+from libsync.id.download_audio import download_mp3_from_youtube_url
+from libsync.id.youtube_dl_utils import (
+    get_mp3_output_path,
+    get_youtube_video_id_from_url,
+)
+from libsync.utils import string_utils
+from libsync.utils.constants import (
     FORCE_REDO_SHAZAM,
     NUM_SHAZAM_MATCHES_THRESHOLD,
     SHOW_URL_IN_SHAZAM_OUTPUT,

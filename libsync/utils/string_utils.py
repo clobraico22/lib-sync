@@ -5,8 +5,9 @@ import string
 
 import spotipy.client
 from colorama import Fore, Style
-from utils.constants import ARTIST_LIST_DELIMITERS, SPOTIFY_TRACK_URI_PREFIX
-from utils.rekordbox_library import RekordboxTrack
+
+from libsync.utils.constants import ARTIST_LIST_DELIMITERS, SPOTIFY_TRACK_URI_PREFIX
+from libsync.utils.rekordbox_library import RekordboxTrack
 
 
 def get_spotify_uri_from_url(spotify_url: str) -> str:

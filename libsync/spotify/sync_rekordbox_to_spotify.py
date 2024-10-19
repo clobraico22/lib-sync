@@ -3,11 +3,12 @@
 import logging
 
 import requests
-from analyze.get_rekordbox_library import get_rekordbox_library
-from db import db_read_operations
-from spotify.get_spotify_matches import get_spotify_matches
-from spotify.sync_spotify_playlists import sync_spotify_playlists
-from utils import string_utils
+
+from libsync.analyze.get_rekordbox_library import get_rekordbox_library
+from libsync.db import db_read_operations
+from libsync.spotify.get_spotify_matches import get_spotify_matches
+from libsync.spotify.sync_spotify_playlists import sync_spotify_playlists
+from libsync.utils import string_utils
 
 logger = logging.getLogger("libsync")
 
@@ -20,6 +21,8 @@ def sync_rekordbox_to_spotify(
     ignore_spotify_search_cache: bool,
     interactive_mode: bool,
     skip_spotify_playlist_sync: bool,
+    dry_run: bool,
+    use_cached_spotify_playlist_data: bool,
 ) -> None:
     """sync a user's rekordbox playlists to their spotify account"""
 
@@ -33,28 +36,37 @@ def sync_rekordbox_to_spotify(
                 f"include_loose_songs={include_loose_songs}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
                 f"interactive_mode={interactive_mode}",
+                f"dry_run={dry_run}",
+                f"use_cached_spotify_playlist_data={use_cached_spotify_playlist_data}",
             ]
         )
     )
     string_utils.print_libsync_status("Syncing your Rekordbox with Spotify", level=0)
 
     # get cached data
-    (rekordbox_to_spotify_map, rb_track_ids_flagged_for_rematch) = (
-        db_read_operations.get_cached_sync_data(rekordbox_xml_path)
+    (
+        rekordbox_to_spotify_map,
+        rb_track_ids_flagged_for_rematch,
+    ) = db_read_operations.get_cached_sync_data(rekordbox_xml_path)
+
+    pending_tracks_spotify_to_rekordbox = (
+        db_read_operations.get_pending_tracks_spotify_to_rekordbox(rekordbox_xml_path)
     )
 
     # get rekordbox db from xml
     rekordbox_library = get_rekordbox_library(
         rekordbox_xml_path, create_collection_playlist
     )
-    # TODO: this muddies up the logs quite a bit - might be worth removing
-    logger.debug(f"got rekordbox library: {rekordbox_library}")
+
+    # this muddies up the logs quite a bit - add it back if needed
+    # logger.debug(f"got rekordbox library: {rekordbox_library}")
 
     # map songs from the user's rekordbox library onto spotify search results
     rekordbox_to_spotify_map = get_spotify_matches(
         rekordbox_to_spotify_map,
         rekordbox_library,
         rb_track_ids_flagged_for_rematch,
+        pending_tracks_spotify_to_rekordbox,
         ignore_spotify_search_cache,
         interactive_mode,
     )
@@ -72,6 +84,8 @@ def sync_rekordbox_to_spotify(
                 rekordbox_playlists=rekordbox_library.playlists,
                 rekordbox_to_spotify_map=rekordbox_to_spotify_map,
                 make_playlists_public=make_playlists_public,
+                dry_run=dry_run,
+                use_cached_spotify_playlist_data=use_cached_spotify_playlist_data,
             )
             logger.debug("done writing playlists")
 

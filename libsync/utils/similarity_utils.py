@@ -4,9 +4,9 @@ import logging
 import unicodedata
 from difflib import SequenceMatcher
 
-from utils.constants import DEBUG_SIMILARITY
-from utils.rekordbox_library import RekordboxTrack
-from utils.string_utils import (
+from libsync.utils.constants import DEBUG_SIMILARITY
+from libsync.utils.rekordbox_library import RekordboxTrack
+from libsync.utils.string_utils import (
     get_artists_from_rb_track,
     get_name_varieties_from_track_name,
     remove_suffixes,

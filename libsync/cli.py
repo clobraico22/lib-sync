@@ -3,17 +3,16 @@
 import logging
 import time
 
-from analyze.analyze_rekordbox_library import analyze_rekordbox_library
 from dotenv import load_dotenv
-from id.get_ids_from_recording import (
+
+from libsync.analyze.analyze_rekordbox_library import analyze_rekordbox_library
+from libsync.id.get_ids_from_recording import (
     get_track_ids_from_audio_file,
     get_track_ids_from_youtube_link,
 )
-from spotify.sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
-from utils.parser_utils import get_cli_argparser
-from utils.rekordbox_library import LibsyncCommand
-
-logger = logging.getLogger("libsync")
+from libsync.spotify.sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
+from libsync.utils.parser_utils import get_cli_argparser
+from libsync.utils.rekordbox_library import LibsyncCommand
 
 
 def setup_logger(logger):
@@ -35,14 +34,16 @@ def setup_logger(logger):
     logger.addHandler(ch)
 
 
-def main():
+def cli():
     """
     parse command line args, call other components
     """
 
+    logger = logging.getLogger("libsync")
     setup_logger(logger)
     load_dotenv()
 
+    start_time = time.time()
     parser = get_cli_argparser()
     args = parser.parse_args()
 
@@ -54,7 +55,7 @@ def main():
     else:
         logger.setLevel(level=logging.ERROR)
 
-    logger.info("running main()")
+    logger.info("running cli()")
     command = args.command
 
     if command == LibsyncCommand.SYNC:
@@ -66,6 +67,8 @@ def main():
             ignore_spotify_search_cache=args.ignore_spotify_search_cache,
             interactive_mode=args.interactive_mode,
             skip_spotify_playlist_sync=args.skip_spotify_playlist_sync,
+            dry_run=args.dry_run,
+            use_cached_spotify_playlist_data=args.use_cached_spotify_playlist_data,
         )
 
     elif command == LibsyncCommand.ANALYZE:
@@ -87,8 +90,4 @@ def main():
             youtube_url = args.youtube_url
             get_track_ids_from_youtube_link(youtube_url)
 
-
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
     logger.info(f"total runtime: {(time.time() - start_time):.3f} seconds")

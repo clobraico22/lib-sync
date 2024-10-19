@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from utils.rekordbox_library import RekordboxTrack
+from libsync.utils.rekordbox_library import RekordboxTrack
 
 
 def export_failed_matches_to_file(failed_matches: list[RekordboxTrack]):

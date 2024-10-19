@@ -2,8 +2,9 @@ import csv
 import logging
 import pickle
 
-from db import db_read_operations, db_utils
-from utils.rekordbox_library import RekordboxLibrary
+from libsync.db import db_read_operations, db_utils
+from libsync.spotify.spotify_auth import SpotifyAuthManager
+from libsync.utils.rekordbox_library import RekordboxLibrary
 
 logger = logging.getLogger("libsync")
 
@@ -29,9 +30,31 @@ def save_cached_spotify_search_results(
         pickle.dump(spotify_search_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
+def save_pending_tracks_spotify_to_rekordbox(
+    rekordbox_xml_path: str,
+    new_songs_to_download: set[str],
+    spotify_song_details: dict[str, dict[str, object]],
+):
+    pending_tracks_spotify_to_rekordbox_db_path = (
+        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(
+            rekordbox_xml_path
+        )
+    )
+
+    logger.debug("save_cached_spotify_search_results")
+    pending_tracks = {
+        song_uri: spotify_song_details[song_uri] for song_uri in new_songs_to_download
+    }
+
+    with open(pending_tracks_spotify_to_rekordbox_db_path, "wb") as handle:
+        pickle.dump(pending_tracks, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def save_list_of_user_playlists(playlist_id_map: dict[str, str]) -> None:
+    user_id = SpotifyAuthManager.get_user_id()
+
     user_spotify_playlists_list_db_path = (
-        db_utils.get_user_spotify_playlists_list_db_path(db_utils.get_spotify_user_id())
+        db_utils.get_user_spotify_playlists_list_db_path(user_id)
     )
     playlists = set()
     try:
@@ -95,7 +118,7 @@ def save_playlist_id_map(rekordbox_xml_path: str, playlist_id_map: dict[str, str
     logger.debug("running save_playlist_id_map")
     user_spotify_playlist_mapping_db_path = (
         db_utils.get_spotify_playlist_mapping_db_path(
-            rekordbox_xml_path, db_utils.get_spotify_user_id()
+            rekordbox_xml_path, SpotifyAuthManager.get_user_id()
         )
     )
 

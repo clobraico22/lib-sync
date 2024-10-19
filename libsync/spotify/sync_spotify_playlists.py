@@ -1,17 +1,46 @@
 """contains sync_spotify_playlists function and helpers"""
 
 import logging
+import os
+import pickle
 import pprint
 import time
 
-import spotipy
-from db import db_read_operations, db_write_operations
-from spotify import spotify_api_utils
-from spotipy.oauth2 import SpotifyOAuth
-from utils import constants, string_utils
-from utils.rekordbox_library import RekordboxPlaylist
+from libsync.db import db_read_operations, db_write_operations
+from libsync.spotify import spotify_api_utils
+from libsync.spotify.spotify_auth import SpotifyAuthManager
+from libsync.utils import constants, string_utils
+from libsync.utils.rekordbox_library import RekordboxPlaylist
 
 logger = logging.getLogger("libsync")
+
+
+def fetch_spotify_playlists(
+    playlist_id_map: dict[str, str],
+) -> tuple[dict[str, list[str]], set[str]]:
+    """
+    Fetches Spotify playlists and related information.
+
+    Args:
+        rekordbox_xml_path (str): Path to the Rekordbox XML file.
+        rekordbox_playlists (list[RekordboxPlaylist]): List of Rekordbox playlists.
+
+    Returns:
+        tuple: Contains the following elements:
+            - libsync_owned_spotify_playlists (dict[str, list[str]]): Details of Spotify playlists owned by libsync.
+            - all_user_spotify_playlists (set[str]): Set of all user's Spotify playlist IDs.
+    """
+    string_utils.print_libsync_status("Fetching your Spotify playlists", level=1)
+    libsync_owned_spotify_playlists = spotify_api_utils.get_user_playlists_details(
+        playlist_id_map.values()
+    )
+    all_user_spotify_playlists = spotify_api_utils.get_all_user_playlists_set()
+    string_utils.print_libsync_status_success("Done", level=1)
+
+    return (
+        libsync_owned_spotify_playlists,
+        all_user_spotify_playlists,
+    )
 
 
 def sync_spotify_playlists(
@@ -19,6 +48,8 @@ def sync_spotify_playlists(
     rekordbox_playlists: list[RekordboxPlaylist],
     rekordbox_to_spotify_map: dict[str, str],
     make_playlists_public: bool,
+    dry_run: bool,
+    use_cached_spotify_playlist_data: bool,
 ) -> dict[str, str]:
     """creates playlists in the user's account with the matched songs
 
@@ -29,8 +60,8 @@ def sync_spotify_playlists(
             (list of rekordbox track IDs)
         rekordbox_to_spotify_map (dict[str, str]): mapping from rekordbox track IDs to spotify URIs
         make_playlists_public (bool): determines if playlist will be made public or not
-        skip_spotify_playlist_sync (bool): don't make playlists
-            (skip for debugging or local matching)
+        dry_run (bool): don't make playlists (skip for debugging or local matching)
+        use_cached_spotify_playlist_data (bool): use cached spotify playlist data
 
     Returns:
         dict[str, str]: reference to playlist_id_map argument which is modified in place
@@ -42,14 +73,56 @@ def sync_spotify_playlists(
         + f"rekordbox_to_spotify_map:\n{pprint.pformat(rekordbox_to_spotify_map)}"
     )
 
-    string_utils.print_libsync_status("Fetching your Spotify playlists", level=1)
     playlist_id_map = db_read_operations.get_playlist_id_map(rekordbox_xml_path)
-    libsync_owned_spotify_playlists = spotify_api_utils.get_user_playlists_details(
-        playlist_id_map.values()
-    )
-    all_user_spotify_playlists = spotify_api_utils.get_all_user_playlists_set()
     rekordbox_playlists_set = {rb_playlist.name for rb_playlist in rekordbox_playlists}
-    string_utils.print_libsync_status_success("Done", level=1)
+    libsync_owned_spotify_playlists = {}
+    all_user_spotify_playlists = set()
+
+    if use_cached_spotify_playlist_data:
+        string_utils.print_libsync_status("Using cached Spotify playlist data", level=1)
+        pickle_dir = os.path.join(os.path.dirname(rekordbox_xml_path), "test_data")
+        pickle_path = os.path.join(pickle_dir, "spotify_playlists_test_data.pickle")
+
+        try:
+            with open(pickle_path, "rb") as f:
+                test_data = pickle.load(f)
+
+            libsync_owned_spotify_playlists = test_data[
+                "libsync_owned_spotify_playlists"
+            ]
+            all_user_spotify_playlists = test_data["all_user_spotify_playlists"]
+
+            string_utils.print_libsync_status_success(
+                "Loaded cached data successfully", level=1
+            )
+        except (FileNotFoundError, KeyError) as e:
+            logger.error(f"Error loading cached data: {e}")
+            string_utils.print_libsync_status(
+                "Failed to load cached data. Fetching fresh data.", level=1
+            )
+            use_cached_spotify_playlist_data = False
+
+    if not use_cached_spotify_playlist_data:
+        string_utils.print_libsync_status("Fetching Spotify playlist data", level=1)
+        (
+            libsync_owned_spotify_playlists,
+            all_user_spotify_playlists,
+        ) = fetch_spotify_playlists(playlist_id_map)
+
+        # Save variables to pickle file for future use
+        test_data = {
+            "libsync_owned_spotify_playlists": libsync_owned_spotify_playlists,
+            "all_user_spotify_playlists": all_user_spotify_playlists,
+        }
+
+        pickle_dir = os.path.join(os.path.dirname(rekordbox_xml_path), "test_data")
+        os.makedirs(pickle_dir, exist_ok=True)
+        pickle_path = os.path.join(pickle_dir, "spotify_playlists_test_data.pickle")
+
+        with open(pickle_path, "wb") as f:
+            pickle.dump(test_data, f)
+
+        logger.info(f"Test data saved to {pickle_path}")
 
     # delete invalid entries from playlist_id_map:
     #   playlist deleted from rekordbox, or playlist deleted from spotify
@@ -68,17 +141,7 @@ def sync_spotify_playlists(
         logger.debug(f"deleting playlist mapping for name: {key}")
         del playlist_id_map[key]
 
-    # TODO: centralize all this auth logic into a singleton class to avoid repeated auth
-    scope = [
-        "user-library-read",
-        "playlist-read-private",
-        "playlist-read-collaborative",
-        "playlist-modify-private",
-        "playlist-modify-public",
-    ]
-    auth_manager = SpotifyOAuth(scope=scope)
-    spotify = spotipy.Spotify(auth_manager=auth_manager)
-    user_id = spotify.current_user()["id"]
+    spotify = SpotifyAuthManager.get_spotify_client()
 
     if len(spotify_playlist_ids_to_delete) < 1:
         string_utils.print_libsync_status("No Spotify playlists to delete", level=1)
@@ -90,7 +153,8 @@ def sync_spotify_playlists(
             # TODO: parallelize this if necessary, shouldn't be a very hot path.
             # "unfollowing" your own playlist is the same as deleting it from the spotify UI.
             # it's impossible to actually "delete" a spotify playlist.
-            spotify.current_user_unfollow_playlist(playlist_id)
+            if not dry_run:
+                spotify.current_user_unfollow_playlist(playlist_id)
 
         string_utils.print_libsync_status_success("Done", level=1)
 
@@ -112,7 +176,7 @@ def sync_spotify_playlists(
             #   (network failures, bad IDs, etc)
             #   catch aiohttp.client_exceptions.ServerDisconnectedError in asyncio workers
             playlist_create_result = spotify.user_playlist_create(
-                user=user_id,
+                user=SpotifyAuthManager.get_user_id(),
                 name=string_utils.generate_spotify_playlist_name(rb_playlist_name),
                 # TODO: private playlists don't work! read here:
                 # https://community.spotify.com/t5/Spotify-for-Developers/Api-to-create-a-private-playlist-doesn-t-work/td-p/5407807
@@ -134,26 +198,72 @@ def sync_spotify_playlists(
         f"time taken for save_list_of_user_playlists: {(time.time() - start_time):.3f} seconds"
     )
 
+    for playlist_id, playlist in libsync_owned_spotify_playlists.items():
+        print(f"Playlist: {playlist_id}")
+        if "spotify:track:45e8T07myBjutIx2xh8Kq5" in playlist:
+            print(f"Playlist containing track: {playlist_id}")
+
     spotify_playlist_write_jobs, new_spotify_additions = get_playlist_diffs(
         rekordbox_playlists,
         rekordbox_to_spotify_map,
         playlist_id_map,
         libsync_owned_spotify_playlists,
     )
-    logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
+    # logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
     logger.debug(f"new_spotify_additions: {new_spotify_additions}")
+
+    # TODO: this isn't the best place to do the match fixing, but it might be the easiest and cleanest.
+    # here we can iterate through the spotify_playlist_write_jobs to find the new tracks we're planning to add,
+    # and then see if any of them should be matched with existing tracks from the new_spotify_additions.
+    # need to do some digging here to find the best way to do this. might need to reorder some functions
+
+    # further review - still seems reasonable to do here
+    # start with von dutch
+
+    # for new songs, we should check if they're already in the user's library before matching against all of spotify
 
     if len(spotify_playlist_write_jobs) < 1:
         string_utils.print_libsync_status("No Spotify playlists to update", level=1)
     else:
         string_utils.print_libsync_status("Updating Spotify playlists", level=1)
-        spotify_api_utils.overwrite_playlists(spotify_playlist_write_jobs)
+        if not dry_run:
+            spotify_api_utils.overwrite_playlists(spotify_playlist_write_jobs)
+
         string_utils.print_libsync_status_success("Done", level=1)
 
     if constants.IGNORE_SP_NEW_TRACKS or len(new_spotify_additions) < 1:
         string_utils.print_libsync_status("No Rekordbox playlists to update", level=1)
+        db_write_operations.save_pending_tracks_spotify_to_rekordbox(
+            rekordbox_xml_path, set(), {}
+        )
+
     else:
-        print_rekordbox_diff_report(new_spotify_additions, rekordbox_to_spotify_map)
+        spotify_song_details = spotify_api_utils.get_spotify_song_details(
+            list(
+                {
+                    sp_uri
+                    for tracklist in new_spotify_additions.values()
+                    for sp_uri in tracklist
+                }
+            )
+        )
+
+        (
+            new_songs_to_download,
+            songs_to_playlists_diff_map,
+            playlists_to_songs_diff_map,
+        ) = calculate_diff(new_spotify_additions, rekordbox_to_spotify_map)
+
+        db_write_operations.save_pending_tracks_spotify_to_rekordbox(
+            rekordbox_xml_path, new_songs_to_download, spotify_song_details
+        )
+
+        print_rekordbox_diff_report(
+            new_songs_to_download,
+            songs_to_playlists_diff_map,
+            playlists_to_songs_diff_map,
+            spotify_song_details,
+        )
 
     # save playlists to db of playlists libsync owns for the current spotify user id
     db_write_operations.save_list_of_user_playlists(playlist_id_map)
@@ -161,35 +271,14 @@ def sync_spotify_playlists(
     return playlist_id_map
 
 
-def print_rekordbox_diff_report(
+def calculate_diff(
     new_spotify_additions: dict[str, list[str]],
     rekordbox_to_spotify_map: dict[str, str],
 ):
-    string_utils.print_libsync_status(
-        "Calculating songs to add to Rekordbox playlists", level=1
-    )
-    spotify_song_details = spotify_api_utils.get_spotify_song_details(
-        list(
-            {
-                sp_uri
-                for tracklist in new_spotify_additions.values()
-                for sp_uri in tracklist
-            }
-        )
-    )
-
-    # TODO: there's an issue with the workflow of adding songs to spotify, and then adding them to
-    # rekordbox. auto match may pick a different song than the one you added to spotify, leading to
-    # a diff that never goes away, plus two versions of the same song in all of the spotify
-    # playlists. need to fix
-    # TODO: there's also an issue with the workflow of deleting a song from a rekordbox playlist
-    # after it's been synced to spotify. libsync doesn't know it was deleted manually, so it will
-    # report that the song is missing from the rekordbox playlist. need to keep track of rekordbox
-    # collection history to track deletions
     spotify_to_rekordbox_map = {
         sp_uri: rb_track_id for rb_track_id, sp_uri in rekordbox_to_spotify_map.items()
     }
-    logger.debug(f"spotify_to_rekordbox_map: {spotify_to_rekordbox_map}")
+    # logger.debug(f"spotify_to_rekordbox_map: {spotify_to_rekordbox_map}")
 
     songs_to_playlists_diff_map = {}
     playlists_to_songs_diff_map = {}
@@ -208,6 +297,33 @@ def print_rekordbox_diff_report(
         for sp_uri in songs_to_playlists_diff_map
         if sp_uri not in spotify_to_rekordbox_map
     }
+
+    return (
+        new_songs_to_download,
+        songs_to_playlists_diff_map,
+        playlists_to_songs_diff_map,
+    )
+
+
+def print_rekordbox_diff_report(
+    new_songs_to_download: set[str],
+    songs_to_playlists_diff_map: dict[str, list[str]],
+    playlists_to_songs_diff_map: dict[str, list[str]],
+    spotify_song_details: dict[str, dict[str, object]],
+):
+    string_utils.print_libsync_status(
+        "Calculating songs to add to Rekordbox playlists", level=1
+    )
+
+    # TODO: there's an issue with the workflow of adding songs to spotify, and then adding them to
+    # rekordbox. auto match may pick a different song than the one you added to spotify, leading to
+    # a diff that never goes away, plus two versions of the same song in all of the spotify
+    # playlists. need to fix
+    # TODO: there's also an issue with the workflow of deleting a song from a rekordbox playlist
+    # after it's been synced to spotify. libsync doesn't know it was deleted manually, so it will
+    # report that the song is missing from the rekordbox playlist. need to keep track of rekordbox
+    # collection history to track deletions
+
     string_utils.print_libsync_status_success("Done", level=1)
     if len(new_songs_to_download) < 1:
         string_utils.print_libsync_status("No new songs to download", level=1)
@@ -333,7 +449,7 @@ def get_playlist_diffs(
             string_utils.get_spotify_uri_from_id(spotify_track_id)
             for spotify_track_id in libsync_owned_spotify_playlists[spotify_playlist_id]
         ]
-        logger.debug(f"spotify uris from spotify playlist: {sp_uris_from_sp}")
+        # logger.debug(f"spotify uris from spotify playlist: {sp_uris_from_sp}")
         sp_new_tracks = [
             uri for uri in sp_uris_from_sp if uri not in set(sp_uris_from_rb)
         ]

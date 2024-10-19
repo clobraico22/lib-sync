@@ -1,7 +1,7 @@
 """generates report based on user's rekordbox library"""
 
-from utils import string_utils
-from utils.rekordbox_library import RekordboxLibrary
+from libsync.utils import string_utils
+from libsync.utils.rekordbox_library import RekordboxLibrary
 
 
 def generate_rekordbox_library_report(rekordbox_library: RekordboxLibrary) -> None:
