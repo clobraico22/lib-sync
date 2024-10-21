@@ -56,11 +56,12 @@ def calculate_similarities(
         spotify_song_name = remove_accents(
             strip_punctuation(remove_suffixes(spotify_track_option["name"]))
         ).strip()
-        # TODO: test out remove_suffixes from the spotify name to get radio edits, etc
-        # ideally, add logic to catch radio edits when nothing else is there,
-        # but prefer the version that you have on rekordbox
-        # TODO: handle (feat. Artist Name)
-        # TODO: handle '&' in artist names (at the spotify search level)
+        # TODO: improve this matching functionality:
+        # -- test out remove_suffixes from the spotify name to get radio edits, etc
+        # -- ideally, add logic to catch radio edits when nothing else is there,
+        #    but prefer the version that you have on rekordbox
+        # -- handle (feat. Artist Name)
+        # -- handle '&' in artist names (at the spotify search level)
         rekordbox_song_names = [
             remove_accents(strip_punctuation(name)).strip()
             for name in get_name_varieties_from_track_name(rb_track.name.lower())

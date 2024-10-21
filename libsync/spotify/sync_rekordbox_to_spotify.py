@@ -20,6 +20,7 @@ def sync_rekordbox_to_spotify(
     include_loose_songs: bool,
     ignore_spotify_search_cache: bool,
     interactive_mode: bool,
+    interactive_mode_pending_tracks: bool,
     skip_spotify_playlist_sync: bool,
     dry_run: bool,
     use_cached_spotify_playlist_data: bool,
@@ -69,6 +70,7 @@ def sync_rekordbox_to_spotify(
         pending_tracks_spotify_to_rekordbox,
         ignore_spotify_search_cache,
         interactive_mode,
+        interactive_mode_pending_tracks,
     )
 
     # create a playlist in the user's account for each rekordbox playlist

@@ -12,7 +12,8 @@ from libsync.db import db_read_operations, db_write_operations
 from libsync.spotify import spotify_api_utils
 from libsync.utils import string_utils
 from libsync.utils.constants import (
-    MINIMUM_SIMILARITY_THRESHOLD,
+    MINIMUM_SIMILARITY_THRESHOLD_NEW_MATCHES,
+    MINIMUM_SIMILARITY_THRESHOLD_PENDING_MATCHES,
     USE_RB_TO_SPOTIFY_MATCHES_CACHE,
     InteractiveWorkflowCommands,
     SpotifyMappingDbFlags,
@@ -30,6 +31,10 @@ from libsync.utils.string_utils import (
 logger = logging.getLogger("libsync")
 
 
+class ExitAndSaveException(Exception):
+    """Custom exception to signal exit and save operation."""
+
+
 def get_spotify_matches(
     rekordbox_to_spotify_map: dict[str, str],
     rekordbox_library: RekordboxLibrary,
@@ -37,6 +42,7 @@ def get_spotify_matches(
     pending_tracks_spotify_to_rekordbox: dict[str, object],
     ignore_spotify_search_cache: bool,
     interactive_mode: bool,
+    interactive_mode_pending_tracks: bool,  # Add this parameter
 ) -> dict[str, str]:
     """attempt to map all songs in rekordbox library to spotify uris
 
@@ -51,6 +57,8 @@ def get_spotify_matches(
             instead of relying on local libsync cache
         interactive_mode (bool): run searching + matching process
             with manual input on failed auto match
+        interactive_mode_pending_tracks (bool): run searching + matching process
+            for pending tracks with manual input on failed auto match
 
     Returns:
         rekordbox_to_spotify_map (dict[str, str]): reference to rekordbox_to_spotify_map argument
@@ -72,6 +80,7 @@ def get_spotify_matches(
                 # f"pending_tracks_spotify_to_rekordbox={pending_tracks_spotify_to_rekordbox}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
                 f"interactive_mode={interactive_mode}",
+                f"interactive_mode_pending_tracks={interactive_mode_pending_tracks}",
             ]
         )
     )
@@ -108,9 +117,45 @@ def get_spotify_matches(
             pending_tracks_spotify_to_rekordbox,
         )
 
+        # cache rekordbox -> spotify mappings
+        db_write_operations.save_song_mappings_csv(
+            rekordbox_library,
+            rb_track_ids_flagged_for_rematch,
+            rekordbox_to_spotify_map,
+        )
+
         rb_track_ids_to_match = [
             t for t in rb_track_ids_to_match if t not in rekordbox_to_spotify_map
         ]
+
+        if not interactive_mode_pending_tracks:
+            string_utils.print_libsync_status(
+                f"Skipping interactive matching against pending tracks for {len(rb_track_ids_to_match)} tracks",
+                level=1,
+            )
+
+        elif len(rb_track_ids_to_match) == 0:
+            string_utils.print_libsync_status(
+                "No tracks left to match interactively against pending tracks",
+                level=1,
+            )
+
+        else:
+            rekordbox_to_spotify_map = (
+                pick_best_pending_tracks_spotify_matches_interactively(
+                    rb_track_ids_to_match,
+                    rekordbox_library,
+                    rekordbox_to_spotify_map,
+                    pending_tracks_spotify_to_rekordbox,
+                )
+            )
+
+        # cache rekordbox -> spotify mappings
+        db_write_operations.save_song_mappings_csv(
+            rekordbox_library,
+            rb_track_ids_flagged_for_rematch,
+            rekordbox_to_spotify_map,
+        )
 
         string_utils.print_libsync_status_success("Done", level=1)
         # exit()
@@ -246,7 +291,9 @@ def check_pending_tracks_for_matches(
         )
 
         best_match_uri = pick_matching_track_automatically(
-            rb_track, pending_tracks_spotify_to_rekordbox
+            rb_track,
+            pending_tracks_spotify_to_rekordbox,
+            MINIMUM_SIMILARITY_THRESHOLD_PENDING_MATCHES,
         )
         if best_match_uri is None:
             logger.info(f"failed to auto match track {rb_track}")
@@ -306,6 +353,45 @@ def pick_best_spotify_matches_automatically(
     return rekordbox_to_spotify_map
 
 
+def pick_best_pending_tracks_spotify_matches_interactively(
+    rb_track_ids_to_match: list[str],
+    rekordbox_library: RekordboxLibrary,
+    rekordbox_to_spotify_map: dict[str, str],
+    pending_tracks_spotify_to_rekordbox: dict[str, object],
+):
+    logger.debug(
+        "running check_pending_tracks_for_matches for "
+        + f"rb_track_ids_to_match: {rb_track_ids_to_match}"
+        # + f" and pending_tracks_spotify_to_rekordbox: {pending_tracks_spotify_to_rekordbox}"
+    )
+
+    for i, rb_track_id in enumerate(rb_track_ids_to_match):
+        logger.debug(
+            f"automatically matching track {i + 1}/{len(rb_track_ids_to_match)}"
+        )
+
+        rb_track = rekordbox_library.collection[rb_track_id]
+
+        logger.debug(
+            f"len(pending_tracks_spotify_to_rekordbox): {len(pending_tracks_spotify_to_rekordbox)}"
+        )
+
+        try:
+            rekordbox_to_spotify_map = (
+                pick_matching_track_interactively_and_process_input(
+                    rekordbox_to_spotify_map,
+                    rb_track,
+                    pending_tracks_spotify_to_rekordbox,
+                )
+            )
+
+        except ExitAndSaveException:
+            logger.debug("exit and save flag received")
+            return rekordbox_to_spotify_map
+
+    return rekordbox_to_spotify_map
+
+
 def pick_best_spotify_matches_interactively(
     rb_track_ids_to_match: list[str],
     rekordbox_library: RekordboxLibrary,
@@ -329,33 +415,49 @@ def pick_best_spotify_matches_interactively(
         )
         logger.debug(f"len(song_search_results): {len(song_search_results)}")
 
-        interactive_input_result = pick_matching_track_interactively(
-            rb_track, song_search_results
+        try:
+            rekordbox_to_spotify_map = (
+                pick_matching_track_interactively_and_process_input(
+                    rekordbox_to_spotify_map, rb_track, song_search_results
+                )
+            )
+
+        except ExitAndSaveException:
+            logger.debug("exit and save flag received")
+            return rekordbox_to_spotify_map
+
+    return rekordbox_to_spotify_map
+
+
+def pick_matching_track_interactively_and_process_input(
+    rekordbox_to_spotify_map: dict[str, str],
+    rb_track: RekordboxTrack,
+    song_search_results: dict[str, object],
+):
+    interactive_input_result = pick_matching_track_interactively(
+        rb_track, song_search_results
+    )
+
+    if interactive_input_result == InteractiveWorkflowCommands.SKIP_TRACK:
+        rekordbox_to_spotify_map[rb_track.id] = SpotifyMappingDbFlags.SKIP_TRACK
+
+    elif interactive_input_result == InteractiveWorkflowCommands.NOT_ON_SPOTIFY:
+        rekordbox_to_spotify_map[rb_track.id] = SpotifyMappingDbFlags.NOT_ON_SPOTIFY
+
+    elif interactive_input_result == InteractiveWorkflowCommands.EXIT_AND_SAVE:
+        raise ExitAndSaveException("exit and save flag received")
+
+    elif interactive_input_result == InteractiveWorkflowCommands.CANCEL:
+        logger.debug(
+            "pick_best_spotify_matches_interactively got cancel flag, exiting without saving"
         )
+        exit()
 
-        if interactive_input_result == InteractiveWorkflowCommands.SKIP_TRACK:
-            rekordbox_to_spotify_map[rb_track_id] = SpotifyMappingDbFlags.SKIP_TRACK
-
-        elif interactive_input_result == InteractiveWorkflowCommands.NOT_ON_SPOTIFY:
-            rekordbox_to_spotify_map[rb_track_id] = SpotifyMappingDbFlags.NOT_ON_SPOTIFY
-
-        elif interactive_input_result == InteractiveWorkflowCommands.EXIT_AND_SAVE:
-            return (
-                rekordbox_to_spotify_map,
-                song_search_results,
-            )
-
-        elif interactive_input_result == InteractiveWorkflowCommands.CANCEL:
-            logger.debug(
-                "pick_best_spotify_matches_interactively got cancel flag, exiting without saving"
-            )
-            exit()
-
-        else:
-            logger.debug(
-                f"interactively picked interactive_input_result: {interactive_input_result}"
-            )
-            rekordbox_to_spotify_map[rb_track_id] = interactive_input_result
+    else:
+        logger.debug(
+            f"interactively picked interactive_input_result: {interactive_input_result}"
+        )
+        rekordbox_to_spotify_map[rb_track.id] = interactive_input_result
 
     return rekordbox_to_spotify_map
 
@@ -407,7 +509,7 @@ def get_rb_track_ids_to_match(
 def get_cached_results_for_track(
     rb_track: RekordboxTrack,
     spotify_search_results: dict[str, object],
-) -> list:
+) -> dict[str, object]:
     """search spotify for a given rekordbox track.
 
     Args:
@@ -455,6 +557,7 @@ def get_spotify_queries_from_rb_track(
 def pick_matching_track_automatically(
     rb_track: RekordboxTrack,
     song_search_results: dict,
+    min_similarity_threshold: float = MINIMUM_SIMILARITY_THRESHOLD_NEW_MATCHES,
 ) -> Optional[str]:
     """pick best track out of spotify search results.
 
@@ -477,7 +580,7 @@ def pick_matching_track_automatically(
 
     best_spotify_track, best_similarity = tracks_with_similarity[0]
 
-    if best_similarity > MINIMUM_SIMILARITY_THRESHOLD:
+    if best_similarity > min_similarity_threshold:
         logger.debug(
             f"found a good match automatically, with similarity: {best_similarity} "
             + f"and track: {pretty_print_spotify_track(best_spotify_track)}"
@@ -494,7 +597,7 @@ def pick_matching_track_automatically(
 
 def pick_matching_track_interactively(
     rb_track: RekordboxTrack,
-    song_search_results: dict,
+    song_search_results: dict[str, object],
 ) -> str:
     """interactively pick best track out of spotify search results.
 
@@ -634,7 +737,7 @@ def get_sorted_list_tracks_with_similarity(rb_track, song_search_results):
     Returns:
         list: _description_
     """
-    print(f"song_search_results: {song_search_results}")
+    # print(f"song_search_results: {song_search_results}")
 
     similarities = calculate_similarities(rb_track, song_search_results)
 

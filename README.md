@@ -126,9 +126,14 @@ python -m libsync id youtube \
 
 # TODO
 
-- support deleting tracks from rekordbox
-- match new rekordbox IDs against pending new spotify URIs before hitting the search algo
+## features
+
+- support deleting tracks from rekordbox - libsync doesn't know it was deleted manually, so it will report that the song is missing from the rekordbox playlist. need to keep track of rekordbox collection history to track deletions
+- support read-only playlists - like "to be tagged" - ignore these when syncing from spotify back to rekordbox
 - multithread shazam process
 - connect id tool to spotify mapper and playlist creator
+
+## dev
+
 - get markdown autoformatter
 - fix structure/imports with https://github.com/jgehrcke/python-cmdline-bootstrap

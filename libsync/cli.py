@@ -66,6 +66,7 @@ def cli():
             include_loose_songs=args.include_loose_songs,
             ignore_spotify_search_cache=args.ignore_spotify_search_cache,
             interactive_mode=args.interactive_mode,
+            interactive_mode_pending_tracks=args.interactive_mode_pending_tracks,
             skip_spotify_playlist_sync=args.skip_spotify_playlist_sync,
             dry_run=args.dry_run,
             use_cached_spotify_playlist_data=args.use_cached_spotify_playlist_data,
