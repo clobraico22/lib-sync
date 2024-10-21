@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Iterable
+import random
+from typing import Any, Iterable
 
 import aiohttp
 import requests
@@ -12,7 +13,46 @@ from libsync.utils import constants, string_utils
 logger = logging.getLogger("libsync")
 
 
-# worker
+# New utility function for handling retries
+async def get_from_spotify_with_retry(
+    session, url, headers, params, description
+) -> Any:
+    for attempt in range(constants.MAX_RETRIES):
+        try:
+            async with session.get(url, headers=headers, params=params) as response:
+                if isinstance(response, aiohttp.ClientResponse):
+                    if response.status == 429:
+                        retry_after = (
+                            int(response.headers.get("Retry-After", "5"))
+                            + random.random() * 5
+                        )
+                        logger.warning(
+                            f"Rate limited. Retrying after {retry_after} seconds. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
+                        )
+                        await asyncio.sleep(retry_after)
+                        continue
+                    if not response.ok:
+                        logger.debug(
+                            f"Response not OK: {response.status} - {await response.text()}"
+                        )
+                        response.raise_for_status()
+                return await response.json()
+        except (aiohttp.ClientError, requests.RequestException) as e:
+            logger.error(
+                f"Error in API call: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
+            )
+            if attempt == constants.MAX_RETRIES - 1:
+                raise ConnectionError(
+                    f"{description} failed after {constants.MAX_RETRIES} attempts"
+                ) from e
+            await asyncio.sleep(2**attempt)  # Exponential backoff
+
+    raise ConnectionError(
+        f"{description} failed after {constants.MAX_RETRIES} attempts"
+    )
+
+
+# workers
 
 
 async def fetch_playlist_details_worker(session, access_token, playlist_id):
@@ -22,12 +62,10 @@ async def fetch_playlist_details_worker(session, access_token, playlist_id):
         "fields": "name,uri,tracks.total,tracks.items(track.id,track.name),tracks.limit"
     }
 
-    async with session.get(url, headers=headers, params=params) as response:
-        if not response.ok:
-            logger.debug(response)
-            raise ConnectionError("fetching playlist failed")
-
-        return playlist_id, await response.json()
+    playlist_data = await get_from_spotify_with_retry(
+        session, url, headers, params, "fetching playlist details"
+    )
+    return playlist_id, playlist_data
 
 
 async def fetch_additional_tracks_worker(
@@ -37,38 +75,10 @@ async def fetch_additional_tracks_worker(
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks?limit={limit}&offset={offset}"
     params = {"fields": "total,items(track.id,track.name),limit"}
 
-    for attempt in range(constants.MAX_RETRIES):
-        try:
-            async with session.get(url, headers=headers, params=params) as response:
-                if response.status == 429:
-                    retry_after = int(response.headers.get("Retry-After", "5"))
-                    logger.warning(
-                        f"Rate limited. Retrying after {retry_after} seconds. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
-                    )
-                    await asyncio.sleep(retry_after)
-                    continue
-
-                if not response.ok:
-                    logger.debug(
-                        f"Response not OK: {response.status} - {await response.text()}"
-                    )
-                    response.raise_for_status()
-
-                return playlist_id, limit, offset, await response.json()
-
-        except aiohttp.ClientError as e:
-            logger.error(
-                f"Error fetching additional tracks: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
-            )
-            if attempt == constants.MAX_RETRIES - 1:
-                raise ConnectionError(
-                    f"Failed to fetch additional tracks after {constants.MAX_RETRIES} attempts"
-                ) from e
-            await asyncio.sleep(2**attempt)  # Exponential backoff
-
-    raise ConnectionError(
-        f"Failed to fetch additional tracks after {constants.MAX_RETRIES} attempts"
+    playlist_data = await get_from_spotify_with_retry(
+        session, url, headers, params, "fetching additional playlist tracks"
     )
+    return playlist_id, limit, offset, playlist_data
 
 
 async def fetch_additional_playlists_worker(
@@ -77,15 +87,13 @@ async def fetch_additional_playlists_worker(
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/users/{user_id}/playlists?limit={limit}&offset={offset}"
     params = {"fields": "items(id,name)"}
-    async with session.get(url, headers=headers, params=params) as response:
-        if not response.ok:
-            logger.debug(response)
-            raise ConnectionError("fetching playlist failed")
 
-        return await response.json()
+    playlist_data = await get_from_spotify_with_retry(
+        session, url, headers, params, "fetching additional playlists"
+    )
+    return playlist_data
 
 
-# TODO: handle API errors and retries in this file
 async def overwrite_playlists_worker(
     session, access_token, playlist_id, track_uri_list
 ):
@@ -131,35 +139,30 @@ async def fetch_spotify_song_details_worker(
         string_utils.get_spotify_id_from_uri(sp_uri) for sp_uri in list_of_sp_uris
     ]
     url = f"https://api.spotify.com/v1/tracks?ids={'%2C'.join(list_of_sp_ids)}"
-    async with session.get(url, headers=headers) as response:
-        if not response.ok:
-            logger.debug(response)
-            raise ConnectionError("fetching song details failed", response)
 
-        logger.debug(f"response: {response}")
-        result = await response.json()
-        # logger.debug(f"result: {result}")
-        return [[track["uri"], track] for track in result["tracks"]]
+    data = await get_from_spotify_with_retry(
+        session, url, headers, None, "fetching song details"
+    )
+    return [[track["uri"], track] for track in data["tracks"]]
 
 
 async def fetch_spotify_search_results_worker(session, access_token, query):
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/search?q={query}&type=track"
 
-    try:
-        async with session.get(url, headers=headers) as response:
-            if not response.ok:
-                logger.debug(response)
-                return query, None
+    data = await get_from_spotify_with_retry(
+        session, url, headers, None, "fetching search results"
+    )
 
-            return query, (await response.json())["tracks"]["items"]
+    try:
+        return query, data["tracks"]["items"]
 
     except KeyError as e:
         logger.error(f"KeyError in fetch_spotify_search_results_worker: {e}")
         return query, None
 
 
-# controller
+# controllers
 
 
 async def fetch_playlist_details_controller(playlist_ids: Iterable[str]):
@@ -206,6 +209,38 @@ async def fetch_additional_tracks_controller(params_list: list[list[str, int, in
         return additional_track_details
 
     return []
+
+
+async def get_all_user_playlists_set_controller():
+    user_id = SpotifyAuthManager.get_user_id()
+
+    access_token = SpotifyAuthManager.get_access_token()
+    data = {}
+    async with aiohttp.ClientSession() as session:
+        headers = {"Authorization": f"Bearer {access_token}"}
+        url = f"https://api.spotify.com/v1/users/{user_id}/playlists"
+        params = {"fields": "total,items(id,name),limit"}
+        data = await get_from_spotify_with_retry(
+            session, url, headers, params, "fetching all user playlists"
+        )
+
+    total = data["total"]
+    limit = data["limit"]
+    all_user_playlists = {item["id"] for item in data["items"]}
+    follow_up_job_params = [
+        [user_id, limit, offset] for offset in range(limit, total, limit)
+    ]
+    follow_up_playlist_ids = await fetch_additional_playlists_controller(
+        follow_up_job_params
+    )
+    all_user_playlists.update(
+        [
+            item["id"]
+            for playlist_batch in follow_up_playlist_ids
+            for item in playlist_batch["items"]
+        ]
+    )
+    return all_user_playlists
 
 
 async def fetch_additional_playlists_controller(params_list: list[list[str, int, int]]):
@@ -361,35 +396,7 @@ def get_all_user_playlists_set() -> set[str]:
     Returns:
         set[str]: set of spotify playlist ids
     """
-    user_id = SpotifyAuthManager.get_user_id()
-
-    access_token = SpotifyAuthManager.get_access_token()
-    headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"https://api.spotify.com/v1/users/{user_id}/playlists"
-    params = {"fields": "total,items(id,name),limit"}
-    response = requests.get(url, headers=headers, params=params, timeout=10)
-    if not response.ok:
-        logger.debug(response)
-        raise ConnectionError("fetching playlist failed")
-
-    result = response.json()
-    total = result["total"]
-    limit = result["limit"]
-    all_user_playlists = {item["id"] for item in result["items"]}
-    follow_up_job_params = [
-        [user_id, limit, offset] for offset in range(limit, total, limit)
-    ]
-    follow_up_playlist_ids = asyncio.run(
-        fetch_additional_playlists_controller(follow_up_job_params)
-    )
-    all_user_playlists.update(
-        [
-            item["id"]
-            for playlist_batch in follow_up_playlist_ids
-            for item in playlist_batch["items"]
-        ]
-    )
-    return all_user_playlists
+    return asyncio.run(get_all_user_playlists_set_controller())
 
 
 def overwrite_playlists(params_list: list[list[str, list[str]]]):

@@ -8,7 +8,7 @@ from libsync.utils.rekordbox_library import LibsyncCommand
 def get_cli_argparser():
     """get parser for CLI arguments"""
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Libsync CLI")
     parser.add_argument(
         "-v", "--verbose", action="count", default=0, help="increase output verbosity"
     )
@@ -33,6 +33,11 @@ def get_cli_argparser():
         "--interactive_mode",
         action="store_true",
         help="interactively fix matches",
+    )
+    parser_sync.add_argument(
+        "--interactive_mode_pending_tracks",
+        action="store_true",
+        help="Enable interactive mode for pending tracks",
     )
     parser_sync.add_argument(
         "--ignore_spotify_search_cache",

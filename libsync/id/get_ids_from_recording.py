@@ -86,7 +86,6 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
         string_utils.print_libsync_status_error(
             f"error parsing cache at '{libsync_cache_path}'. clearing cache."
         )
-        # TODO actually clear cache, also centralize this duplicated caching logic
 
     input_file = open(recording_audio_file_path, "rb").read()
     shazam = Shazam(input_file)

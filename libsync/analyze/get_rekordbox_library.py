@@ -16,6 +16,10 @@ logger = logging.getLogger("libsync")
 
 # TODO: investigate if we can read/modify the rekordbox library directly
 # see https://github.com/erikrichardlarson/unbox
+# see rekordbox section here:
+# https://github.com/erikrichardlarson/unbox/blob/main/src/poller.js#L134
+# https://www.reddit.com/r/Rekordbox/comments/qou6nm/comment/hjpi2u3/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+# ~/Library/Application Support/Pioneer/rekordboxAgent/storage/options.json
 
 
 def get_rekordbox_library(
