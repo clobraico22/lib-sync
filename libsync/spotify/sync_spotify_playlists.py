@@ -217,6 +217,9 @@ def sync_spotify_playlists(
         #     print(f"uris.length: {len(job[1])}")
 
         if not dry_run:
+            logger.info(
+                f"running overwrite_playlists with {len(spotify_playlist_write_jobs)} jobs"
+            )
             spotify_api_utils.overwrite_playlists(spotify_playlist_write_jobs)
             string_utils.print_libsync_status_success("Done", level=1)
 
@@ -358,10 +361,14 @@ def print_rekordbox_diff_report(
 
 
 def print_rekordbox_diff_report_by_track(
-    songs_to_playlists_diff_map, spotify_song_details
+    songs_to_playlists_diff_map: dict[str, list[str]],
+    spotify_song_details: dict[str, dict[str, object]],
 ):
     for sp_uri, rb_playlists in sorted(
-        songs_to_playlists_diff_map.items(), key=lambda x: x[0]
+        songs_to_playlists_diff_map.items(),
+        key=lambda item: string_utils.pretty_print_spotify_track(
+            spotify_song_details[item[0]]
+        ),
     ):
         print(
             f"      {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
@@ -371,7 +378,8 @@ def print_rekordbox_diff_report_by_track(
 
 
 def print_rekordbox_diff_report_by_playlist(
-    playlists_to_songs_diff_map, spotify_song_details
+    playlists_to_songs_diff_map: dict[str, list[str]],
+    spotify_song_details: dict[str, dict[str, object]],
 ):
     for rb_playlist_name, sp_uris in sorted(
         playlists_to_songs_diff_map.items(), key=lambda x: x[0]
