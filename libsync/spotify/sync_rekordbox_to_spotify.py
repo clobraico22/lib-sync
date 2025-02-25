@@ -88,6 +88,7 @@ def sync_rekordbox_to_spotify(
                 make_playlists_public=make_playlists_public,
                 dry_run=dry_run,
                 use_cached_spotify_playlist_data=use_cached_spotify_playlist_data,
+                collection=rekordbox_library.collection,
             )
             logger.debug("done writing playlists")
 
