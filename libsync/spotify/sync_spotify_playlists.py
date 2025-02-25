@@ -3,14 +3,13 @@
 import logging
 import os
 import pickle
-import pprint
 import time
 
 from libsync.db import db_read_operations, db_write_operations
 from libsync.spotify import spotify_api_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
 from libsync.utils import constants, string_utils
-from libsync.utils.rekordbox_library import RekordboxPlaylist
+from libsync.utils.rekordbox_library import RekordboxCollection, RekordboxPlaylist
 
 logger = logging.getLogger("libsync")
 
@@ -51,6 +50,7 @@ def sync_spotify_playlists(
     make_playlists_public: bool,
     dry_run: bool,
     use_cached_spotify_playlist_data: bool,
+    collection: RekordboxCollection,
 ) -> dict[str, str]:
     """creates playlists in the user's account with the matched songs
 
@@ -68,11 +68,11 @@ def sync_spotify_playlists(
         dict[str, str]: reference to playlist_id_map argument which is modified in place
     """
 
-    logger.debug(
-        "running sync_spotify_playlists with\n"
-        + f"rekordbox_playlists:\n{pprint.pformat(rekordbox_playlists)},\n"
-        + f"rekordbox_to_spotify_map:\n{pprint.pformat(rekordbox_to_spotify_map)}"
-    )
+    # logger.debug(
+    #     "running sync_spotify_playlists with\n"
+    #     + f"rekordbox_playlists:\n{pprint.pformat(rekordbox_playlists)},\n"
+    #     + f"rekordbox_to_spotify_map:\n{pprint.pformat(rekordbox_to_spotify_map)}"
+    # )
 
     playlist_id_map = db_read_operations.get_playlist_id_map(rekordbox_xml_path)
     rekordbox_playlists_set = {rb_playlist.name for rb_playlist in rekordbox_playlists}
@@ -210,13 +210,28 @@ def sync_spotify_playlists(
     if len(spotify_playlist_write_jobs) < 1:
         string_utils.print_libsync_status("No Spotify playlists to update", level=1)
     else:
-        string_utils.print_libsync_status("Updating Spotify playlists", level=1)
-        # print(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
-        # for job in spotify_playlist_write_jobs:
-        #     print(f"playlist_id: {job[0]}")
-        #     print(f"uris.length: {len(job[1])}")
+        # Show summary of changes before proceeding
+        print_spotify_playlist_changes_summary(
+            spotify_playlist_write_jobs,
+            libsync_owned_spotify_playlists,
+            playlist_id_map,
+            collection,
+            rekordbox_to_spotify_map,
+        )
+
+        # Ask for confirmation
+        confirmation = (
+            input("\nDo you want to proceed with these changes? (y/n): ")
+            .lower()
+            .strip()
+        )
+        if confirmation != "y":
+            string_utils.print_libsync_status("Canceling playlist updates", level=2)
+            return playlist_id_map
 
         if not dry_run:
+            string_utils.print_libsync_status("Updating Spotify playlists", level=1)
+
             logger.info(
                 f"running overwrite_playlists with {len(spotify_playlist_write_jobs)} jobs"
             )
@@ -427,7 +442,7 @@ def get_playlist_diffs(
         sp_uris_from_rb = get_filtered_spotify_uris_from_rekordbox_playlist(
             rb_playlist, rekordbox_to_spotify_map
         )
-        logger.debug(f"spotify uris from rekordbox playlist: {sp_uris_from_rb}")
+        # logger.debug(f"spotify uris from rekordbox playlist: {sp_uris_from_rb}")
 
         spotify_playlist_id = playlist_id_map[rb_playlist.name]
         if spotify_playlist_id not in libsync_owned_spotify_playlists:
@@ -475,3 +490,53 @@ def get_playlist_diffs(
             continue
 
     return spotify_playlist_write_jobs, new_spotify_additions
+
+
+def print_spotify_playlist_changes_summary(
+    spotify_playlist_write_jobs: list[list[str, list[str]]],
+    libsync_owned_spotify_playlists: dict[str, list[str]],
+    playlist_id_map: dict[str, str],
+    collection: RekordboxCollection,
+    rekordbox_to_spotify_map: dict[str, str],
+):
+    """Print a summary of changes to be made to Spotify playlists.
+    Shows which songs will be added and removed from each playlist.
+    """
+    string_utils.print_libsync_status(
+        f"Changes to be made to {len(spotify_playlist_write_jobs)} playlists:", level=2
+    )
+
+    reverse_playlist_id_map = {v: k for k, v in playlist_id_map.items()}
+    reverse_rekordbox_to_spotify_map = {
+        v: k for k, v in rekordbox_to_spotify_map.items()
+    }
+
+    for playlist_id, new_track_uris in spotify_playlist_write_jobs:
+        playlist_name = reverse_playlist_id_map[playlist_id]
+        current_track_ids = libsync_owned_spotify_playlists.get(playlist_id, [])
+        current_track_uris = [
+            string_utils.get_spotify_uri_from_id(track_id)
+            for track_id in current_track_ids
+        ]
+
+        added_tracks = set(new_track_uris) - set(current_track_uris)
+        removed_tracks = set(current_track_uris) - set(new_track_uris)
+
+        if len(added_tracks) == 0 and len(removed_tracks) == 0:
+            continue
+
+        print(f"\n      Playlist: {playlist_name}")
+
+        if added_tracks:
+            print("        Adding:")
+            for uri in sorted(added_tracks):
+                if uri in reverse_rekordbox_to_spotify_map:
+                    rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
+                    print(f"          {rb_track.artist} - {rb_track.name}")
+
+        if removed_tracks:
+            print("        Removing:")
+            for uri in sorted(removed_tracks):
+                if uri in reverse_rekordbox_to_spotify_map:
+                    rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
+                    print(f"          {rb_track.artist} - {rb_track.name}")
