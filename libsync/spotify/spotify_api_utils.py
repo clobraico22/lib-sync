@@ -356,7 +356,7 @@ def get_user_playlists_details(playlists: Iterable[str]) -> dict[str, list[str]]
         playlists (Iterable[str]): list of spotify playlist ids
 
     Returns:
-        dict[str, list]: map from spotify playlist id to list of spotify track URIs
+        dict[str, list]: map from spotify playlist id to list of spotify track ids
     """
 
     initial_playlist_info = asyncio.run(fetch_playlist_details_controller(playlists))
