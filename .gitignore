@@ -11,3 +11,5 @@ data/*.part
 data/*.csv
 data/*.txt
 .cache-*
+data/temp_segments/*
+libsync.egg-info
