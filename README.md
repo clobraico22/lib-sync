@@ -14,6 +14,7 @@ libsync has some useful tools for managing your music library.
 - `.env` file in the root directory with client ID and secret
   - go to the [Spotify developers dashboard](https://developer.spotify.com/dashboard) and go to Create App to get a client ID and secret
   - copy `.example.env` from this directory into a new file `.env` in the same directory and add your `id` and `secret`
+- [`ffmpeg`](https://www.ffmpeg.org/download.html) installed and available on the path
 
 ### Setup
 
