@@ -10,7 +10,7 @@ libsync has some useful tools for managing your music library.
 
 ### Prerequisites
 
-- [python 3.10](https://www.python.org/downloads/release/python-31010/) installed locally
+- [python 3.11](https://www.python.org/downloads/release/python-31010/) installed locally
 - `.env` file in the root directory with client ID and secret
   - go to the [Spotify developers dashboard](https://developer.spotify.com/dashboard) and go to Create App to get a client ID and secret
   - copy `.example.env` from this directory into a new file `.env` in the same directory and add your `id` and `secret`
@@ -21,7 +21,7 @@ libsync has some useful tools for managing your music library.
 In this directory, run:
 
 ```bash
-python3.10 -m venv .venv   # create virtual environment
+python3.11 -m venv .venv   # create virtual environment
 source .venv/bin/activate  # activate virtual environment
 pip install -e ".[dev]"    # install dependencies locally
 ```
@@ -57,7 +57,7 @@ python -m libsync analyze -h
 **One time setup**
 
 ```bash
-python3.10 -m venv .venv   # create virtual environment
+python3.11 -m venv .venv   # create virtual environment
 ```
 
 **Each time you pull a new version**
