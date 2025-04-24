@@ -24,6 +24,7 @@ from libsync.utils.string_utils import (
     get_artists_from_rb_track,
     get_name_varieties_from_track_name,
     get_spotify_uri_from_url,
+    log_and_print,
     pretty_print_spotify_track,
     strip_punctuation,
 )
@@ -33,6 +34,10 @@ logger = logging.getLogger("libsync")
 
 class ExitAndSaveException(Exception):
     """Custom exception to signal exit and save operation."""
+
+
+class SkipRemainingException(Exception):
+    """Custom exception to signal skip remaining operation."""
 
 
 def get_spotify_matches(
@@ -125,7 +130,10 @@ def get_spotify_matches(
         )
 
         rb_track_ids_to_match = [
-            t for t in rb_track_ids_to_match if t not in rekordbox_to_spotify_map
+            t
+            for t in rb_track_ids_to_match
+            if t not in rekordbox_to_spotify_map
+            or rekordbox_to_spotify_map[t] == SpotifyMappingDbFlags.SKIP_TRACK
         ]
 
         if not interactive_mode_pending_tracks:
@@ -179,7 +187,10 @@ def get_spotify_matches(
     )
 
     rb_track_ids_to_match = [
-        t for t in rb_track_ids_to_match if t not in rekordbox_to_spotify_map
+        t
+        for t in rb_track_ids_to_match
+        if t not in rekordbox_to_spotify_map
+        or rekordbox_to_spotify_map[t] == SpotifyMappingDbFlags.SKIP_TRACK
     ]
 
     if not interactive_mode:
@@ -360,14 +371,38 @@ def pick_best_pending_tracks_spotify_matches_interactively(
     pending_tracks_spotify_to_rekordbox: dict[str, object],
 ):
     logger.debug(
-        "running check_pending_tracks_for_matches for "
+        "running pick_best_pending_tracks_spotify_matches_interactively for "
         + f"rb_track_ids_to_match: {rb_track_ids_to_match}"
         # + f" and pending_tracks_spotify_to_rekordbox: {pending_tracks_spotify_to_rekordbox}"
     )
 
-    for i, rb_track_id in enumerate(rb_track_ids_to_match):
+    # if there are a lot of tracks left to manually match with pending tracks, let's sort by how well they matched.
+    # going to duplicate some processing here now for the sake of readability.
+    # doing the same processing that we do for each track in pick_matching_track_interactively_and_process_input here
+    # just to sort. inefficient but not a big deal
+
+    # TODO: if we successfully match a song, take it out of contention for future matches.
+    rb_track_id_to_max_similarity_score = {
+        rb_track_id: max(
+            [
+                track_tuple[1]
+                for track_tuple in get_sorted_list_tracks_with_similarity(
+                    rekordbox_library.collection[rb_track_id],
+                    pending_tracks_spotify_to_rekordbox,
+                )
+            ]
+        )
+        for rb_track_id in rb_track_ids_to_match
+    }
+    sorted_rb_track_ids_to_match = sorted(
+        rb_track_ids_to_match,
+        key=lambda rb_track_id: rb_track_id_to_max_similarity_score[rb_track_id],
+        reverse=True,
+    )
+
+    for i, rb_track_id in enumerate(sorted_rb_track_ids_to_match):
         logger.debug(
-            f"automatically matching track {i + 1}/{len(rb_track_ids_to_match)}"
+            f"interactively matching track {i + 1}/{len(sorted_rb_track_ids_to_match)}"
         )
 
         rb_track = rekordbox_library.collection[rb_track_id]
@@ -384,6 +419,13 @@ def pick_best_pending_tracks_spotify_matches_interactively(
                     pending_tracks_spotify_to_rekordbox,
                 )
             )
+
+        except SkipRemainingException:
+            logger.debug("skip remaining flag received")
+            for rb_track_id in sorted_rb_track_ids_to_match[i:]:
+                rekordbox_to_spotify_map[rb_track_id] = SpotifyMappingDbFlags.SKIP_TRACK
+
+            return rekordbox_to_spotify_map
 
         except ExitAndSaveException:
             logger.debug("exit and save flag received")
@@ -403,9 +445,35 @@ def pick_best_spotify_matches_interactively(
         + f"rb_track_ids_to_match: {rb_track_ids_to_match}"
     )
 
-    for i, rb_track_id in enumerate(rb_track_ids_to_match):
+    # if there are a lot of tracks left to manually match with pending tracks, let's sort by how well they matched.
+    # going to duplicate some processing here now for the sake of readability.
+    # doing the same processing that we do for each track in pick_matching_track_interactively_and_process_input here
+    # just to sort. inefficient but not a big deal
+    rb_track_id_to_max_similarity_score = {
+        rb_track_id: max(
+            [
+                track_tuple[1]
+                for track_tuple in get_sorted_list_tracks_with_similarity(
+                    rekordbox_library.collection[rb_track_id],
+                    spotify_search_results,
+                )
+            ]
+        )
+        for rb_track_id in rb_track_ids_to_match
+    }
+    sorted_rb_track_ids_to_match = sorted(
+        rb_track_ids_to_match,
+        key=lambda rb_track_id: rb_track_id_to_max_similarity_score[rb_track_id],
+        reverse=True,
+    )
+    log_and_print(
+        f"rb_track_id_to_max_similarity_score: {rb_track_id_to_max_similarity_score}"
+    )
+    log_and_print(f"sorted_rb_track_ids_to_match: {sorted_rb_track_ids_to_match}")
+
+    for i, rb_track_id in enumerate(sorted_rb_track_ids_to_match):
         logger.debug(
-            f"interactively matching track {i + 1}/{len(rb_track_ids_to_match)}"
+            f"interactively matching track {i + 1}/{len(sorted_rb_track_ids_to_match)}"
         )
 
         rb_track = rekordbox_library.collection[rb_track_id]
@@ -421,6 +489,13 @@ def pick_best_spotify_matches_interactively(
                     rekordbox_to_spotify_map, rb_track, song_search_results
                 )
             )
+
+        except SkipRemainingException:
+            logger.debug("skip remaining flag received")
+            for rb_track_id in sorted_rb_track_ids_to_match[i:]:
+                rekordbox_to_spotify_map[rb_track_id] = SpotifyMappingDbFlags.SKIP_TRACK
+
+            return rekordbox_to_spotify_map
 
         except ExitAndSaveException:
             logger.debug("exit and save flag received")
@@ -440,6 +515,9 @@ def pick_matching_track_interactively_and_process_input(
 
     if interactive_input_result == InteractiveWorkflowCommands.SKIP_TRACK:
         rekordbox_to_spotify_map[rb_track.id] = SpotifyMappingDbFlags.SKIP_TRACK
+
+    elif interactive_input_result == InteractiveWorkflowCommands.SKIP_REMAINING:
+        raise SkipRemainingException("skip remaining flag received")
 
     elif interactive_input_result == InteractiveWorkflowCommands.NOT_ON_SPOTIFY:
         rekordbox_to_spotify_map[rb_track.id] = SpotifyMappingDbFlags.NOT_ON_SPOTIFY
@@ -490,10 +568,14 @@ def get_rb_track_ids_to_match(
                 rekordbox_to_spotify_map[rb_track_id]
                 == SpotifyMappingDbFlags.SKIP_TRACK
             ):
+                # logger.debug(
+                #     "skipped matching this track last time, adding to list of skipped tracks"
+                # )
+                # skipped_tracks.append(rb_track_id)
                 logger.debug(
-                    "skipped matching this track last time, adding to list of skipped tracks"
+                    "skipped matching this track last time, let's try matching it this time"
                 )
-                skipped_tracks.append(rb_track_id)
+                rb_track_ids_to_match.append(rb_track_id)
 
             else:
                 logger.debug("track already matched, no need for lookup")
@@ -632,25 +714,29 @@ def get_interactive_input_for_track(rb_track, list_of_spotify_tracks: list):
     list_of_spotify_tracks = list_of_spotify_tracks[:10]
     selection = get_valid_interactive_input(rb_track, list_of_spotify_tracks)
     if selection == "s":
-        print("skipping this track")
+        log_and_print("skipping this track")
         return InteractiveWorkflowCommands.SKIP_TRACK
 
+    elif selection == "skip_remaining":
+        log_and_print("skipping the rest of the tracks")
+        return InteractiveWorkflowCommands.SKIP_REMAINING
+
     elif selection == "m":
-        print("marking song as missing")
+        log_and_print("marking song as missing")
         return InteractiveWorkflowCommands.NOT_ON_SPOTIFY
 
     elif selection == "x":
-        print("exiting and saving")
+        log_and_print("exiting and saving")
         return InteractiveWorkflowCommands.EXIT_AND_SAVE
 
     elif selection == "cancel":
-        print("exiting without saving")
+        log_and_print("exiting without saving")
         return InteractiveWorkflowCommands.CANCEL
 
     elif selection.isdigit():
         index = int(selection) - 1
         spotify_track = list_of_spotify_tracks[int(selection) - 1][0]
-        print(
+        log_and_print(
             f"selected track index: {index}, track: {pretty_print_spotify_track(spotify_track)}"
         )
         return spotify_track["uri"]
@@ -674,34 +760,37 @@ def get_valid_interactive_input(rb_track: RekordboxTrack, list_of_spotify_tracks
     """
     search_query = urllib.parse.quote(f"{rb_track.artist} - {rb_track.name}")
     web_search_url = f"https://open.spotify.com/search/{search_query}"
-    print(
+    log_and_print(
         "---------------------------------------------------"
         + "-------------------------------------------------"
     )
-    print(f"looking for a match for rekordbox track with id: {rb_track}")
-    print(f"url to search spotify for this song: {web_search_url}")
+    log_and_print(f"looking for a match for rekordbox track with id: {rb_track}")
+    log_and_print(f"url to search spotify for this song: {web_search_url}")
 
     for i, (spotify_track, similarity) in enumerate(list_of_spotify_tracks):
-        print(
+        log_and_print(
             f"{i + 1:3}. {int(similarity * 100):3}%: "
             + pretty_print_spotify_track(spotify_track, include_url=True)
         )
 
     while True:
         user_input = input(
-            'enter "s" to skip, "m" to mark a song as missing on spotify, '
-            + '"x" to exit and save matches, "cancel" to exit without saving, '
+            "Enter one of the following options:\n"
+            + '  "s" to skip\n'
+            + '  "skip_remaining" to skip the rest of the tracks for this section\n'
+            + '  "m" to mark a song as missing on spotify\n'
+            + '  "x" to exit and save matches\n'
+            + '  "cancel" to exit without saving\n'
             + (
-                f"any number between 1 and {len(list_of_spotify_tracks)} to select "
-                + "one of the results from the list above, "
+                f"  any number between 1 and {len(list_of_spotify_tracks)} to select one of the results from the list above\n"
                 if len(list_of_spotify_tracks) >= 1
                 else ""
             )
-            + "or paste a spotify link to "
-            + "the track to save it: "
+            + "  or paste a spotify link to the track to save it\n"
+            + "Your choice: "
         )
         user_input = user_input.strip()
-        if user_input.lower() in ("s", "m", "x", "cancel"):
+        if user_input.lower() in ("s", "skip_remaining", "m", "x", "cancel"):
             return user_input
 
         elif user_input.isdigit() and 1 <= int(user_input) <= len(
@@ -721,10 +810,10 @@ def get_valid_interactive_input(rb_track: RekordboxTrack, list_of_spotify_tracks
 
             except spotipy.exceptions.SpotifyException as error:
                 logger.debug(error)
-                print("Invalid spotify link. Try again.")
+                log_and_print("Invalid spotify link. Try again.")
 
         else:
-            print("Invalid input. Try again.")
+            log_and_print("Invalid input. Try again.")
 
 
 def get_sorted_list_tracks_with_similarity(rb_track, song_search_results):
@@ -737,7 +826,7 @@ def get_sorted_list_tracks_with_similarity(rb_track, song_search_results):
     Returns:
         list: _description_
     """
-    # print(f"song_search_results: {song_search_results}")
+    # log_and_print(f"song_search_results: {song_search_results}")
 
     similarities = calculate_similarities(rb_track, song_search_results)
 

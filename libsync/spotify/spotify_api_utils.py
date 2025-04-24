@@ -22,10 +22,9 @@ async def get_from_spotify_with_retry(
             async with session.get(url, headers=headers, params=params) as response:
                 if isinstance(response, aiohttp.ClientResponse):
                     if response.status == 429:
-                        retry_after = (
-                            int(response.headers.get("Retry-After", "5"))
-                            + random.random() * 5
-                        )
+                        retry_after = int(
+                            response.headers.get("Retry-After", "5")
+                        ) + 2 ** (attempt + random.random())
                         logger.warning(
                             f"Rate limited. Retrying after {retry_after} seconds. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
                         )
@@ -115,7 +114,9 @@ async def overwrite_playlists_worker(
     json = {"uris": []}
     async with session.put(url, headers=headers, json=json) as response:
         if not response.ok:
-            raise ConnectionError("updating playlist failed")
+            logger.error(f"updating playlist page 1 failed: {await response.text()}")
+            logger.error(f"response: {response}")
+            raise ConnectionError("updating playlist page 1 failed")
 
         responses.append(await response.json())
 
@@ -124,7 +125,11 @@ async def overwrite_playlists_worker(
         json = {"uris": page}
         async with session.post(url, headers=headers, json=json) as response:
             if not response.ok:
-                raise ConnectionError("updating playlist failed")
+                logger.error(
+                    f"updating playlist page {page} failed: {await response.text()}"
+                )
+                logger.error(f"response: {response}")
+                raise ConnectionError("updating playlist page n failed")
 
             responses.append(await response.json())
 
@@ -147,15 +152,21 @@ async def fetch_spotify_song_details_worker(
 
 
 async def fetch_spotify_search_results_worker(session, access_token, query):
+    if not query:
+        return query, None
+
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/search?q={query}&type=track"
 
-    data = await get_from_spotify_with_retry(
-        session, url, headers, None, "fetching search results"
-    )
-
     try:
+        data = await get_from_spotify_with_retry(
+            session, url, headers, None, "fetching search results"
+        )
         return query, data["tracks"]["items"]
+
+    except ConnectionError as e:
+        logger.error(f"ConnectionError in fetch_spotify_search_results_worker: {e}")
+        return query, None
 
     except KeyError as e:
         logger.error(f"KeyError in fetch_spotify_search_results_worker: {e}")
@@ -329,6 +340,11 @@ async def fetch_spotify_search_results_controller(queries):
             fetch_spotify_search_results_worker(session, access_token, query)
             for query in queries
         ]
+        # TODO: we're getting rate limited here when we try to hit this too quickly.
+        # might be some persistent issues here
+        # need to debug.
+        # use case: trying to update 40+ playlists at once, we're successfully deleting them, but not recreating.
+        # major bug.
         search_results_list = []
         for future in tqdm(
             asyncio.as_completed(tasks),
