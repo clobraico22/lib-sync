@@ -360,14 +360,40 @@ def pick_best_pending_tracks_spotify_matches_interactively(
     pending_tracks_spotify_to_rekordbox: dict[str, object],
 ):
     logger.debug(
-        "running check_pending_tracks_for_matches for "
+        "running pick_best_pending_tracks_spotify_matches_interactively for "
         + f"rb_track_ids_to_match: {rb_track_ids_to_match}"
         # + f" and pending_tracks_spotify_to_rekordbox: {pending_tracks_spotify_to_rekordbox}"
     )
 
-    for i, rb_track_id in enumerate(rb_track_ids_to_match):
+    # if there are a lot of tracks left to manually match with pending tracks, let's sort by how well they matched.
+    # going to duplicate some processing here now for the sake of readability.
+    # doing the same processing that we do for each track in pick_matching_track_interactively_and_process_input here
+    # just to sort. inefficient but not a big deal
+
+    # TODO: if we successfully match a song, take it out of contention for future matches.
+    rb_track_id_to_max_similarity_score = {
+        rb_track_id: max(
+            [
+                track_tuple[1]
+                for track_tuple in get_sorted_list_tracks_with_similarity(
+                    rekordbox_library.collection[rb_track_id],
+                    pending_tracks_spotify_to_rekordbox,
+                )
+            ]
+        )
+        for rb_track_id in rb_track_ids_to_match
+    }
+    sorted_rb_track_ids_to_match = sorted(
+        rb_track_ids_to_match,
+        key=lambda rb_track_id: rb_track_id_to_max_similarity_score[rb_track_id],
+        reverse=True,
+    )
+    print(f"rb_track_id_to_max_similarity_score: {rb_track_id_to_max_similarity_score}")
+    print(f"sorted_rb_track_ids_to_match: {sorted_rb_track_ids_to_match}")
+
+    for i, rb_track_id in enumerate(sorted_rb_track_ids_to_match):
         logger.debug(
-            f"automatically matching track {i + 1}/{len(rb_track_ids_to_match)}"
+            f"manually matching track {i + 1}/{len(sorted_rb_track_ids_to_match)}"
         )
 
         rb_track = rekordbox_library.collection[rb_track_id]
