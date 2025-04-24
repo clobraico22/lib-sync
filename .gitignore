@@ -13,3 +13,4 @@ data/*.txt
 .cache-*
 data/temp_segments/*
 libsync.egg-info
+data/logs/*.log

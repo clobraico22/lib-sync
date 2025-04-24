@@ -10,6 +10,7 @@ from libsync.spotify import spotify_api_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
 from libsync.utils import constants, string_utils
 from libsync.utils.rekordbox_library import RekordboxCollection, RekordboxPlaylist
+from libsync.utils.string_utils import log_and_print
 
 logger = logging.getLogger("libsync")
 
@@ -119,8 +120,15 @@ def sync_spotify_playlists(
         pickle_dir = os.path.join(os.path.dirname(rekordbox_xml_path), "test_data")
         os.makedirs(pickle_dir, exist_ok=True)
         pickle_path = os.path.join(pickle_dir, "spotify_playlists_test_data.pickle")
+        pickle_path_backup = os.path.join(
+            pickle_dir,
+            f"spotify_playlists_test_data_{time.strftime('%Y.%m.%d_%H.%M.%S')}.pickle",
+        )
 
         with open(pickle_path, "wb") as f:
+            pickle.dump(test_data, f)
+
+        with open(pickle_path_backup, "wb") as f:
             pickle.dump(test_data, f)
 
         logger.info(f"Test data saved to {pickle_path}")
@@ -333,7 +341,7 @@ def print_rekordbox_diff_report(
             f"Download these songs ({len(new_songs_to_download)}):", level=1
         )
         for sp_uri in sorted(new_songs_to_download):
-            print(
+            log_and_print(
                 f"    {sp_uri} "
                 + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
             )
@@ -354,19 +362,19 @@ def print_rekordbox_diff_report(
     }
 
     if len(songs_to_playlists_diff_map_new_tracks) >= 1:
-        print("    New tracks")
+        log_and_print("    New tracks")
         print_rekordbox_diff_report_by_track(
             songs_to_playlists_diff_map_new_tracks,
             spotify_song_details,
         )
     if len(songs_to_playlists_diff_map_old_tracks) >= 1:
-        print("\n    Tracks already in your collection")
+        log_and_print("\n    Tracks already in your collection")
         print_rekordbox_diff_report_by_track(
             songs_to_playlists_diff_map_old_tracks,
             spotify_song_details,
         )
 
-    print("\n    Sorted by playlist")
+    log_and_print("\n    Sorted by playlist")
     print_rekordbox_diff_report_by_playlist(
         playlists_to_songs_diff_map,
         spotify_song_details,
@@ -385,11 +393,11 @@ def print_rekordbox_diff_report_by_track(
             spotify_song_details[item[0]]
         ),
     ):
-        print(
+        log_and_print(
             f"      {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
         )
         for rb_playlist_name in sorted(rb_playlists):
-            print(f"        {rb_playlist_name}")
+            log_and_print(f"        {rb_playlist_name}")
 
 
 def print_rekordbox_diff_report_by_playlist(
@@ -399,9 +407,9 @@ def print_rekordbox_diff_report_by_playlist(
     for rb_playlist_name, sp_uris in sorted(
         playlists_to_songs_diff_map.items(), key=lambda x: x[0]
     ):
-        print(f"      {rb_playlist_name}")
+        log_and_print(f"      {rb_playlist_name}")
         for sp_uri in sorted(sp_uris):
-            print(
+            log_and_print(
                 f"        {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
             )
 
@@ -525,18 +533,18 @@ def print_spotify_playlist_changes_summary(
         if len(added_tracks) == 0 and len(removed_tracks) == 0:
             continue
 
-        print(f"\n      Playlist: {playlist_name}")
+        log_and_print(f"\n      Playlist: {playlist_name}")
 
         if added_tracks:
-            print("        Adding:")
+            log_and_print("        Adding:")
             for uri in sorted(added_tracks):
                 if uri in reverse_rekordbox_to_spotify_map:
                     rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
-                    print(f"          {rb_track.artist} - {rb_track.name}")
+                    log_and_print(f"          {rb_track.artist} - {rb_track.name}")
 
         if removed_tracks:
-            print("        Removing:")
+            log_and_print("        Removing:")
             for uri in sorted(removed_tracks):
                 if uri in reverse_rekordbox_to_spotify_map:
                     rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
-                    print(f"          {rb_track.artist} - {rb_track.name}")
+                    log_and_print(f"          {rb_track.artist} - {rb_track.name}")

@@ -2,6 +2,7 @@
 
 from libsync.utils import string_utils
 from libsync.utils.rekordbox_library import RekordboxLibrary
+from libsync.utils.string_utils import log_and_print
 
 
 def generate_rekordbox_library_report(rekordbox_library: RekordboxLibrary) -> None:
@@ -22,8 +23,8 @@ def generate_rekordbox_library_report(rekordbox_library: RekordboxLibrary) -> No
         for track_id, playlists in track_to_playlists_map.items()
         if len(playlists) == 0
     ]
-    print("tracks not on any playlists:")
+    log_and_print("tracks not on any playlists:")
     for track_id in tracks_not_on_any_playlists:
-        print(f"{rekordbox_library.collection[track_id]}")
+        log_and_print(f"{rekordbox_library.collection[track_id]}")
 
     string_utils.print_libsync_status_success("Done", level=1)

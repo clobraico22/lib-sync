@@ -2,12 +2,15 @@
 
 import re
 import string
+import time
 
 import spotipy.client
 from colorama import Fore, Style
 
 from libsync.utils.constants import ARTIST_LIST_DELIMITERS, SPOTIFY_TRACK_URI_PREFIX
 from libsync.utils.rekordbox_library import RekordboxTrack
+
+output_file = open(f"data/logs/libsync_{time.strftime('%Y-%m-%d_%H-%M-%S')}.log", "w")
 
 
 def get_spotify_uri_from_url(spotify_url: str) -> str:
@@ -120,14 +123,23 @@ def generate_spotify_playlist_name(rb_playlist_name: str) -> str:
 def print_libsync_status(
     status_message, level=0, arrow_color=Fore.BLUE, text_color=Fore.WHITE
 ):
-    print(
+    message = (
         "  " * (level - 1)
         + ((arrow_color + "==> " + Style.RESET_ALL) if level >= 1 else "")
         + Style.BRIGHT
         + text_color
         + status_message
-        + Style.RESET_ALL,
+        + Style.RESET_ALL
     )
+    print(message)
+    # Remove ANSI color codes and escape sequences before writing to file
+    clean_message = re.sub(r"\033\[\d+(;\d+)*m", "", message)
+    output_file.write(clean_message + "\n")
+
+
+def log_and_print(message):
+    print(message)
+    output_file.write(message + "\n")
 
 
 def print_libsync_status_success(status_message, level=0):
