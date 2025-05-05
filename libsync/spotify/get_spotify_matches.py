@@ -18,7 +18,13 @@ from libsync.utils.constants import (
     InteractiveWorkflowCommands,
     SpotifyMappingDbFlags,
 )
-from libsync.utils.rekordbox_library import RekordboxLibrary, RekordboxTrack
+from libsync.utils.rekordbox_library import (
+    RekordboxLibrary,
+    RekordboxTrack,
+    RekordboxTrackID,
+    SpotifySearchResults,
+    SpotifySongCollection,
+)
 from libsync.utils.similarity_utils import calculate_similarities
 from libsync.utils.string_utils import (
     get_artists_from_rb_track,
@@ -225,9 +231,9 @@ def get_spotify_matches(
 
 
 def get_spotify_search_results_and_update_cache(
-    rb_track_ids_to_match: list[str],
+    rb_track_ids_to_match: list[RekordboxTrackID],
     rekordbox_library: RekordboxLibrary,
-    spotify_search_results: dict[str, object],
+    spotify_search_results: SpotifySearchResults,
 ):
     string_utils.print_libsync_status(
         f"Searching Spotify for matches for {len(rb_track_ids_to_match)} new Rekordbox tracks",
@@ -279,7 +285,7 @@ def get_spotify_search_results_and_update_cache(
 
 
 def check_pending_tracks_for_matches(
-    rb_track_ids_to_match: list[str],
+    rb_track_ids_to_match: list[RekordboxTrackID],
     rekordbox_library: RekordboxLibrary,
     rekordbox_to_spotify_map: dict[str, str],
     pending_tracks_spotify_to_rekordbox: dict[str, object],
@@ -324,9 +330,9 @@ def check_pending_tracks_for_matches(
 
 
 def pick_best_spotify_matches_automatically(
-    rb_track_ids_to_match: list[str],
+    rb_track_ids_to_match: list[RekordboxTrackID],
     rekordbox_library: RekordboxLibrary,
-    spotify_search_results: dict[str, object],
+    spotify_search_results: SpotifySearchResults,
     rekordbox_to_spotify_map: dict[str, str],
 ):
     logger.debug(
@@ -365,10 +371,10 @@ def pick_best_spotify_matches_automatically(
 
 
 def pick_best_pending_tracks_spotify_matches_interactively(
-    rb_track_ids_to_match: list[str],
+    rb_track_ids_to_match: list[RekordboxTrackID],
     rekordbox_library: RekordboxLibrary,
     rekordbox_to_spotify_map: dict[str, str],
-    pending_tracks_spotify_to_rekordbox: dict[str, object],
+    pending_tracks_spotify_to_rekordbox: SpotifySongCollection,
 ):
     logger.debug(
         "running pick_best_pending_tracks_spotify_matches_interactively for "
@@ -435,9 +441,9 @@ def pick_best_pending_tracks_spotify_matches_interactively(
 
 
 def pick_best_spotify_matches_interactively(
-    rb_track_ids_to_match: list[str],
+    rb_track_ids_to_match: list[RekordboxTrackID],
     rekordbox_library: RekordboxLibrary,
-    spotify_search_results: dict[str, object],
+    spotify_search_results: SpotifySearchResults,
     rekordbox_to_spotify_map: dict[str, str],
 ):
     logger.debug(
@@ -455,7 +461,10 @@ def pick_best_spotify_matches_interactively(
                 track_tuple[1]
                 for track_tuple in get_sorted_list_tracks_with_similarity(
                     rekordbox_library.collection[rb_track_id],
-                    spotify_search_results,
+                    get_cached_results_for_track(
+                        rekordbox_library.collection[rb_track_id],
+                        spotify_search_results,
+                    ),
                 )
             ]
         )
@@ -590,13 +599,13 @@ def get_rb_track_ids_to_match(
 
 def get_cached_results_for_track(
     rb_track: RekordboxTrack,
-    spotify_search_results: dict[str, object],
-) -> dict[str, object]:
+    spotify_search_results: SpotifySearchResults,
+) -> SpotifySongCollection:
     """search spotify for a given rekordbox track.
 
     Args:
-        spotify_client (spotipy.Spotify): spotipy client for using spotify api
-        rb_track (RekordboxTrack): reack object with members 'name','artist','album'
+        rb_track (RekordboxTrack): track object with members 'name','artist','album'
+        spotify_search_results (SpotifySongCollection): map of spotify URI to a spotify song object
 
     Returns:
         search_result_tracks (dict): dict top results from various searches based on
@@ -638,7 +647,7 @@ def get_spotify_queries_from_rb_track(
 
 def pick_matching_track_automatically(
     rb_track: RekordboxTrack,
-    song_search_results: dict,
+    song_search_results: SpotifySongCollection,
     min_similarity_threshold: float = MINIMUM_SIMILARITY_THRESHOLD_NEW_MATCHES,
 ) -> Optional[str]:
     """pick best track out of spotify search results.
@@ -816,17 +825,19 @@ def get_valid_interactive_input(rb_track: RekordboxTrack, list_of_spotify_tracks
             log_and_print("Invalid input. Try again.")
 
 
-def get_sorted_list_tracks_with_similarity(rb_track, song_search_results):
+# being called incorrectly rn
+def get_sorted_list_tracks_with_similarity(
+    rb_track: RekordboxTrack, song_search_results: SpotifySongCollection
+):
     """get list of spotify tracks sorted by similarity to rekordbox track
 
     Args:
-        rb_track (RekordboxTrack): _description_
-        song_search_results (dict): _description_
+        rb_track (RekordboxTrack): rekordbox track to compare against
+        song_search_results (SpotifySongCollection): tracks to compare against
 
     Returns:
-        list: _description_
+        list: list of tuples, each containing a spotify track and its similarity score
     """
-    # log_and_print(f"song_search_results: {song_search_results}")
 
     similarities = calculate_similarities(rb_track, song_search_results)
 

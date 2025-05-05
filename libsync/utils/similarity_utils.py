@@ -5,7 +5,7 @@ import unicodedata
 from difflib import SequenceMatcher
 
 from libsync.utils.constants import DEBUG_SIMILARITY
-from libsync.utils.rekordbox_library import RekordboxTrack
+from libsync.utils.rekordbox_library import RekordboxTrack, SpotifySongCollection
 from libsync.utils.string_utils import (
     get_artists_from_rb_track,
     get_name_varieties_from_track_name,
@@ -39,7 +39,7 @@ def remove_accents(input_str):
 
 
 def calculate_similarities(
-    rb_track: RekordboxTrack, spotify_search_results: dict
+    rb_track: RekordboxTrack, spotify_search_results: SpotifySongCollection
 ) -> dict:
     """calculate similarity to rb_track for each result in spotify_search_results
 
