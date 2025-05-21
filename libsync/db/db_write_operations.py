@@ -4,7 +4,11 @@ import pickle
 
 from libsync.db import db_read_operations, db_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
-from libsync.utils.rekordbox_library import RekordboxLibrary
+from libsync.utils.rekordbox_library import (
+    PlaylistName,
+    RekordboxLibrary,
+    SpotifyPlaylistId,
+)
 
 logger = logging.getLogger("libsync")
 
@@ -50,7 +54,9 @@ def save_pending_tracks_spotify_to_rekordbox(
         pickle.dump(pending_tracks, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def save_list_of_user_playlists(playlist_id_map: dict[str, str]) -> None:
+def save_list_of_user_playlists(
+    playlist_id_map: dict[PlaylistName, SpotifyPlaylistId],
+) -> None:
     user_id = SpotifyAuthManager.get_user_id()
 
     user_spotify_playlists_list_db_path = (
@@ -114,7 +120,9 @@ def save_song_mappings_csv(
         )
 
 
-def save_playlist_id_map(rekordbox_xml_path: str, playlist_id_map: dict[str, str]):
+def save_playlist_id_map(
+    rekordbox_xml_path: str, playlist_id_map: dict[PlaylistName, SpotifyPlaylistId]
+):
     logger.debug("running save_playlist_id_map")
     user_spotify_playlist_mapping_db_path = (
         db_utils.get_spotify_playlist_mapping_db_path(

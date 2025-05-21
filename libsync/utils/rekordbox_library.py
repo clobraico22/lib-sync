@@ -88,3 +88,5 @@ SpotifySearchQuery = str
 SpotifySong = dict[str, object]
 SpotifySongCollection = dict[SpotifyURI, SpotifySong]
 SpotifySearchResults = dict[SpotifySearchQuery, list[SpotifySong]]
+PlaylistName = str
+SpotifyPlaylistId = str

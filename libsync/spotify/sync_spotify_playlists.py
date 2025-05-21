@@ -9,14 +9,20 @@ from libsync.db import db_read_operations, db_write_operations
 from libsync.spotify import spotify_api_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
 from libsync.utils import constants, string_utils
-from libsync.utils.rekordbox_library import RekordboxCollection, RekordboxPlaylist
+from libsync.utils.rekordbox_library import (
+    PlaylistName,
+    RekordboxCollection,
+    RekordboxPlaylist,
+    SpotifyPlaylistId,
+    SpotifyURI,
+)
 from libsync.utils.string_utils import log_and_print
 
 logger = logging.getLogger("libsync")
 
 
 def fetch_spotify_playlists(
-    playlist_id_map: dict[str, str],
+    playlist_id_map: dict[PlaylistName, SpotifyPlaylistId],
 ) -> tuple[dict[str, list[str]], set[str]]:
     """
     Fetches Spotify playlists and related information.
@@ -426,14 +432,17 @@ def get_filtered_spotify_uris_from_rekordbox_playlist(
 
 
 def get_playlist_diffs(
-    rekordbox_playlists,
-    rekordbox_to_spotify_map,
-    playlist_id_map,
-    libsync_owned_spotify_playlists,
-):
+    rekordbox_playlists: list[RekordboxPlaylist],
+    rekordbox_to_spotify_map: dict[str, str],
+    playlist_id_map: dict[PlaylistName, SpotifyPlaylistId],
+    libsync_owned_spotify_playlists: dict[str, list[str]],
+) -> tuple[
+    list[tuple[SpotifyPlaylistId, list[SpotifyURI]]],
+    dict[PlaylistName, list[SpotifyURI]],
+]:
     logger.debug("running get_playlist_diffs")
-    spotify_playlist_write_jobs = []
-    new_spotify_additions = {}
+    spotify_playlist_write_jobs: list[tuple[SpotifyPlaylistId, list[SpotifyURI]]] = []
+    new_spotify_additions: dict[PlaylistName, list[SpotifyURI]] = {}
 
     # figure out which playlists need to be updated
     for rb_playlist in rekordbox_playlists:
@@ -503,7 +512,7 @@ def get_playlist_diffs(
 def print_spotify_playlist_changes_summary(
     spotify_playlist_write_jobs: list[list[str, list[str]]],
     libsync_owned_spotify_playlists: dict[str, list[str]],
-    playlist_id_map: dict[str, str],
+    playlist_id_map: dict[PlaylistName, SpotifyPlaylistId],
     collection: RekordboxCollection,
     rekordbox_to_spotify_map: dict[str, str],
 ):
