@@ -52,6 +52,51 @@ async def get_from_spotify_with_retry(
     )
 
 
+# New utility function for handling PUT/POST requests with retry
+async def modify_spotify_with_retry(
+    session, url, headers, json, method, description
+) -> Any:
+    for attempt in range(constants.MAX_RETRIES):
+        try:
+            if method.upper() == "PUT":
+                request_func = session.put
+            elif method.upper() == "POST":
+                request_func = session.post
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+
+            async with request_func(url, headers=headers, json=json) as response:
+                if isinstance(response, aiohttp.ClientResponse):
+                    if response.status == 429:
+                        retry_after = int(
+                            response.headers.get("Retry-After", "5")
+                        ) + 2 ** (attempt + random.random())
+                        logger.warning(
+                            f"Rate limited. Retrying after {retry_after} seconds. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
+                        )
+                        await asyncio.sleep(retry_after)
+                        continue
+                    if not response.ok:
+                        logger.debug(
+                            f"Response not OK: {response.status} - {await response.text()}"
+                        )
+                        response.raise_for_status()
+                return await response.json()
+        except (aiohttp.ClientError, requests.RequestException) as e:
+            logger.error(
+                f"Error in API call: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
+            )
+            if attempt == constants.MAX_RETRIES - 1:
+                raise ConnectionError(
+                    f"{description} failed after {constants.MAX_RETRIES} attempts"
+                ) from e
+            await asyncio.sleep(2**attempt)  # Exponential backoff
+
+    raise ConnectionError(
+        f"{description} failed after {constants.MAX_RETRIES} attempts"
+    )
+
+
 # workers
 
 
@@ -111,30 +156,41 @@ async def overwrite_playlists_worker(
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
 
-    # first page
+    # first page - clear the playlist
     json = {"uris": []}
-    async with session.put(url, headers=headers, json=json) as response:
-        if not response.ok:
-            logger.error(f"updating playlist page 1 failed: {await response.text()}")
-            logger.error(f"response: {response}")
-            raise ConnectionError("updating playlist page 1 failed")
+    try:
+        response_data = await modify_spotify_with_retry(
+            session, url, headers, json, "PUT", f"clearing playlist {playlist_id}"
+        )
+        responses.append(response_data)
 
-        responses.append(await response.json())
+        # Add delay between clearing and adding tracks to avoid rate limits
+        await asyncio.sleep(1)
 
-    # following pages
-    for page in pages:
-        json = {"uris": page}
-        async with session.post(url, headers=headers, json=json) as response:
-            if not response.ok:
-                logger.error(
-                    f"updating playlist page {page} failed: {await response.text()}"
-                )
-                logger.error(f"response: {response}")
-                raise ConnectionError("updating playlist page n failed")
+        # following pages - add tracks with delay between batches
+        for i, page in enumerate(pages):
+            json = {"uris": page}
+            response_data = await modify_spotify_with_retry(
+                session,
+                url,
+                headers,
+                json,
+                "POST",
+                f"adding tracks to playlist {playlist_id}",
+            )
+            responses.append(response_data)
 
-            responses.append(await response.json())
+            # Add delay between batches to reduce rate limiting
+            if i < len(pages) - 1:
+                await asyncio.sleep(0.5)
 
-    return responses
+        return responses
+    except ConnectionError as e:
+        logger.error(f"Failed to update playlist {playlist_id}: {e}")
+        # Return partial responses if we have any
+        if responses:
+            return responses
+        return []
 
 
 async def fetch_spotify_song_details_worker(
