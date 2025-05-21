@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from libsync.spotify.spotify_auth import SpotifyAuthManager
 from libsync.utils import constants, string_utils
+from libsync.utils.rekordbox_library import SpotifyPlaylistId, SpotifyURI
 
 logger = logging.getLogger("libsync")
 
@@ -277,7 +278,9 @@ async def fetch_additional_playlists_controller(params_list: list[list[str, int,
     return []
 
 
-async def overwrite_playlists_controller(params_list: list[list[str, list[str]]]):
+async def overwrite_playlists_controller(
+    params_list: list[tuple[SpotifyPlaylistId, list[SpotifyURI]]],
+):
     access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
@@ -415,7 +418,7 @@ def get_all_user_playlists_set() -> set[str]:
     return asyncio.run(get_all_user_playlists_set_controller())
 
 
-def overwrite_playlists(params_list: list[list[str, list[str]]]):
+def overwrite_playlists(params_list: list[tuple[SpotifyPlaylistId, list[SpotifyURI]]]):
     return asyncio.run(overwrite_playlists_controller(params_list))
 
 
