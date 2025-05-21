@@ -14,10 +14,15 @@ class LibsyncCommand(str, Enum):
     YOUTUBE = "youtube"
 
 
+RekordboxTrackID = str
+
+
 class RekordboxTrack:
     """Relevant track info from rekordbox xml file"""
 
-    def __init__(self, id, name, artist, album=None) -> None:
+    def __init__(
+        self, id: RekordboxTrackID, name: str, artist: str, album: str | None = None
+    ) -> None:
         self.id = id
         self.name = name
         self.artist = artist
@@ -75,3 +80,13 @@ class RekordboxLibrary:
 class RekordboxNodeType(Enum):
     FOLDER = 0
     PLAYLIST = 1
+
+
+SpotifyURI = str
+SpotifyURL = str
+SpotifySearchQuery = str
+SpotifySong = dict[str, object]
+SpotifySongCollection = dict[SpotifyURI, SpotifySong]
+SpotifySearchResults = dict[SpotifySearchQuery, list[SpotifySong]]
+PlaylistName = str
+SpotifyPlaylistId = str
