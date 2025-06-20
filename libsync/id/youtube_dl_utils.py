@@ -51,6 +51,7 @@ def get_youtube_video_id_from_url(value):
 YDL_OPTIONS = {
     "format": "bestaudio/best",
     "outtmpl": OUTPUT_TEMPLATE,
+    "extract_audio": True,
     "postprocessors": [
         {
             "key": "FFmpegExtractAudio",
@@ -58,6 +59,12 @@ YDL_OPTIONS = {
             "preferredquality": "192",
         }
     ],
+    "prefer_ffmpeg": True,
+    "keepvideo": False,
+    "no_playlist": True,
+    "extract_flat": False,
+    "age_limit": None,
+    "geo_bypass": True,
     "logger": YoutubeDLLogger(),
     "progress_hooks": [youtube_dl_progress_hook],
 }

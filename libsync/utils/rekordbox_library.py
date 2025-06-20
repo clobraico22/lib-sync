@@ -43,7 +43,7 @@ RekordboxCollection = dict[str, RekordboxTrack]
 
 # ordered list of track IDs
 class RekordboxPlaylist:
-    def __init__(self, name: str, tracks: list[str]) -> None:
+    def __init__(self, name: str, tracks: list[RekordboxTrackID]) -> None:
         self.name = name
         self.tracks = tracks
 

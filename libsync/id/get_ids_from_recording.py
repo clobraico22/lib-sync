@@ -104,10 +104,10 @@ async def recognize_segments(
 
                 if result and "matches" in result and "track" in result:
                     track = result["track"]
-                    offset = (start_ms,)
-                    shazam_id = (track["key"],)
-                    title = (track["title"],)
-                    artist = (track["subtitle"],)
+                    offset = start_ms
+                    shazam_id = track["key"]
+                    title = track["title"]
+                    artist = track["subtitle"]
 
                     if shazam_id and shazam_id not in shazam_matches_by_id:
                         timestamp = str(timedelta(milliseconds=offset))
