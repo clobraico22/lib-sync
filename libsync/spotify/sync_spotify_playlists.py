@@ -397,7 +397,7 @@ def print_rekordbox_diff_report_by_track(
         songs_to_playlists_diff_map.items(),
         key=lambda item: string_utils.pretty_print_spotify_track(
             spotify_song_details[item[0]]
-        ),
+        ).lower(),
     ):
         log_and_print(
             f"      {string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
