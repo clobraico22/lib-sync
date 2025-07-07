@@ -57,7 +57,7 @@ python -m libsync analyze -h
 **One time setup**
 
 ```bash
-python3.11 -m venv .venv   # create virtual environment
+python -m venv .venv   # create virtual environment
 ```
 
 **Each time you pull a new version**
