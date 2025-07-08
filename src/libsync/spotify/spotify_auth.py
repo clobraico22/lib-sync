@@ -1,14 +1,12 @@
-from typing import Optional
-
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
 
 class SpotifyAuthManager:
-    _auth_manager: Optional[SpotifyOAuth] = None
-    _user_id: Optional[str] = None
-    _spotify_client: Optional[spotipy.Spotify] = None
-    _access_token: Optional[str] = None
+    _auth_manager: SpotifyOAuth | None = None
+    _user_id: str | None = None
+    _spotify_client: spotipy.Spotify | None = None
+    _access_token: str | None = None
 
     # base level
     @classmethod

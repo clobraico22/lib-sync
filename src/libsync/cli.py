@@ -23,9 +23,7 @@ def setup_logger(logger):
     ch.setLevel(logging.DEBUG)
 
     # create formatter
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # add formatter to ch
     ch.setFormatter(formatter)
@@ -92,3 +90,11 @@ def cli():
             get_track_ids_from_youtube_link(youtube_url)
 
     logger.info(f"total runtime: {(time.time() - start_time):.3f} seconds")
+
+
+def main():
+    cli()
+
+
+if __name__ == "__main__":
+    main()

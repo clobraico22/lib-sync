@@ -28,9 +28,7 @@ def get_cached_spotify_search_results(
           indexed by spotify search API query string
     """
 
-    spotify_search_cache_path = db_utils.get_spotify_search_cache_path(
-        rekordbox_xml_path
-    )
+    spotify_search_cache_path = db_utils.get_spotify_search_cache_path(rekordbox_xml_path)
 
     try:
         with open(spotify_search_cache_path, "rb") as handle:
@@ -68,9 +66,7 @@ def get_pending_tracks_spotify_to_rekordbox(
 
     logger.debug("running get_pending_tracks_spotify_to_rekordbox")
     pending_tracks_spotify_to_rekordbox_db_path = (
-        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(
-            rekordbox_xml_path
-        )
+        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(rekordbox_xml_path)
     )
     try:
         with open(pending_tracks_spotify_to_rekordbox_db_path, "rb") as handle:
@@ -95,16 +91,12 @@ def get_playlist_id_map(
     rekordbox_xml_path: str,
 ) -> dict[str, str]:
     logger.debug("running get_playlist_id_map")
-    user_spotify_playlist_mapping_db_path = (
-        db_utils.get_spotify_playlist_mapping_db_path(
-            rekordbox_xml_path, SpotifyAuthManager.get_user_id()
-        )
+    user_spotify_playlist_mapping_db_path = db_utils.get_spotify_playlist_mapping_db_path(
+        rekordbox_xml_path, SpotifyAuthManager.get_user_id()
     )
     playlist_id_map = {}
     try:
-        with open(
-            user_spotify_playlist_mapping_db_path, mode="r", encoding="utf-8"
-        ) as file:
+        with open(user_spotify_playlist_mapping_db_path, encoding="utf-8") as file:
             reader = csv.reader(file)
             next(reader, None)  # skip the headers
             csv_lines = [line for line in reader]
@@ -117,10 +109,7 @@ def get_playlist_id_map(
                 # TODO: replace playlist name with playlist path (including folders)
                 playlist_id_map[playlist_name] = spotify_playlist_id
 
-        logger.debug(
-            "len(playlist_id_map) (after reading from csv): "
-            + f"{len(playlist_id_map)}"
-        )
+        logger.debug("len(playlist_id_map) (after reading from csv): " + f"{len(playlist_id_map)}")
         return playlist_id_map
 
     except FileNotFoundError as error:
@@ -150,11 +139,9 @@ def get_cached_sync_data(
     rb_track_ids_flagged_for_rematch = set()
 
     # get song mappings data from csv
-    libsync_song_mapping_csv_path = db_utils.get_libsync_song_mapping_csv_path(
-        rekordbox_xml_path
-    )
+    libsync_song_mapping_csv_path = db_utils.get_libsync_song_mapping_csv_path(rekordbox_xml_path)
     try:
-        with open(libsync_song_mapping_csv_path, mode="r", encoding="utf-8") as file:
+        with open(libsync_song_mapping_csv_path, encoding="utf-8") as file:
             reader = csv.reader(file)
             next(reader, None)  # skip the headers
             csv_lines = [line for line in reader]
@@ -192,9 +179,7 @@ def get_cached_sync_data(
                         )
 
                     except spotipy.exceptions.SpotifyException as error:
-                        raise ValueError(
-                            f"invalid spotify URL in csv: '{spotify_url}'"
-                        ) from error
+                        raise ValueError(f"invalid spotify URL in csv: '{spotify_url}'") from error
 
                 rekordbox_to_spotify_map[rb_track_id] = spotify_uri
 
@@ -227,7 +212,7 @@ def get_list_from_file(list_file_path) -> set[str]:
 
     lines = []
     try:
-        with open(list_file_path, "r", encoding="utf-8") as handle:
+        with open(list_file_path, encoding="utf-8") as handle:
             for line in handle.readlines():
                 lines.append(line.strip())
 

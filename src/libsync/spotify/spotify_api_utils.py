@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import random
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import aiohttp
 import requests
@@ -15,17 +16,15 @@ logger = logging.getLogger("libsync")
 
 
 # New utility function for handling retries
-async def get_from_spotify_with_retry(
-    session, url, headers, params, description
-) -> Any:
+async def get_from_spotify_with_retry(session, url, headers, params, description) -> Any:
     for attempt in range(constants.MAX_RETRIES):
         try:
             async with session.get(url, headers=headers, params=params) as response:
                 if isinstance(response, aiohttp.ClientResponse):
                     if response.status == 429:
-                        retry_after = int(
-                            response.headers.get("Retry-After", "5")
-                        ) + 2 ** (attempt + random.random())
+                        retry_after = int(response.headers.get("Retry-After", "5")) + 2 ** (
+                            attempt + random.random()
+                        )
                         logger.warning(
                             f"Rate limited. Retrying after {retry_after} seconds. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
                         )
@@ -38,24 +37,18 @@ async def get_from_spotify_with_retry(
                         response.raise_for_status()
                 return await response.json()
         except (aiohttp.ClientError, requests.RequestException) as e:
-            logger.error(
-                f"Error in API call: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
-            )
+            logger.error(f"Error in API call: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}")
             if attempt == constants.MAX_RETRIES - 1:
                 raise ConnectionError(
                     f"{description} failed after {constants.MAX_RETRIES} attempts"
                 ) from e
             await asyncio.sleep(2**attempt)  # Exponential backoff
 
-    raise ConnectionError(
-        f"{description} failed after {constants.MAX_RETRIES} attempts"
-    )
+    raise ConnectionError(f"{description} failed after {constants.MAX_RETRIES} attempts")
 
 
 # New utility function for handling PUT/POST requests with retry
-async def modify_spotify_with_retry(
-    session, url, headers, json, method, description
-) -> Any:
+async def modify_spotify_with_retry(session, url, headers, json, method, description) -> Any:
     for attempt in range(constants.MAX_RETRIES):
         try:
             if method.upper() == "PUT":
@@ -68,9 +61,9 @@ async def modify_spotify_with_retry(
             async with request_func(url, headers=headers, json=json) as response:
                 if isinstance(response, aiohttp.ClientResponse):
                     if response.status == 429:
-                        retry_after = int(
-                            response.headers.get("Retry-After", "5")
-                        ) + 2 ** (attempt + random.random())
+                        retry_after = int(response.headers.get("Retry-After", "5")) + 2 ** (
+                            attempt + random.random()
+                        )
                         logger.warning(
                             f"Rate limited. Retrying after {retry_after} seconds. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
                         )
@@ -83,18 +76,14 @@ async def modify_spotify_with_retry(
                         response.raise_for_status()
                 return await response.json()
         except (aiohttp.ClientError, requests.RequestException) as e:
-            logger.error(
-                f"Error in API call: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}"
-            )
+            logger.error(f"Error in API call: {e}. Attempt {attempt + 1}/{constants.MAX_RETRIES}")
             if attempt == constants.MAX_RETRIES - 1:
                 raise ConnectionError(
                     f"{description} failed after {constants.MAX_RETRIES} attempts"
                 ) from e
             await asyncio.sleep(2**attempt)  # Exponential backoff
 
-    raise ConnectionError(
-        f"{description} failed after {constants.MAX_RETRIES} attempts"
-    )
+    raise ConnectionError(f"{description} failed after {constants.MAX_RETRIES} attempts")
 
 
 # workers
@@ -103,9 +92,7 @@ async def modify_spotify_with_retry(
 async def fetch_playlist_details_worker(session, access_token, playlist_id):
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
-    params = {
-        "fields": "name,uri,tracks.total,tracks.items(track.id,track.name),tracks.limit"
-    }
+    params = {"fields": "name,uri,tracks.total,tracks.items(track.id,track.name),tracks.limit"}
 
     playlist_data = await get_from_spotify_with_retry(
         session, url, headers, params, "fetching playlist details"
@@ -126,9 +113,7 @@ async def fetch_additional_tracks_worker(
     return playlist_id, limit, offset, playlist_data
 
 
-async def fetch_additional_playlists_worker(
-    session, access_token, user_id, limit, offset
-):
+async def fetch_additional_playlists_worker(session, access_token, user_id, limit, offset):
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://api.spotify.com/v1/users/{user_id}/playlists?limit={limit}&offset={offset}"
     params = {"fields": "items(id,name)"}
@@ -139,12 +124,8 @@ async def fetch_additional_playlists_worker(
     return playlist_data
 
 
-async def overwrite_playlists_worker(
-    session, access_token, playlist_id, track_uri_list
-):
-    logger.debug(
-        f"clearing playlist: {playlist_id}, then adding {len(track_uri_list)} tracks."
-    )
+async def overwrite_playlists_worker(session, access_token, playlist_id, track_uri_list):
+    logger.debug(f"clearing playlist: {playlist_id}, then adding {len(track_uri_list)} tracks.")
     pages = [
         track_uri_list[i : i + constants.SPOTIFY_API_ITEMS_PER_PAGE]
         for i in range(0, len(track_uri_list), constants.SPOTIFY_API_ITEMS_PER_PAGE)
@@ -197,14 +178,10 @@ async def fetch_spotify_song_details_worker(
     session, access_token, list_of_sp_uris
 ) -> list[str, str, str]:
     headers = {"Authorization": f"Bearer {access_token}"}
-    list_of_sp_ids = [
-        string_utils.get_spotify_id_from_uri(sp_uri) for sp_uri in list_of_sp_uris
-    ]
+    list_of_sp_ids = [string_utils.get_spotify_id_from_uri(sp_uri) for sp_uri in list_of_sp_uris]
     url = f"https://api.spotify.com/v1/tracks?ids={'%2C'.join(list_of_sp_ids)}"
 
-    data = await get_from_spotify_with_retry(
-        session, url, headers, None, "fetching song details"
-    )
+    data = await get_from_spotify_with_retry(session, url, headers, None, "fetching song details")
     return [[track["uri"], track] for track in data["tracks"]]
 
 
@@ -248,10 +225,7 @@ async def fetch_playlist_details_controller(playlist_ids: Iterable[str]):
         ):
             playlist_info_list.append(await future)
 
-        return {
-            playlist_id: playlist_info
-            for playlist_id, playlist_info in playlist_info_list
-        }
+        return {playlist_id: playlist_info for playlist_id, playlist_info in playlist_info_list}
 
     return {}
 
@@ -260,9 +234,7 @@ async def fetch_additional_tracks_controller(params_list: list[list[str, int, in
     access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
-            fetch_additional_tracks_worker(
-                session, access_token, playlist_id, limit, offset
-            )
+            fetch_additional_tracks_worker(session, access_token, playlist_id, limit, offset)
             for playlist_id, limit, offset in params_list
         ]
 
@@ -295,12 +267,8 @@ async def get_all_user_playlists_set_controller():
     total = data["total"]
     limit = data["limit"]
     all_user_playlists = {item["id"] for item in data["items"]}
-    follow_up_job_params = [
-        [user_id, limit, offset] for offset in range(limit, total, limit)
-    ]
-    follow_up_playlist_ids = await fetch_additional_playlists_controller(
-        follow_up_job_params
-    )
+    follow_up_job_params = [[user_id, limit, offset] for offset in range(limit, total, limit)]
+    follow_up_playlist_ids = await fetch_additional_playlists_controller(follow_up_job_params)
     all_user_playlists.update(
         [
             item["id"]
@@ -315,9 +283,7 @@ async def fetch_additional_playlists_controller(params_list: list[list[str, int,
     access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
-            fetch_additional_playlists_worker(
-                session, access_token, user_id, limit, offset
-            )
+            fetch_additional_playlists_worker(session, access_token, user_id, limit, offset)
             for user_id, limit, offset in params_list
         ]
 
@@ -340,9 +306,7 @@ async def overwrite_playlists_controller(
     access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
-            overwrite_playlists_worker(
-                session, access_token, playlist_id, track_uri_list
-            )
+            overwrite_playlists_worker(session, access_token, playlist_id, track_uri_list)
             for playlist_id, track_uri_list in params_list
         ]
 
@@ -365,9 +329,7 @@ async def fetch_spotify_song_details_controller(
     # split the uris into batches - can run the batches in parallel
     batches = [
         spotify_uris[i : i + constants.SPOTIFY_API_GET_TRACKS_ITEMS_PER_PAGE]
-        for i in range(
-            0, len(spotify_uris), constants.SPOTIFY_API_GET_TRACKS_ITEMS_PER_PAGE
-        )
+        for i in range(0, len(spotify_uris), constants.SPOTIFY_API_GET_TRACKS_ITEMS_PER_PAGE)
     ]
     if len(batches) < 1:
         return {}
@@ -375,8 +337,7 @@ async def fetch_spotify_song_details_controller(
     access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
-            fetch_spotify_song_details_worker(session, access_token, batch)
-            for batch in batches
+            fetch_spotify_song_details_worker(session, access_token, batch) for batch in batches
         ]
 
         track_details_list = []
@@ -385,19 +346,14 @@ async def fetch_spotify_song_details_controller(
         ):
             track_details_list.append(await future)
 
-        return {
-            track_uri: track
-            for batch in track_details_list
-            for track_uri, track in batch
-        }
+        return {track_uri: track for batch in track_details_list for track_uri, track in batch}
 
 
 async def fetch_spotify_search_results_controller(queries):
     access_token = SpotifyAuthManager.get_access_token()
     async with aiohttp.ClientSession() as session:
         tasks = [
-            fetch_spotify_search_results_worker(session, access_token, query)
-            for query in queries
+            fetch_spotify_search_results_worker(session, access_token, query) for query in queries
         ]
         # TODO: we're getting rate limited here when we try to hit this too quickly.
         # might be some persistent issues here
@@ -412,11 +368,7 @@ async def fetch_spotify_search_results_controller(queries):
         ):
             search_results_list.append(await future)
 
-        return {
-            query: results
-            for query, results in search_results_list
-            if results is not None
-        }
+        return {query: results for query, results in search_results_list if results is not None}
 
     return {}
 
@@ -440,9 +392,7 @@ def get_user_playlists_details(playlists: Iterable[str]) -> dict[str, list[str]]
 
     for playlist_id, playlist_info in initial_playlist_info.items():
         tracks = playlist_info["tracks"]
-        user_spotify_playlists[playlist_id] = [
-            item["track"]["id"] for item in tracks["items"]
-        ]
+        user_spotify_playlists[playlist_id] = [item["track"]["id"] for item in tracks["items"]]
         total = tracks["total"]
         limit = tracks["limit"]
         if total > limit:
@@ -458,9 +408,7 @@ def get_user_playlists_details(playlists: Iterable[str]) -> dict[str, list[str]]
     follow_up_playlist_tracks.sort(key=lambda entry: entry[2])
 
     for entry in follow_up_playlist_tracks:
-        user_spotify_playlists[entry[0]].extend(
-            [item["track"]["id"] for item in entry[3]["items"]]
-        )
+        user_spotify_playlists[entry[0]].extend([item["track"]["id"] for item in entry[3]["items"]])
 
     return user_spotify_playlists
 

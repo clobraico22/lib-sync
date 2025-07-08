@@ -4,7 +4,7 @@ contains get_spotify_matches function and helpers
 
 import logging
 import urllib.parse
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import spotipy.exceptions
 
@@ -155,13 +155,11 @@ def get_spotify_matches(
             )
 
         else:
-            rekordbox_to_spotify_map = (
-                pick_best_pending_tracks_spotify_matches_interactively(
-                    rb_track_ids_to_match,
-                    rekordbox_library,
-                    rekordbox_to_spotify_map,
-                    pending_tracks_spotify_to_rekordbox,
-                )
+            rekordbox_to_spotify_map = pick_best_pending_tracks_spotify_matches_interactively(
+                rb_track_ids_to_match,
+                rekordbox_library,
+                rekordbox_to_spotify_map,
+                pending_tracks_spotify_to_rekordbox,
             )
 
         # cache rekordbox -> spotify mappings
@@ -206,9 +204,7 @@ def get_spotify_matches(
         )
 
     elif len(rb_track_ids_to_match) == 0:
-        string_utils.print_libsync_status(
-            "No tracks left to match interactively", level=1
-        )
+        string_utils.print_libsync_status("No tracks left to match interactively", level=1)
 
     else:
         rekordbox_to_spotify_map = pick_best_spotify_matches_interactively(
@@ -243,26 +239,16 @@ def get_spotify_search_results_and_update_cache(
     list_of_search_queries = {
         query
         for rb_track_id in rb_track_ids_to_match
-        for query in get_spotify_queries_from_rb_track(
-            rekordbox_library.collection[rb_track_id]
-        )
+        for query in get_spotify_queries_from_rb_track(rekordbox_library.collection[rb_track_id])
         if query not in spotify_search_results
     }
     logger.debug(f"len(list_of_search_queries): {len(list_of_search_queries)}")
-    logger.debug(
-        f"len(set(list_of_search_queries)): {len(set(list_of_search_queries))}"
-    )
-    new_results_to_add = spotify_api_utils.get_spotify_search_results(
-        list(list_of_search_queries)
-    )
+    logger.debug(f"len(set(list_of_search_queries)): {len(set(list_of_search_queries))}")
+    new_results_to_add = spotify_api_utils.get_spotify_search_results(list(list_of_search_queries))
     logger.debug(f"len(new_results_to_add): {len(new_results_to_add)}")
 
     spotify_search_results.update(
-        {
-            query: results
-            for query, results in new_results_to_add.items()
-            if results is not None
-        }
+        {query: results for query, results in new_results_to_add.items() if results is not None}
     )
     missing_search_results = {
         query for query, results in new_results_to_add.items() if results is None
@@ -297,9 +283,7 @@ def check_pending_tracks_for_matches(
     )
 
     for i, rb_track_id in enumerate(rb_track_ids_to_match):
-        logger.debug(
-            f"automatically matching track {i + 1}/{len(rb_track_ids_to_match)}"
-        )
+        logger.debug(f"automatically matching track {i + 1}/{len(rb_track_ids_to_match)}")
 
         rb_track = rekordbox_library.collection[rb_track_id]
 
@@ -320,9 +304,7 @@ def check_pending_tracks_for_matches(
         else:
             logger.info(
                 f" automatically matched {rb_track} to "
-                + pretty_print_spotify_track(
-                    pending_tracks_spotify_to_rekordbox[best_match_uri]
-                )
+                + pretty_print_spotify_track(pending_tracks_spotify_to_rekordbox[best_match_uri])
             )
             rekordbox_to_spotify_map[rb_track_id] = best_match_uri
 
@@ -341,20 +323,14 @@ def pick_best_spotify_matches_automatically(
     )
 
     for i, rb_track_id in enumerate(rb_track_ids_to_match):
-        logger.debug(
-            f"automatically matching track {i + 1}/{len(rb_track_ids_to_match)}"
-        )
+        logger.debug(f"automatically matching track {i + 1}/{len(rb_track_ids_to_match)}")
 
         rb_track = rekordbox_library.collection[rb_track_id]
 
-        song_search_results = get_cached_results_for_track(
-            rb_track, spotify_search_results
-        )
+        song_search_results = get_cached_results_for_track(rb_track, spotify_search_results)
         logger.debug(f"len(song_search_results): {len(song_search_results)}")
 
-        best_match_uri = pick_matching_track_automatically(
-            rb_track, song_search_results
-        )
+        best_match_uri = pick_matching_track_automatically(rb_track, song_search_results)
         if best_match_uri is None:
             logger.info(f"failed to auto match track {rb_track}")
             # don't update rekordbox_to_spotify_map.
@@ -407,9 +383,7 @@ def pick_best_pending_tracks_spotify_matches_interactively(
     )
 
     for i, rb_track_id in enumerate(sorted_rb_track_ids_to_match):
-        logger.debug(
-            f"interactively matching track {i + 1}/{len(sorted_rb_track_ids_to_match)}"
-        )
+        logger.debug(f"interactively matching track {i + 1}/{len(sorted_rb_track_ids_to_match)}")
 
         rb_track = rekordbox_library.collection[rb_track_id]
 
@@ -418,12 +392,10 @@ def pick_best_pending_tracks_spotify_matches_interactively(
         )
 
         try:
-            rekordbox_to_spotify_map = (
-                pick_matching_track_interactively_and_process_input(
-                    rekordbox_to_spotify_map,
-                    rb_track,
-                    pending_tracks_spotify_to_rekordbox,
-                )
+            rekordbox_to_spotify_map = pick_matching_track_interactively_and_process_input(
+                rekordbox_to_spotify_map,
+                rb_track,
+                pending_tracks_spotify_to_rekordbox,
             )
 
         except SkipRemainingException:
@@ -475,28 +447,20 @@ def pick_best_spotify_matches_interactively(
         key=lambda rb_track_id: rb_track_id_to_max_similarity_score[rb_track_id],
         reverse=True,
     )
-    log_and_print(
-        f"rb_track_id_to_max_similarity_score: {rb_track_id_to_max_similarity_score}"
-    )
+    log_and_print(f"rb_track_id_to_max_similarity_score: {rb_track_id_to_max_similarity_score}")
     log_and_print(f"sorted_rb_track_ids_to_match: {sorted_rb_track_ids_to_match}")
 
     for i, rb_track_id in enumerate(sorted_rb_track_ids_to_match):
-        logger.debug(
-            f"interactively matching track {i + 1}/{len(sorted_rb_track_ids_to_match)}"
-        )
+        logger.debug(f"interactively matching track {i + 1}/{len(sorted_rb_track_ids_to_match)}")
 
         rb_track = rekordbox_library.collection[rb_track_id]
 
-        song_search_results = get_cached_results_for_track(
-            rb_track, spotify_search_results
-        )
+        song_search_results = get_cached_results_for_track(rb_track, spotify_search_results)
         logger.debug(f"len(song_search_results): {len(song_search_results)}")
 
         try:
-            rekordbox_to_spotify_map = (
-                pick_matching_track_interactively_and_process_input(
-                    rekordbox_to_spotify_map, rb_track, song_search_results
-                )
+            rekordbox_to_spotify_map = pick_matching_track_interactively_and_process_input(
+                rekordbox_to_spotify_map, rb_track, song_search_results
             )
 
         except SkipRemainingException:
@@ -518,9 +482,7 @@ def pick_matching_track_interactively_and_process_input(
     rb_track: RekordboxTrack,
     song_search_results: dict[str, object],
 ):
-    interactive_input_result = pick_matching_track_interactively(
-        rb_track, song_search_results
-    )
+    interactive_input_result = pick_matching_track_interactively(rb_track, song_search_results)
 
     if interactive_input_result == InteractiveWorkflowCommands.SKIP_TRACK:
         rekordbox_to_spotify_map[rb_track.id] = SpotifyMappingDbFlags.SKIP_TRACK
@@ -541,9 +503,7 @@ def pick_matching_track_interactively_and_process_input(
         exit()
 
     else:
-        logger.debug(
-            f"interactively picked interactive_input_result: {interactive_input_result}"
-        )
+        logger.debug(f"interactively picked interactive_input_result: {interactive_input_result}")
         rekordbox_to_spotify_map[rb_track.id] = interactive_input_result
 
     return rekordbox_to_spotify_map
@@ -559,24 +519,16 @@ def get_rb_track_ids_to_match(
 
     for rb_track_id in rb_track_ids:
         logger.debug(f"checking db for matches for track_id: {rb_track_id}")
-        if (
-            not USE_RB_TO_SPOTIFY_MATCHES_CACHE
-            or rb_track_id not in rekordbox_to_spotify_map
-        ):
+        if not USE_RB_TO_SPOTIFY_MATCHES_CACHE or rb_track_id not in rekordbox_to_spotify_map:
             logger.debug("track not found in db, adding to list to search list")
             rb_track_ids_to_match.append(rb_track_id)
 
         else:
             if rb_track_id in rb_track_ids_flagged_for_rematch:
-                logger.debug(
-                    "track manually flagged for rematch, adding to list to search list"
-                )
+                logger.debug("track manually flagged for rematch, adding to list to search list")
                 rb_track_ids_to_match.append(rb_track_id)
 
-            elif (
-                rekordbox_to_spotify_map[rb_track_id]
-                == SpotifyMappingDbFlags.SKIP_TRACK
-            ):
+            elif rekordbox_to_spotify_map[rb_track_id] == SpotifyMappingDbFlags.SKIP_TRACK:
                 # logger.debug(
                 #     "skipped matching this track last time, adding to list of skipped tracks"
                 # )
@@ -649,7 +601,7 @@ def pick_matching_track_automatically(
     rb_track: RekordboxTrack,
     song_search_results: SpotifySongCollection,
     min_similarity_threshold: float = MINIMUM_SIMILARITY_THRESHOLD_NEW_MATCHES,
-) -> Optional[str]:
+) -> str | None:
     """pick best track out of spotify search results.
 
     Args:
@@ -662,9 +614,7 @@ def pick_matching_track_automatically(
 
     logger.debug(f"running pick_matching_track_automatically with rb_track: {rb_track}")
 
-    tracks_with_similarity = get_sorted_list_tracks_with_similarity(
-        rb_track, song_search_results
-    )
+    tracks_with_similarity = get_sorted_list_tracks_with_similarity(rb_track, song_search_results)
 
     if len(tracks_with_similarity) == 0:
         return None
@@ -702,9 +652,7 @@ def pick_matching_track_interactively(
 
     logger.debug(f"running pick_matching_track_interactively with rb_track: {rb_track}")
 
-    tracks_with_similarity = get_sorted_list_tracks_with_similarity(
-        rb_track, song_search_results
-    )
+    tracks_with_similarity = get_sorted_list_tracks_with_similarity(rb_track, song_search_results)
 
     return get_interactive_input_for_track(rb_track, tracks_with_similarity)
 
@@ -802,9 +750,7 @@ def get_valid_interactive_input(rb_track: RekordboxTrack, list_of_spotify_tracks
         if user_input.lower() in ("s", "skip_remaining", "m", "x", "cancel"):
             return user_input
 
-        elif user_input.isdigit() and 1 <= int(user_input) <= len(
-            list_of_spotify_tracks
-        ):
+        elif user_input.isdigit() and 1 <= int(user_input) <= len(list_of_spotify_tracks):
             return user_input
 
         elif "spotify" in user_input:
@@ -853,8 +799,6 @@ def get_sorted_list_tracks_with_similarity(
         f"track options from spotify search, sorted by similarity to rekordbox track {rb_track}:"
     )
     for spotify_track, similarity in tracks_with_similarity:
-        logger.debug(
-            f"* {similarity:3.2f}: " + pretty_print_spotify_track(spotify_track)
-        )
+        logger.debug(f"* {similarity:3.2f}: " + pretty_print_spotify_track(spotify_track))
 
     return tracks_with_similarity

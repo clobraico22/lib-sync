@@ -1,8 +1,14 @@
 """utils for file read and write operations"""
 
 from datetime import datetime
+from pathlib import Path
 
 from libsync.utils.rekordbox_library import RekordboxTrack
+
+# Use ~/.libsync/data for all data storage
+LIBSYNC_DATA_DIR = Path.home() / ".libsync" / "data"
+# Create directory if it doesn't exist
+LIBSYNC_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def export_failed_matches_to_file(failed_matches: list[RekordboxTrack]):
@@ -12,8 +18,9 @@ def export_failed_matches_to_file(failed_matches: list[RekordboxTrack]):
         failed_matches (list[RekordboxTrack]): list of failed rekordbox tracks
     """
 
+    filename = f"failed_matches_{datetime.now()}.txt".replace(" ", "_")
     with open(
-        f"data/failed_matches_{datetime.now()}.txt".replace(" ", "_"),
+        LIBSYNC_DATA_DIR / filename,
         "w",
         encoding="utf-8",
     ) as file:

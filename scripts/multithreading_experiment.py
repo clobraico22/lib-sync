@@ -865,9 +865,7 @@ start_time = time.time()
 # Use ThreadPoolExecutor to parallelize requests
 with ThreadPoolExecutor(max_workers=20) as executor:
     # Submit all the tasks and collect the futures
-    futures = [
-        executor.submit(fetch_artist_info, artist_id) for artist_id in artist_ids
-    ]
+    futures = [executor.submit(fetch_artist_info, artist_id) for artist_id in artist_ids]
 
     # As each future completes, process its result
     for future in as_completed(futures):
@@ -904,7 +902,7 @@ asyncio.run(main(artist_ids))
 
 end_time_asyncio = time.time()
 
-print(f"total runtime threads: {(end_time-start_time):.3f} seconds")
-print(f"total runtime asyncio: {(end_time_asyncio-start_time_asyncio):.3f} seconds")
+print(f"total runtime threads: {(end_time - start_time):.3f} seconds")
+print(f"total runtime asyncio: {(end_time_asyncio - start_time_asyncio):.3f} seconds")
 
 # asyncio much faster

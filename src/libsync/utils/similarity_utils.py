@@ -74,9 +74,7 @@ def calculate_similarities(
         ]
 
         # artist similarity
-        spotify_artist_list = [
-            artist["name"] for artist in spotify_track_option["artists"]
-        ]
+        spotify_artist_list = [artist["name"] for artist in spotify_track_option["artists"]]
         rekordbox_artist_list = [
             artist.lower() for artist in get_artists_from_rb_track(rb_track=rb_track)
         ]

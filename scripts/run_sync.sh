@@ -1,30 +1,22 @@
 #!/bin/bash
 # run this in the root dir of the project
 
-source .venv/bin/activate
-
 # testing interactive mode
 if true; then
-  python -m libsync \
-    --verbose \
-    --verbose \
+  rye run libsync \
     sync \
     --rekordbox_xml_path "${HOME}"/Documents/rekordbox/rekordbox_export.xml \
     --create_collection_playlist \
     --interactive_mode \
-    --interactive_mode_pending_tracks
-
-  # --dry_run \
-
-  # --use_cached_spotify_playlist_data \
-
-  # --skip_spotify_playlist_sync \
+    --interactive_mode_pending_tracks \
+    --use_cached_spotify_playlist_data \
+    --dry_run
 
 fi
 
 # non prod data (KEEP skip_spotify_playlist_sync FLAG!)
 if false; then
-  python -m libsync \
+  rye run libsync \
     --verbose \
     --verbose \
     sync \
@@ -36,7 +28,7 @@ fi
 
 # all flags
 if false; then
-  python -m libsync \
+  rye run libsync \
     --verbose \
     --verbose \
     sync \

@@ -25,9 +25,7 @@ def save_cached_spotify_search_results(
           this will be used to determine cache and csv paths
     """
 
-    spotify_search_cache_path = db_utils.get_spotify_search_cache_path(
-        rekordbox_xml_path
-    )
+    spotify_search_cache_path = db_utils.get_spotify_search_cache_path(rekordbox_xml_path)
 
     logger.debug("save_cached_spotify_search_results")
     with open(spotify_search_cache_path, "wb") as handle:
@@ -40,9 +38,7 @@ def save_pending_tracks_spotify_to_rekordbox(
     spotify_song_details: dict[str, dict[str, object]],
 ):
     pending_tracks_spotify_to_rekordbox_db_path = (
-        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(
-            rekordbox_xml_path
-        )
+        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(rekordbox_xml_path)
     )
 
     logger.debug("save_cached_spotify_search_results")
@@ -59,14 +55,10 @@ def save_list_of_user_playlists(
 ) -> None:
     user_id = SpotifyAuthManager.get_user_id()
 
-    user_spotify_playlists_list_db_path = (
-        db_utils.get_user_spotify_playlists_list_db_path(user_id)
-    )
+    user_spotify_playlists_list_db_path = db_utils.get_user_spotify_playlists_list_db_path(user_id)
     playlists = set()
     try:
-        playlists = set(
-            db_read_operations.get_list_from_file(user_spotify_playlists_list_db_path)
-        )
+        playlists = set(db_read_operations.get_list_from_file(user_spotify_playlists_list_db_path))
     except FileNotFoundError as error:
         logger.debug(error)
         logger.info(
@@ -124,10 +116,8 @@ def save_playlist_id_map(
     rekordbox_xml_path: str, playlist_id_map: dict[PlaylistName, SpotifyPlaylistId]
 ):
     logger.debug("running save_playlist_id_map")
-    user_spotify_playlist_mapping_db_path = (
-        db_utils.get_spotify_playlist_mapping_db_path(
-            rekordbox_xml_path, SpotifyAuthManager.get_user_id()
-        )
+    user_spotify_playlist_mapping_db_path = db_utils.get_spotify_playlist_mapping_db_path(
+        rekordbox_xml_path, SpotifyAuthManager.get_user_id()
     )
 
     with open(user_spotify_playlist_mapping_db_path, "w", encoding="utf-8") as handle:
