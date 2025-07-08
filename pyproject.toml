@@ -45,3 +45,4 @@ strict = true
 
 [project.scripts]
 libsync = "libsync.__main__:main"
+publish = "twine upload dist/*"
