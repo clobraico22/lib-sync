@@ -9,7 +9,7 @@ Thank you for your interest in contributing to Lib-Sync! This guide will help yo
 - Python 3.11 or higher
 - [Rye](https://rye-up.com/) for Python project management
 - [ffmpeg](https://www.ffmpeg.org/download.html) installed and available on PATH
-- Git
+- [pipx](https://pipx.pypa.io/stable/installation/) for testing wheel installation locally
 
 ### Initial Setup
 
@@ -35,7 +35,7 @@ rye run pre-commit install
 4. Create a `.env` file for testing:
 
 ```bash
-cp .example.env .env
+cp .env.example .env
 # Add your Spotify API credentials to .env
 ```
 
@@ -184,7 +184,17 @@ rye build
 To publish to PyPI (maintainers only):
 
 ```bash
-rye publish
+rye run publish
+```
+
+### Testing wheel installation locally
+
+```bash
+# Build the wheel
+rye build
+
+# Install the wheel
+python -m pip install --force-reinstall --user dist/lib_sync-*.whl
 ```
 
 ## Future Development Ideas
@@ -208,3 +218,7 @@ rye publish
 - Open an issue on GitHub for bugs or feature requests
 - Join our discussions for questions and ideas
 - Check existing issues before creating new ones
+
+```
+
+```

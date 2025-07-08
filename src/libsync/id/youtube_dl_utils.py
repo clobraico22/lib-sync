@@ -1,9 +1,15 @@
 """contains utility functions related to the youtube download module"""
 
 import logging
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-OUTPUT_TEMPLATE = "data/%(id)s_audio_download"
+# Use ~/.libsync/data for all data storage
+LIBSYNC_DATA_DIR = Path.home() / ".libsync" / "data"
+# Create directory if it doesn't exist
+LIBSYNC_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+OUTPUT_TEMPLATE = str(LIBSYNC_DATA_DIR / "%(id)s_audio_download")
 logger = logging.getLogger("libsync")
 
 

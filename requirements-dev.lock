@@ -46,11 +46,15 @@ docutils==0.21.2
     # via readme-renderer
 fastjsonschema==2.21.1
     # via nbformat
+ffmpeg-python==0.2.0
+    # via lib-sync
 filelock==3.18.0
     # via virtualenv
 frozenlist==1.7.0
     # via aiohttp
     # via aiosignal
+future==1.0.0
+    # via ffmpeg-python
 id==1.5.0
     # via twine
 identify==2.6.12

@@ -13,7 +13,8 @@ dependencies = [
   "aiohttp==3.9.3",
   "colorama==0.4.6",
   "tqdm==4.62.3",
-  "shazamio==0.7.0"
+  "shazamio==0.7.0",
+  "ffmpeg-python==0.2.0"
 ]
 
 [project.urls]

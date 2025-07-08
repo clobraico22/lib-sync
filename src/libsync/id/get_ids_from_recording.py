@@ -6,8 +6,8 @@ import os
 import pickle
 from datetime import timedelta
 
+import ffmpeg
 from aiohttp_retry import ExponentialRetry
-from pydub import AudioSegment
 from shazamio import HTTPClient, Shazam
 
 from libsync.id.download_audio import download_mp3_from_youtube_url
@@ -57,9 +57,16 @@ async def recognize_segments(
         segment_length_ms: Length of each segment in milliseconds (default 10 seconds)
         overlap_ms: Overlap between segments in milliseconds (default 5 seconds)
     """
-    # Load the audio file
-    audio = AudioSegment.from_file(audio_path)
-    total_duration_ms = len(audio)
+    # Get audio duration using ffprobe
+    probe = ffmpeg.probe(audio_path)
+    audio_stream = next(
+        (stream for stream in probe["streams"] if stream["codec_type"] == "audio"), None
+    )
+    if not audio_stream:
+        raise ValueError(f"No audio stream found in {audio_path}")
+
+    total_duration_seconds = float(audio_stream["duration"])
+    total_duration_ms = int(total_duration_seconds * 1000)
 
     # Create temporary directory for segments if it doesn't exist
     temp_dir = os.path.join(os.path.dirname(audio_path), "temp_segments")
@@ -83,10 +90,18 @@ async def recognize_segments(
             if end_ms - start_ms < 5000:  # Skip segments shorter than 5 seconds
                 continue
 
-            # Extract segment and save to temporary file
-            segment = audio[start_ms:end_ms]
+            # Extract segment using ffmpeg
+            start_seconds = start_ms / 1000
+            duration_seconds = (end_ms - start_ms) / 1000
             segment_path = os.path.join(temp_dir, f"segment_{start_ms}.mp3")
-            segment.export(segment_path, format="mp3")
+
+            # Use ffmpeg to extract and save the segment
+            (
+                ffmpeg.input(audio_path, ss=start_seconds, t=duration_seconds)
+                .output(segment_path, acodec="mp3", audio_bitrate="128k")
+                .overwrite_output()
+                .run(quiet=True)
+            )
 
             # Recognize segment
             try:

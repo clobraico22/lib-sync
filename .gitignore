@@ -1,16 +1,3 @@
-.DS_Store
-
-data/failed_matches_*
-data/*.mp3
-data/*.db
-data/*.part
-data/*.csv
-data/*.txt
-.cache-*
-.cache
-data/temp_segments/*
-data/logs/*.log
-
 TODO.txt
 
 dist
@@ -19,3 +6,6 @@ libsync/__pycache__
 .venv
 .env
 src/lib_sync.egg-info/
+.DS_Store
+.cache-*
+.cache

@@ -8,23 +8,27 @@ Lib-Sync is a collection of tools for managing your music library across differe
 - **Analyze**: Analyze your Rekordbox library for insights and statistics
 - **Identify**: Identify songs from recordings or YouTube sets using audio fingerprinting
 
-## Installation
-
-### Install from PyPI
+## Installation from PyPI
 
 Please make sure you have Python 3.11 or newer (python --version).
 
-# Install lib-sync
+### Install lib-sync
 
 ```bash
-python -m pip install --upgrade pip wheel
+# with pipx (recommended)
+pipx install lib-sync
+
+# with pip
 python -m pip install lib-sync
 ```
 
-# Upgrade lib-sync
+### Upgrade lib-sync
 
 ```bash
-python -m pip install --upgrade pip wheel
+# with pipx (recommended)
+pipx upgrade lib-sync
+
+# with pip
 python -m pip install --upgrade lib-sync
 ```
 
@@ -34,12 +38,13 @@ After installation, the `libsync` command will be available in your terminal.
 
 - Make sure you're using Python 3.11 or higher
 - If your python is installed via rye (or in a virtual environment), try `python -m pip install --force-reinstall --user lib-sync`
+- try running `python -m pip install --upgrade pip wheel` first
 
 ### Prerequisites
 
 - Python 3.11 or higher
-- [ffmpeg](https://www.ffmpeg.org/download.html) installed and available on PATH
-- Spotify API credentials (for sync functionality)
+- For YouTube id extraction, you'll need [ffmpeg](https://www.ffmpeg.org/download.html) installed and available on PATH
+- For Spotify sync functionality, you'll need Spotify API credentials (see [Spotify API Setup](#spotify-api-setup) below)
 
 ## Configuration
 
@@ -50,7 +55,7 @@ After installation, the `libsync` command will be available in your terminal.
 3. Create a `.env` file in your working directory:
 
 ```bash
-cp .example.env .env
+cp .env.example .env
 ```
 
 4. Add your Spotify credentials to the `.env` file:

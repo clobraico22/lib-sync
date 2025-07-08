@@ -34,9 +34,13 @@ colorama==0.4.6
     # via lib-sync
 dataclass-factory==2.16
     # via shazamio
+ffmpeg-python==0.2.0
+    # via lib-sync
 frozenlist==1.7.0
     # via aiohttp
     # via aiosignal
+future==1.0.0
+    # via ffmpeg-python
 idna==3.10
     # via anyio
     # via requests
