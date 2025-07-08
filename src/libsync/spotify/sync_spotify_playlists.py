@@ -95,14 +95,10 @@ def sync_spotify_playlists(
             with open(pickle_path, "rb") as f:
                 test_data = pickle.load(f)
 
-            libsync_owned_spotify_playlists = test_data[
-                "libsync_owned_spotify_playlists"
-            ]
+            libsync_owned_spotify_playlists = test_data["libsync_owned_spotify_playlists"]
             all_user_spotify_playlists = test_data["all_user_spotify_playlists"]
 
-            string_utils.print_libsync_status_success(
-                "Loaded cached data successfully", level=1
-            )
+            string_utils.print_libsync_status_success("Loaded cached data successfully", level=1)
         except (FileNotFoundError, KeyError) as e:
             logger.error(f"Error loading cached data: {e}")
             string_utils.print_libsync_status(
@@ -234,11 +230,7 @@ def sync_spotify_playlists(
         )
 
         # Ask for confirmation
-        confirmation = (
-            input("\nDo you want to proceed with these changes? (y/n): ")
-            .lower()
-            .strip()
-        )
+        confirmation = input("\nDo you want to proceed with these changes? (y/n): ").lower().strip()
         if confirmation != "y":
             string_utils.print_libsync_status("Canceling playlist updates", level=2)
             return playlist_id_map
@@ -246,9 +238,7 @@ def sync_spotify_playlists(
         if not dry_run:
             string_utils.print_libsync_status("Updating Spotify playlists", level=1)
 
-            logger.info(
-                f"running overwrite_playlists with {len(spotify_playlist_write_jobs)} jobs"
-            )
+            logger.info(f"running overwrite_playlists with {len(spotify_playlist_write_jobs)} jobs")
             spotify_api_utils.overwrite_playlists(spotify_playlist_write_jobs)
             string_utils.print_libsync_status_success("Done", level=1)
 
@@ -257,19 +247,11 @@ def sync_spotify_playlists(
 
     if constants.IGNORE_SP_NEW_TRACKS or len(new_spotify_additions) < 1:
         string_utils.print_libsync_status("No Rekordbox playlists to update", level=1)
-        db_write_operations.save_pending_tracks_spotify_to_rekordbox(
-            rekordbox_xml_path, set(), {}
-        )
+        db_write_operations.save_pending_tracks_spotify_to_rekordbox(rekordbox_xml_path, set(), {})
 
     else:
         spotify_song_details = spotify_api_utils.get_spotify_song_details(
-            list(
-                {
-                    sp_uri
-                    for tracklist in new_spotify_additions.values()
-                    for sp_uri in tracklist
-                }
-            )
+            list({sp_uri for tracklist in new_spotify_additions.values() for sp_uri in tracklist})
         )
 
         (
@@ -317,9 +299,7 @@ def calculate_diff(
             playlists_to_songs_diff_map[rb_playlist_name].append(sp_uri)
 
     new_songs_to_download = {
-        sp_uri
-        for sp_uri in songs_to_playlists_diff_map
-        if sp_uri not in spotify_to_rekordbox_map
+        sp_uri for sp_uri in songs_to_playlists_diff_map if sp_uri not in spotify_to_rekordbox_map
     }
 
     return (
@@ -335,9 +315,7 @@ def print_rekordbox_diff_report(
     playlists_to_songs_diff_map: dict[str, list[str]],
     spotify_song_details: dict[str, dict[str, object]],
 ):
-    string_utils.print_libsync_status(
-        "Calculating songs to add to Rekordbox playlists", level=1
-    )
+    string_utils.print_libsync_status("Calculating songs to add to Rekordbox playlists", level=1)
 
     string_utils.print_libsync_status_success("Done", level=1)
     if len(new_songs_to_download) < 1:
@@ -352,9 +330,7 @@ def print_rekordbox_diff_report(
                 + f"{string_utils.pretty_print_spotify_track(spotify_song_details[sp_uri])}"
             )
 
-    string_utils.print_libsync_status(
-        "Add these songs to your Rekordbox playlists:", level=1
-    )
+    string_utils.print_libsync_status("Add these songs to your Rekordbox playlists:", level=1)
 
     songs_to_playlists_diff_map_new_tracks = {
         sp_uri: rb_playlists
@@ -446,14 +422,10 @@ def get_playlist_diffs(
 
     # figure out which playlists need to be updated
     for rb_playlist in rekordbox_playlists:
-        logger.debug(
-            f"get_playlist_diffs for rekordbox playlist with name: {rb_playlist.name}"
-        )
+        logger.debug(f"get_playlist_diffs for rekordbox playlist with name: {rb_playlist.name}")
 
         if rb_playlist.name not in playlist_id_map:
-            logger.error(
-                f"failed to add playlist {rb_playlist.name} to playlist_id_map."
-            )
+            logger.error(f"failed to add playlist {rb_playlist.name} to playlist_id_map.")
             continue
 
         sp_uris_from_rb = get_filtered_spotify_uris_from_rekordbox_playlist(
@@ -473,9 +445,7 @@ def get_playlist_diffs(
             for spotify_track_id in libsync_owned_spotify_playlists[spotify_playlist_id]
         ]
         # logger.debug(f"spotify uris from spotify playlist: {sp_uris_from_sp}")
-        sp_new_tracks = [
-            uri for uri in sp_uris_from_sp if uri not in set(sp_uris_from_rb)
-        ]
+        sp_new_tracks = [uri for uri in sp_uris_from_sp if uri not in set(sp_uris_from_rb)]
         if len(sp_new_tracks) >= 1:
             new_spotify_additions[rb_playlist.name] = sp_new_tracks
 
@@ -524,16 +494,13 @@ def print_spotify_playlist_changes_summary(
     )
 
     reverse_playlist_id_map = {v: k for k, v in playlist_id_map.items()}
-    reverse_rekordbox_to_spotify_map = {
-        v: k for k, v in rekordbox_to_spotify_map.items()
-    }
+    reverse_rekordbox_to_spotify_map = {v: k for k, v in rekordbox_to_spotify_map.items()}
 
     for playlist_id, new_track_uris in spotify_playlist_write_jobs:
         playlist_name = reverse_playlist_id_map[playlist_id]
         current_track_ids = libsync_owned_spotify_playlists.get(playlist_id, [])
         current_track_uris = [
-            string_utils.get_spotify_uri_from_id(track_id)
-            for track_id in current_track_ids
+            string_utils.get_spotify_uri_from_id(track_id) for track_id in current_track_ids
         ]
 
         added_tracks = set(new_track_uris) - set(current_track_uris)

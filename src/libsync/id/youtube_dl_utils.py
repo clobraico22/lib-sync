@@ -7,7 +7,7 @@ OUTPUT_TEMPLATE = "data/%(id)s_audio_download"
 logger = logging.getLogger("libsync")
 
 
-class YoutubeDLLogger(object):
+class YoutubeDLLogger:
     def debug(self, msg):
         pass
 

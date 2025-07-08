@@ -31,15 +31,11 @@ def get_track_ids_from_youtube_link(youtube_url: str) -> None:
     Args:
         youtube_url (str): URL of youtube video to analyze
     """
-    logger.info(
-        "get_track_ids_from_audio_file with args " + f"youtube_url: {youtube_url}"
-    )
+    logger.info("get_track_ids_from_audio_file with args " + f"youtube_url: {youtube_url}")
 
     youtube_video_id = get_youtube_video_id_from_url(youtube_url)
     mp3_output_path = get_mp3_output_path(youtube_video_id)
-    logger.info(
-        f"using youtube_video_id: {youtube_video_id}, mp3_output_path: {mp3_output_path}"
-    )
+    logger.info(f"using youtube_video_id: {youtube_video_id}, mp3_output_path: {mp3_output_path}")
 
     if not os.path.isfile(mp3_output_path):
         logger.info("couldn't find file, downloading from youtube")
@@ -120,10 +116,7 @@ async def recognize_segments(
 
                     elif shazam_id:
                         shazam_matches_by_id[shazam_id]["count"] += 1
-                        if (
-                            shazam_matches_by_id[shazam_id]["count"]
-                            > NUM_SHAZAM_MATCHES_THRESHOLD
-                        ):
+                        if shazam_matches_by_id[shazam_id]["count"] > NUM_SHAZAM_MATCHES_THRESHOLD:
                             print(f"{timestamp} {artist:40} - {title:80} {shazam_id}")
 
                 # Clean up segment file
@@ -171,9 +164,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
     if len(shazam_matches_by_id) == 0 or FORCE_REDO_SHAZAM:
         try:
             # Run recognition on segments
-            shazam_matches_by_id = asyncio.run(
-                recognize_segments(recording_audio_file_path)
-            )
+            shazam_matches_by_id = asyncio.run(recognize_segments(recording_audio_file_path))
 
             # Save matches to cache
             with open(libsync_cache_path, "wb") as handle:
@@ -191,10 +182,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
             raise e
 
     shazam_ids_in_order = [
-        item[0]
-        for item in sorted(
-            list(shazam_matches_by_id.items()), key=lambda x: x[1]["offset"]
-        )
+        item[0] for item in sorted(list(shazam_matches_by_id.items()), key=lambda x: x[1]["offset"])
     ]
 
     # Print results
@@ -207,9 +195,7 @@ def get_track_ids_from_audio_file(recording_audio_file_path: str) -> None:
         title = match["title"]
         if match_count >= NUM_SHAZAM_MATCHES_THRESHOLD:
             url_component = f"{shazam_id:30}" if SHOW_URL_IN_SHAZAM_OUTPUT else ""
-            print(
-                f"{match_count:3} {timestamp} {artist:30} - {title:30}{url_component}"
-            )
+            print(f"{match_count:3} {timestamp} {artist:30} - {title:30}{url_component}")
 
 
 # TODO: add youtube title to db and output

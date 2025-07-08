@@ -19,9 +19,7 @@ def generate_rekordbox_library_report(rekordbox_library: RekordboxLibrary) -> No
             track_to_playlists_map[track_id].append(playlist.name)
 
     tracks_not_on_any_playlists = [
-        track_id
-        for track_id, playlists in track_to_playlists_map.items()
-        if len(playlists) == 0
+        track_id for track_id, playlists in track_to_playlists_map.items() if len(playlists) == 0
     ]
     log_and_print("tracks not on any playlists:")
     for track_id in tracks_not_on_any_playlists:

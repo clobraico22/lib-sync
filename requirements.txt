@@ -1,7 +1,0 @@
-spotipy==2.23.0
-python-dotenv==1.0.0
-yt-dlp==2025.06.09
-aiohttp==3.9.3
-colorama==0.4.6
-tqdm==4.62.3
-shazamio==0.7.0

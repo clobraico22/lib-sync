@@ -55,9 +55,7 @@ def sync_rekordbox_to_spotify(
     )
 
     # get rekordbox db from xml
-    rekordbox_library = get_rekordbox_library(
-        rekordbox_xml_path, create_collection_playlist
-    )
+    rekordbox_library = get_rekordbox_library(rekordbox_xml_path, create_collection_playlist)
 
     # this muddies up the logs quite a bit - add it back if needed
     # logger.debug(f"got rekordbox library: {rekordbox_library}")
@@ -75,9 +73,7 @@ def sync_rekordbox_to_spotify(
 
     # create a playlist in the user's account for each rekordbox playlist
     if skip_spotify_playlist_sync:
-        string_utils.print_libsync_status_error(
-            "Skipping Spotify playlist sync", level=1
-        )
+        string_utils.print_libsync_status_error("Skipping Spotify playlist sync", level=1)
 
     else:
         try:

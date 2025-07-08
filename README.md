@@ -62,10 +62,31 @@ python -m venv .venv   # create virtual environment
 
 **Each time you pull a new version**
 
+OLD
+
 ```bash
 source .venv/bin/activate  # activate virtual environment
 pip install -e ".[dev]"    # install dependencies locally
 pre-commit install         # install pre-commit hooks
+```
+
+### New user quickstart:
+
+<!-- add instructions to install from pypi instead of source -->
+
+```bash
+rye sync
+rye run libsync
+# TODO: add more example commands
+```
+
+### Dev quickstart:
+
+on first install, and when you pull a new version, run:
+
+```bash
+rye sync --all-features
+rye run pre-commit install
 ```
 
 **To add useful dev shell commands**

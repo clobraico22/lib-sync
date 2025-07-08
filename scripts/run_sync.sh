@@ -6,19 +6,13 @@ source .venv/bin/activate
 # testing interactive mode
 if true; then
   python -m libsync \
-    --verbose \
-    --verbose \
     sync \
     --rekordbox_xml_path "${HOME}"/Documents/rekordbox/rekordbox_export.xml \
     --create_collection_playlist \
     --interactive_mode \
-    --interactive_mode_pending_tracks
-
-  # --dry_run \
-
-  # --use_cached_spotify_playlist_data \
-
-  # --skip_spotify_playlist_sync \
+    --interactive_mode_pending_tracks \
+    --use_cached_spotify_playlist_data \
+    --dry_run
 
 fi
 

@@ -41,12 +41,8 @@ def is_spotify_uri(value: str) -> bool:
 
 
 def remove_original_mix(song_title: str) -> str:
-    song_title = re.sub(
-        r"[\(\[]original mix[\)\]]", "", song_title, flags=re.IGNORECASE
-    )
-    song_title = re.sub(
-        r"[\(\[]original version[\)\]]", "", song_title, flags=re.IGNORECASE
-    )
+    song_title = re.sub(r"[\(\[]original mix[\)\]]", "", song_title, flags=re.IGNORECASE)
+    song_title = re.sub(r"[\(\[]original version[\)\]]", "", song_title, flags=re.IGNORECASE)
     song_title = re.sub(r"[\(\[]original[\)\]]", "", song_title, flags=re.IGNORECASE)
     song_title = re.sub(r"original mix", "", song_title, flags=re.IGNORECASE)
     song_title = re.sub(r"original version", "", song_title, flags=re.IGNORECASE)
@@ -54,13 +50,9 @@ def remove_original_mix(song_title: str) -> str:
 
 
 def remove_extended_mix(song_title: str) -> str:
-    song_title = re.sub(
-        r"[\(\[]extended mix[\)\]]", "", song_title, flags=re.IGNORECASE
-    )
+    song_title = re.sub(r"[\(\[]extended mix[\)\]]", "", song_title, flags=re.IGNORECASE)
     song_title = re.sub(r"extended mix", "", song_title, flags=re.IGNORECASE)
-    song_title = re.sub(
-        r"[\(\[]extended version[\)\]]", "", song_title, flags=re.IGNORECASE
-    )
+    song_title = re.sub(r"[\(\[]extended version[\)\]]", "", song_title, flags=re.IGNORECASE)
     song_title = re.sub(r"extended version", "", song_title, flags=re.IGNORECASE)
     song_title = re.sub(r"extended", "", song_title, flags=re.IGNORECASE)
     return song_title
@@ -95,9 +87,7 @@ def get_name_varieties_from_track_name(name: str):
 def get_artists_from_rb_track(
     rb_track: RekordboxTrack,
 ):
-    return [
-        artist.strip() for artist in re.split(ARTIST_LIST_DELIMITERS, rb_track.artist)
-    ]
+    return [artist.strip() for artist in re.split(ARTIST_LIST_DELIMITERS, rb_track.artist)]
 
 
 def strip_punctuation(name: str) -> str:
@@ -120,9 +110,7 @@ def generate_spotify_playlist_name(rb_playlist_name: str) -> str:
     return f"[ls] {rb_playlist_name}"
 
 
-def print_libsync_status(
-    status_message, level=0, arrow_color=Fore.BLUE, text_color=Fore.WHITE
-):
+def print_libsync_status(status_message, level=0, arrow_color=Fore.BLUE, text_color=Fore.WHITE):
     message = (
         "  " * (level - 1)
         + ((arrow_color + "==> " + Style.RESET_ALL) if level >= 1 else "")
@@ -149,6 +137,4 @@ def print_libsync_status_success(status_message, level=0):
 
 
 def print_libsync_status_error(error_message, level=0):
-    return print_libsync_status(
-        error_message, level, arrow_color=Fore.RED, text_color=Fore.WHITE
-    )
+    return print_libsync_status(error_message, level, arrow_color=Fore.RED, text_color=Fore.WHITE)

@@ -37,9 +37,7 @@ def get_rekordbox_library(
         RekordboxLibrary: data structure containing a representation of the library
     """
 
-    logger.debug(
-        f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}"
-    )
+    logger.debug(f"running get_rekordbox_library with rekordbox_xml_path: {rekordbox_xml_path}")
     string_utils.print_libsync_status("Reading Rekordbox library", level=1)
 
     tree = get_tree_from_xml(rekordbox_xml_path)
@@ -63,9 +61,7 @@ def get_rekordbox_library(
     while len(nodes) >= 1:
         node = nodes[0]
         node_type = (
-            RekordboxNodeType.FOLDER
-            if node.get("Type") == "0"
-            else RekordboxNodeType.PLAYLIST
+            RekordboxNodeType.FOLDER if node.get("Type") == "0" else RekordboxNodeType.PLAYLIST
         )
 
         logger.debug(f"running loop with nodes: {nodes}, " + f"nodes[0]: {nodes[0]}, ")
