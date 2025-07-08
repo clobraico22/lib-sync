@@ -19,6 +19,9 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/clobraico22/lib-sync"
 
+[project.scripts]
+libsync = "libsync.cli:main"
+
 [tool.rye]
 managed = true
 src = "src"
@@ -44,6 +47,3 @@ ignore = ["E501", "C901"]  # Line too long (eventually fix)
 
 [tool.mypy]
 strict = true
-
-[project.scripts]
-libsync = "libsync.__main__:main"

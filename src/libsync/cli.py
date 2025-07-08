@@ -90,3 +90,11 @@ def cli():
             get_track_ids_from_youtube_link(youtube_url)
 
     logger.info(f"total runtime: {(time.time() - start_time):.3f} seconds")
+
+
+def main():
+    cli()
+
+
+if __name__ == "__main__":
+    main()

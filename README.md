@@ -12,15 +12,28 @@ Lib-Sync is a collection of tools for managing your music library across differe
 
 ### Install from PyPI
 
-```bash
-# with pip
-pip install lib-sync
+Please make sure you have Python 3.11 or newer (python --version).
 
-# or with uv
-uv pip install --system lib-sync
+# Install lib-sync
+
+```bash
+python -m pip install --upgrade pip wheel
+python -m pip install lib-sync
+```
+
+# Upgrade lib-sync
+
+```bash
+python -m pip install --upgrade pip wheel
+python -m pip install --upgrade lib-sync
 ```
 
 After installation, the `libsync` command will be available in your terminal.
+
+**Troubleshooting**: If `libsync` command is not found:
+
+- Make sure you're using Python 3.11 or higher
+- If your python is installed via rye (or in a virtual environment), try `python -m pip install --force-reinstall --user lib-sync`
 
 ### Prerequisites
 
