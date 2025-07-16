@@ -8,7 +8,7 @@ from libsync.db import db_read_operations, db_write_operations
 from libsync.db.db_utils import get_spotify_playlist_backup_path, get_spotify_playlist_cache_path
 from libsync.spotify import spotify_api_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
-from libsync.utils import constants, string_utils
+from libsync.utils import string_utils
 from libsync.utils.rekordbox_library import (
     PlaylistName,
     RekordboxCollection,
@@ -58,6 +58,7 @@ def sync_spotify_playlists(
     dry_run: bool,
     use_cached_spotify_playlist_data: bool,
     collection: RekordboxCollection,
+    overwrite_spotify_playlists: bool,
 ) -> dict[str, str]:
     """creates playlists in the user's account with the matched songs
 
@@ -70,6 +71,7 @@ def sync_spotify_playlists(
         make_playlists_public (bool): determines if playlist will be made public or not
         dry_run (bool): don't make playlists (skip for debugging or local matching)
         use_cached_spotify_playlist_data (bool): use cached spotify playlist data
+        overwrite_spotify_playlists (bool): overwrite spotify playlists with only rekordbox tracks
 
     Returns:
         dict[str, str]: reference to playlist_id_map argument which is modified in place
@@ -207,6 +209,7 @@ def sync_spotify_playlists(
         rekordbox_to_spotify_map,
         playlist_id_map,
         libsync_owned_spotify_playlists,
+        overwrite_spotify_playlists,
     )
     # logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
     logger.debug(f"new_spotify_additions: {new_spotify_additions}")
@@ -239,7 +242,7 @@ def sync_spotify_playlists(
         else:
             string_utils.print_libsync_status("Dry run, skipping", level=2)
 
-    if constants.IGNORE_SP_NEW_TRACKS or len(new_spotify_additions) < 1:
+    if overwrite_spotify_playlists or len(new_spotify_additions) < 1:
         string_utils.print_libsync_status("No Rekordbox playlists to update", level=1)
         db_write_operations.save_pending_tracks_spotify_to_rekordbox(rekordbox_xml_path, set(), {})
 
@@ -406,6 +409,7 @@ def get_playlist_diffs(
     rekordbox_to_spotify_map: dict[str, str],
     playlist_id_map: dict[PlaylistName, SpotifyPlaylistId],
     libsync_owned_spotify_playlists: dict[str, list[str]],
+    overwrite_spotify_playlists: bool,
 ) -> tuple[
     list[tuple[SpotifyPlaylistId, list[SpotifyURI]]],
     dict[PlaylistName, list[SpotifyURI]],
@@ -444,7 +448,7 @@ def get_playlist_diffs(
             new_spotify_additions[rb_playlist.name] = sp_new_tracks
 
         # this is what we want the spotify playlist to look like
-        if constants.IGNORE_SP_NEW_TRACKS:
+        if overwrite_spotify_playlists:
             logger.debug(
                 "ignoring new tracks from spotify playlist (overwriting with rekordbox playlist)"
             )

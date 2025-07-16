@@ -76,6 +76,11 @@ def get_cli_argparser():
         action="store_true",
         help="use cached spotify playlist data",
     )
+    parser_sync.add_argument(
+        "--overwrite_spotify_playlists",
+        action="store_true",
+        help="overwrite spotify playlists with new data",
+    )
 
     # analyze command
     parser_analyze = subparsers.add_parser(

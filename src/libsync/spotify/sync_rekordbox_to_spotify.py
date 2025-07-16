@@ -24,6 +24,7 @@ def sync_rekordbox_to_spotify(
     skip_spotify_playlist_sync: bool,
     dry_run: bool,
     use_cached_spotify_playlist_data: bool,
+    overwrite_spotify_playlists: bool,
 ) -> None:
     """sync a user's rekordbox playlists to their spotify account"""
 
@@ -39,6 +40,7 @@ def sync_rekordbox_to_spotify(
                 f"interactive_mode={interactive_mode}",
                 f"dry_run={dry_run}",
                 f"use_cached_spotify_playlist_data={use_cached_spotify_playlist_data}",
+                f"overwrite_spotify_playlists={overwrite_spotify_playlists}",
             ]
         )
     )
@@ -85,6 +87,7 @@ def sync_rekordbox_to_spotify(
                 dry_run=dry_run,
                 use_cached_spotify_playlist_data=use_cached_spotify_playlist_data,
                 collection=rekordbox_library.collection,
+                overwrite_spotify_playlists=overwrite_spotify_playlists,
             )
             logger.debug("done writing playlists")
 
