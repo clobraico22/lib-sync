@@ -1,11 +1,11 @@
 """contains sync_spotify_playlists function and helpers"""
 
 import logging
-import os
 import pickle
 import time
 
 from libsync.db import db_read_operations, db_write_operations
+from libsync.db.db_utils import get_spotify_playlist_backup_path, get_spotify_playlist_cache_path
 from libsync.spotify import spotify_api_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
 from libsync.utils import constants, string_utils
@@ -88,15 +88,14 @@ def sync_spotify_playlists(
 
     if use_cached_spotify_playlist_data:
         string_utils.print_libsync_status("Using cached Spotify playlist data", level=1)
-        pickle_dir = os.path.join(os.path.dirname(rekordbox_xml_path), "test_data")
-        pickle_path = os.path.join(pickle_dir, "spotify_playlists_test_data.pickle")
+        pickle_path = get_spotify_playlist_cache_path()
 
         try:
             with open(pickle_path, "rb") as f:
-                test_data = pickle.load(f)
+                playlist_data = pickle.load(f)
 
-            libsync_owned_spotify_playlists = test_data["libsync_owned_spotify_playlists"]
-            all_user_spotify_playlists = test_data["all_user_spotify_playlists"]
+            libsync_owned_spotify_playlists = playlist_data["libsync_owned_spotify_playlists"]
+            all_user_spotify_playlists = playlist_data["all_user_spotify_playlists"]
 
             string_utils.print_libsync_status_success("Loaded cached data successfully", level=1)
         except (FileNotFoundError, KeyError) as e:
@@ -114,24 +113,19 @@ def sync_spotify_playlists(
         ) = fetch_spotify_playlists(playlist_id_map)
 
         # Save variables to pickle file for future use
-        test_data = {
+        playlist_data = {
             "libsync_owned_spotify_playlists": libsync_owned_spotify_playlists,
             "all_user_spotify_playlists": all_user_spotify_playlists,
         }
 
-        pickle_dir = os.path.join(os.path.dirname(rekordbox_xml_path), "test_data")
-        os.makedirs(pickle_dir, exist_ok=True)
-        pickle_path = os.path.join(pickle_dir, "spotify_playlists_test_data.pickle")
-        pickle_path_backup = os.path.join(
-            pickle_dir,
-            f"spotify_playlists_test_data_{time.strftime('%Y.%m.%d_%H.%M.%S')}.pickle",
-        )
+        pickle_path = get_spotify_playlist_cache_path()
+        pickle_path_backup = get_spotify_playlist_backup_path()
 
         with open(pickle_path, "wb") as f:
-            pickle.dump(test_data, f)
+            pickle.dump(playlist_data, f)
 
         with open(pickle_path_backup, "wb") as f:
-            pickle.dump(test_data, f)
+            pickle.dump(playlist_data, f)
 
         logger.info(f"Test data saved to {pickle_path}")
 
