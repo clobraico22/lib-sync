@@ -4,6 +4,7 @@
 # testing interactive mode
 if true; then
   rye run libsync \
+    --verbose \
     sync \
     --rekordbox_xml_path "${HOME}"/Documents/rekordbox/rekordbox_export.xml \
     --create_collection_playlist \

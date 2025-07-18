@@ -4,9 +4,9 @@ import pickle
 
 import spotipy.exceptions
 
-from libsync.db import db_utils, db_write_operations
+from libsync.db import db_write_operations
 from libsync.spotify.spotify_auth import SpotifyAuthManager
-from libsync.utils import string_utils
+from libsync.utils import filepath_utils, string_utils
 from libsync.utils.constants import SpotifyMappingDbFlags
 from libsync.utils.string_utils import get_spotify_uri_from_url
 
@@ -28,7 +28,7 @@ def get_cached_spotify_search_results(
           indexed by spotify search API query string
     """
 
-    spotify_search_cache_path = db_utils.get_spotify_search_cache_path(rekordbox_xml_path)
+    spotify_search_cache_path = filepath_utils.get_spotify_search_cache_path(rekordbox_xml_path)
 
     try:
         with open(spotify_search_cache_path, "rb") as handle:
@@ -66,7 +66,7 @@ def get_pending_tracks_spotify_to_rekordbox(
 
     logger.debug("running get_pending_tracks_spotify_to_rekordbox")
     pending_tracks_spotify_to_rekordbox_db_path = (
-        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(rekordbox_xml_path)
+        filepath_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(rekordbox_xml_path)
     )
     try:
         with open(pending_tracks_spotify_to_rekordbox_db_path, "rb") as handle:
@@ -91,7 +91,7 @@ def get_playlist_id_map(
     rekordbox_xml_path: str,
 ) -> dict[str, str]:
     logger.debug("running get_playlist_id_map")
-    user_spotify_playlist_mapping_db_path = db_utils.get_spotify_playlist_mapping_db_path(
+    user_spotify_playlist_mapping_db_path = filepath_utils.get_spotify_playlist_mapping_db_path(
         rekordbox_xml_path, SpotifyAuthManager.get_user_id()
     )
     playlist_id_map = {}
@@ -139,7 +139,9 @@ def get_cached_sync_data(
     rb_track_ids_flagged_for_rematch = set()
 
     # get song mappings data from csv
-    libsync_song_mapping_csv_path = db_utils.get_libsync_song_mapping_csv_path(rekordbox_xml_path)
+    libsync_song_mapping_csv_path = filepath_utils.get_libsync_song_mapping_csv_path(
+        rekordbox_xml_path
+    )
     try:
         with open(libsync_song_mapping_csv_path, encoding="utf-8") as file:
             reader = csv.reader(file)
