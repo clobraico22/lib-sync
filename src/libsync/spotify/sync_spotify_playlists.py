@@ -5,10 +5,9 @@ import pickle
 import time
 
 from libsync.db import db_read_operations, db_write_operations
-from libsync.db.db_utils import get_spotify_playlist_backup_path, get_spotify_playlist_cache_path
 from libsync.spotify import spotify_api_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
-from libsync.utils import string_utils
+from libsync.utils import filepath_utils, string_utils
 from libsync.utils.rekordbox_library import (
     PlaylistName,
     RekordboxCollection,
@@ -90,7 +89,7 @@ def sync_spotify_playlists(
 
     if use_cached_spotify_playlist_data:
         string_utils.print_libsync_status("Using cached Spotify playlist data", level=1)
-        pickle_path = get_spotify_playlist_cache_path()
+        pickle_path = filepath_utils.get_spotify_playlist_cache_path()
 
         try:
             with open(pickle_path, "rb") as f:
@@ -120,8 +119,8 @@ def sync_spotify_playlists(
             "all_user_spotify_playlists": all_user_spotify_playlists,
         }
 
-        pickle_path = get_spotify_playlist_cache_path()
-        pickle_path_backup = get_spotify_playlist_backup_path()
+        pickle_path = filepath_utils.get_spotify_playlist_cache_path()
+        pickle_path_backup = filepath_utils.get_spotify_playlist_backup_path()
 
         with open(pickle_path, "wb") as f:
             pickle.dump(playlist_data, f)
@@ -148,19 +147,18 @@ def sync_spotify_playlists(
         logger.debug(f"deleting playlist mapping for name: {key}")
         del playlist_id_map[key]
 
-    spotify = SpotifyAuthManager.get_spotify_client()
-
     if len(spotify_playlist_ids_to_delete) < 1:
         string_utils.print_libsync_status("No Spotify playlists to delete", level=1)
     else:
         string_utils.print_libsync_status("Deleting old Spotify playlists", level=1)
+        spotify_client = SpotifyAuthManager.get_spotify_client()
 
         for playlist_id in spotify_playlist_ids_to_delete:
             logger.debug(f"deleting playlist with id: {playlist_id}")
             # "unfollowing" your own playlist is the same as deleting it from the spotify UI.
             # it's impossible to actually "delete" a spotify playlist.
             if not dry_run:
-                spotify.current_user_unfollow_playlist(playlist_id)
+                spotify_client.current_user_unfollow_playlist(playlist_id)
 
         string_utils.print_libsync_status_success("Done", level=1)
 
@@ -176,10 +174,11 @@ def sync_spotify_playlists(
     else:
         if not dry_run:
             string_utils.print_libsync_status("Creating new Spotify playlists", level=1)
+            spotify_client = SpotifyAuthManager.get_spotify_client()
 
             # TODO: parallelize this if necessary (see spotify_api_utils), shouldn't be a very hot path.
             for rb_playlist_name in playlist_names_to_create:
-                playlist_create_result = spotify.user_playlist_create(
+                playlist_create_result = spotify_client.user_playlist_create(
                     user=SpotifyAuthManager.get_user_id(),
                     name=string_utils.generate_spotify_playlist_name(rb_playlist_name),
                     # NOTE: private playlists don't work! read here:

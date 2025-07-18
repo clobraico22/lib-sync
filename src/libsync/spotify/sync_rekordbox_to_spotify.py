@@ -93,6 +93,7 @@ def sync_rekordbox_to_spotify(
 
         except (ConnectionError, requests.exceptions.ConnectionError) as e:
             logger.error(e)
+            # TODO: print stack trace for e for better debugging
             string_utils.print_libsync_status_error(
                 "Failed to connect to Spotify. Please try again later.", level=1
             )

@@ -2,10 +2,11 @@
 
 import logging
 import os
+import shutil
 import time
 import xml.etree.ElementTree as ET
 
-from libsync.utils import string_utils
+from libsync.utils import filepath_utils, string_utils
 from libsync.utils.rekordbox_library import (
     RekordboxLibrary,
     RekordboxNodeType,
@@ -164,6 +165,18 @@ def get_tree_from_xml(xml_path: str):
             + "Consider exporting a fresh copy from Rekordbox for the most up-to-date library.",
             level=1,
         )
+
+    # Backup the XML file before parsing
+    backup_path = filepath_utils.get_rekordbox_xml_backup_path(xml_path, file_mtime)
+
+    # Only backup if this exact file hasn't been backed up already
+    if not backup_path.exists():
+        try:
+            shutil.copy2(xml_path, backup_path)
+            logger.info(f"Backed up XML file to: {backup_path}")
+        except Exception as error:
+            logger.warning(f"Failed to backup XML file: {str(error)}")
+            # Don't exit on backup failure, just warn
 
     # Quick check for XML header
     try:
