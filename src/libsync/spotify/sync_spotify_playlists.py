@@ -504,10 +504,11 @@ def print_spotify_playlist_changes_summary(
         added_tracks = set(new_track_uris) - set(current_track_uris)
         removed_tracks = set(current_track_uris) - set(new_track_uris)
 
-        if len(added_tracks) == 0 and len(removed_tracks) == 0:
-            continue
-
         log_and_print(f"\n      Playlist: {playlist_name}")
+
+        if len(added_tracks) == 0 and len(removed_tracks) == 0:
+            log_and_print("        No additions, just reordering")
+            continue
 
         if added_tracks:
             log_and_print("        Adding:")
