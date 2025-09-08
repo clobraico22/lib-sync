@@ -19,8 +19,8 @@ def sync_rekordbox_to_spotify(
     make_playlists_public: bool,
     include_loose_songs: bool,
     ignore_spotify_search_cache: bool,
-    interactive_mode: bool,
-    interactive_mode_pending_tracks: bool,
+    skip_interactive_mode: bool,
+    skip_interactive_mode_pending_tracks: bool,
     skip_spotify_playlist_sync: bool,
     dry_run: bool,
     use_cached_spotify_playlist_data: bool,
@@ -37,7 +37,7 @@ def sync_rekordbox_to_spotify(
                 f"make_playlists_public={make_playlists_public}",
                 f"include_loose_songs={include_loose_songs}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
-                f"interactive_mode={interactive_mode}",
+                f"skip_interactive_mode={skip_interactive_mode}",
                 f"dry_run={dry_run}",
                 f"use_cached_spotify_playlist_data={use_cached_spotify_playlist_data}",
                 f"overwrite_spotify_playlists={overwrite_spotify_playlists}",
@@ -69,8 +69,8 @@ def sync_rekordbox_to_spotify(
         rb_track_ids_flagged_for_rematch,
         pending_tracks_spotify_to_rekordbox,
         ignore_spotify_search_cache,
-        interactive_mode,
-        interactive_mode_pending_tracks,
+        skip_interactive_mode,
+        skip_interactive_mode_pending_tracks,
     )
 
     # create a playlist in the user's account for each rekordbox playlist

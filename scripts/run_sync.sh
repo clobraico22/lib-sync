@@ -6,11 +6,8 @@ if true; then
   uv run libsync \
     --verbose \
     sync \
-    --rekordbox_xml_path "${HOME}"/Documents/rekordbox/rekordbox_export.xml \
     --create_collection_playlist \
-    --interactive_mode \
-    --interactive_mode_pending_tracks \
-    --dry_run
+    --dry_run \
 
 fi
 
@@ -22,7 +19,7 @@ if false; then
     sync \
     --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
     --skip_spotify_playlist_sync \
-    --create_collection_playlist
+    --create_collection_playlist \
 
 fi
 
@@ -33,9 +30,15 @@ if false; then
     --verbose \
     sync \
     --rekordbox_xml_path "${HOME}"/Documents/rekordbox/rekordbox_export.xml \
-    --interactive_mode \
-    --create_collection_playlist \
+    --skip_interactive_mode \
+    --skip_interactive_mode_pending_tracks \
+    --ignore_spotify_search_cache \
     --skip_spotify_playlist_sync \
-    --include_loose_songs
+    --create_collection_playlist \
+    --make_playlists_public \
+    --include_loose_songs \
+    --dry_run \
+    --use_cached_spotify_playlist_data \
+    --overwrite_spotify_playlists \
 
 fi
