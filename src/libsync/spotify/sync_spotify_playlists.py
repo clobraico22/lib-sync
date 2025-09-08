@@ -520,5 +520,9 @@ def print_spotify_playlist_changes_summary(
             log_and_print("        Removing:")
             for uri in sorted(removed_tracks):
                 if uri in reverse_rekordbox_to_spotify_map:
-                    rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
-                    log_and_print(f"          {rb_track.artist} - {rb_track.name}")
+                    try:
+                        rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
+                        log_and_print(f"          {rb_track.artist} - {rb_track.name}")
+                    except KeyError:
+                        logger.error(f"failed to find track {uri} in collection")
+                        log_and_print(f"          {uri} (track not in rekordbox collection)")
