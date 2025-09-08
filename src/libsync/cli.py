@@ -68,6 +68,7 @@ def cli():
             skip_spotify_playlist_sync=args.skip_spotify_playlist_sync,
             dry_run=args.dry_run,
             use_cached_spotify_playlist_data=args.use_cached_spotify_playlist_data,
+            overwrite_spotify_playlists=args.overwrite_spotify_playlists,
         )
 
     elif command == LibsyncCommand.ANALYZE:

@@ -25,19 +25,18 @@ Homepage = "https://github.com/clobraico22/lib-sync"
 [project.scripts]
 libsync = "libsync.cli:main"
 
-[tool.rye]
-managed = true
-src = "src"
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "ruff==0.12.2",
+    "ipykernel==6.30.1",
     "pre-commit==4.2.0",
     "nbstripout==0.8.1",
     "twine>=6.1.0",
     "mypy>=1.16.1",
 ]
 
-[tool.rye.scripts]
-publish = "twine upload dist/*"
+[tool.uv]
+package = true
 
 [tool.ruff]
 line-length = 100

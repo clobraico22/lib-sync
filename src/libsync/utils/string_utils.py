@@ -2,25 +2,16 @@
 
 import re
 import string
-import time
-from pathlib import Path
 
 import spotipy.client
 from colorama import Fore, Style
 
 from libsync.utils.constants import ARTIST_LIST_DELIMITERS, SPOTIFY_TRACK_URI_PREFIX
+from libsync.utils.filepath_utils import get_log_file_path
 from libsync.utils.rekordbox_library import RekordboxTrack
 
-# Use ~/.libsync/data for all data storage
-LIBSYNC_DATA_DIR = Path.home() / ".libsync" / "data"
-LIBSYNC_LOGS_DIR = LIBSYNC_DATA_DIR / "logs"
-
-# Create directories if they don't exist
-LIBSYNC_LOGS_DIR.mkdir(parents=True, exist_ok=True)
-
 # Create log file
-log_filename = f"libsync_{time.strftime('%Y-%m-%d_%H-%M-%S')}.log"
-output_file = open(LIBSYNC_LOGS_DIR / log_filename, "w")
+output_file = open(get_log_file_path(), "w")
 
 
 def get_spotify_uri_from_url(spotify_url: str) -> str:

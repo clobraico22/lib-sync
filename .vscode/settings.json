@@ -13,6 +13,7 @@
     "editor.formatOnType": true,
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
+  "notebook.formatOnSave.enabled": true,
   "workbench.colorCustomizations": {
     "titleBar.activeBackground": "#770000"
   }

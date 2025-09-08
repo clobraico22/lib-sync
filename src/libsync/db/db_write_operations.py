@@ -2,8 +2,9 @@ import csv
 import logging
 import pickle
 
-from libsync.db import db_read_operations, db_utils
+from libsync.db import db_read_operations
 from libsync.spotify.spotify_auth import SpotifyAuthManager
+from libsync.utils import filepath_utils
 from libsync.utils.rekordbox_library import (
     PlaylistName,
     RekordboxLibrary,
@@ -25,7 +26,7 @@ def save_cached_spotify_search_results(
           this will be used to determine cache and csv paths
     """
 
-    spotify_search_cache_path = db_utils.get_spotify_search_cache_path(rekordbox_xml_path)
+    spotify_search_cache_path = filepath_utils.get_spotify_search_cache_path(rekordbox_xml_path)
 
     logger.debug("save_cached_spotify_search_results")
     with open(spotify_search_cache_path, "wb") as handle:
@@ -38,7 +39,7 @@ def save_pending_tracks_spotify_to_rekordbox(
     spotify_song_details: dict[str, dict[str, object]],
 ):
     pending_tracks_spotify_to_rekordbox_db_path = (
-        db_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(rekordbox_xml_path)
+        filepath_utils.get_libsync_pending_tracks_spotify_to_rekordbox_db_path(rekordbox_xml_path)
     )
 
     logger.debug("save_cached_spotify_search_results")
@@ -55,7 +56,9 @@ def save_list_of_user_playlists(
 ) -> None:
     user_id = SpotifyAuthManager.get_user_id()
 
-    user_spotify_playlists_list_db_path = db_utils.get_user_spotify_playlists_list_db_path(user_id)
+    user_spotify_playlists_list_db_path = filepath_utils.get_user_spotify_playlists_list_db_path(
+        user_id
+    )
     playlists = set()
     try:
         playlists = set(db_read_operations.get_list_from_file(user_spotify_playlists_list_db_path))
@@ -75,7 +78,7 @@ def save_song_mappings_csv(
     rb_track_ids_flagged_for_rematch: set[str],
     rekordbox_to_spotify_map: dict[str, str],
 ):
-    libsync_song_mapping_csv_path = db_utils.get_libsync_song_mapping_csv_path(
+    libsync_song_mapping_csv_path = filepath_utils.get_libsync_song_mapping_csv_path(
         rekordbox_library.xml_path
     )
 
@@ -116,7 +119,7 @@ def save_playlist_id_map(
     rekordbox_xml_path: str, playlist_id_map: dict[PlaylistName, SpotifyPlaylistId]
 ):
     logger.debug("running save_playlist_id_map")
-    user_spotify_playlist_mapping_db_path = db_utils.get_spotify_playlist_mapping_db_path(
+    user_spotify_playlist_mapping_db_path = filepath_utils.get_spotify_playlist_mapping_db_path(
         rekordbox_xml_path, SpotifyAuthManager.get_user_id()
     )
 

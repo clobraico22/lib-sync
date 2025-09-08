@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Lib-Sync! This guide will help yo
 ### Prerequisites
 
 - Python 3.11 or higher
-- [Rye](https://rye-up.com/) for Python project management
+- [uv](https://docs.astral.sh/uv/) for Python project management
 - [ffmpeg](https://www.ffmpeg.org/download.html) installed and available on PATH
 - [pipx](https://pipx.pypa.io/stable/installation/) for testing wheel installation locally
 
@@ -20,16 +20,16 @@ git clone https://github.com/clobraico22/lib-sync.git
 cd lib-sync
 ```
 
-2. Install development dependencies using Rye:
+2. Install development dependencies using uv:
 
 ```bash
-rye sync --all-features
+uv sync
 ```
 
 3. Install pre-commit hooks:
 
 ```bash
-rye run pre-commit install
+uv run pre-commit install
 ```
 
 4. Create a `.env` file for testing:
@@ -43,11 +43,11 @@ cp .env.example .env
 
 #### Running the Code
 
-During development, use Rye to run the code:
+During development, use uv to run the code:
 
 ```bash
-# Run with Rye
-rye run libsync sync --help
+# Run with uv
+uv run libsync sync --help
 ```
 
 #### Useful Shell Aliases
@@ -57,7 +57,7 @@ Add these to your `.bashrc` or `.zshrc` for convenience:
 ```bash
 # Update the path to match your local repo location
 LIBSYNC_REPO_DIRECTORY="${HOME}/code/lib-sync"
-alias libsync-dev="cd ${LIBSYNC_REPO_DIRECTORY} && rye run libsync"
+alias libsync-dev="cd ${LIBSYNC_REPO_DIRECTORY} && uv run libsync"
 alias libsync-run-sync="cd ${LIBSYNC_REPO_DIRECTORY} && ${LIBSYNC_REPO_DIRECTORY}/scripts/run_sync.sh"
 alias libsync-run-sync-edit="cd ${LIBSYNC_REPO_DIRECTORY} && code ${LIBSYNC_REPO_DIRECTORY}/scripts/run_sync.sh"
 ```
@@ -70,19 +70,19 @@ The repository includes sample data for testing:
 
 ```bash
 # Test sync command
-rye run libsync -vv sync \
+uv run libsync -vv sync \
   --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
   --create_collection_playlist
 
 # Test analyze command
-rye run libsync analyze \
+uv run libsync analyze \
   --rekordbox_xml_path sample_data/example_rekordbox_export.xml
 
 # Test identify command
-rye run libsync id file \
+uv run libsync id file \
   --recording_audio_file_path sample_data/file.mp3
 
-rye run libsync id youtube \
+uv run libsync id youtube \
   --youtube_url "https://www.youtube.com/watch?v=6qSnO5U95yU"
 ```
 
@@ -90,12 +90,12 @@ rye run libsync id youtube \
 
 ```bash
 # Sync with your Rekordbox library
-rye run libsync -vv sync \
+uv run libsync -vv sync \
   --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml \
   --create_collection_playlist
 
 # Analyze your library
-rye run libsync analyze \
+uv run libsync analyze \
   --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
 ```
 
@@ -107,13 +107,13 @@ We use Ruff for both linting and formatting:
 
 ```bash
 # Run linter
-rye run ruff check src/
+uv run ruff check src/
 
 # Run formatter
-rye run ruff format src/
+uv run ruff format src/
 
 # Run both with pre-commit
-rye run pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 #### Type Checking
@@ -121,7 +121,7 @@ rye run pre-commit run --all-files
 We use mypy for static type checking:
 
 ```bash
-rye run mypy src/
+uv run mypy src/
 ```
 
 ### Project Structure
@@ -153,7 +153,7 @@ git checkout -b feature/your-feature-name
 3. Run pre-commit checks:
 
 ```bash
-rye run pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 4. Commit your changes with a descriptive message
@@ -165,33 +165,33 @@ To add a new dependency:
 
 ```bash
 # Add a runtime dependency
-rye add package-name
+uv add package-name
 
 # Add a development dependency
-rye add --dev package-name
+uv add --group dev package-name
 ```
 
-Then run `rye sync` to update the lock file.
+Then run `uv sync` to update the lock file.
 
 ### Building and Publishing
 
 To build the package:
 
 ```bash
-rye build
+uv build
 ```
 
 To publish to PyPI (maintainers only):
 
 ```bash
-rye run publish
+uv run twine upload dist/*
 ```
 
 ### Testing wheel installation locally
 
 ```bash
 # Build the wheel
-rye build
+uv build
 
 # Install the wheel
 python -m pip install --force-reinstall --user dist/lib_sync-*.whl

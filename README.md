@@ -15,7 +15,10 @@ Please make sure you have Python 3.11 or newer (python --version).
 ### Install lib-sync
 
 ```bash
-# with pipx (recommended)
+# with uvx (recommended)
+uvx lib-sync
+
+# with pipx
 pipx install lib-sync
 
 # with pip
@@ -25,7 +28,10 @@ python -m pip install lib-sync
 ### Upgrade lib-sync
 
 ```bash
-# with pipx (recommended)
+# with uv (recommended)
+uv tool upgrade lib-sync
+
+# with pipx
 pipx upgrade lib-sync
 
 # with pip
@@ -37,7 +43,7 @@ After installation, the `libsync` command will be available in your terminal.
 **Troubleshooting**: If `libsync` command is not found:
 
 - Make sure you're using Python 3.11 or higher
-- If your python is installed via rye (or in a virtual environment), try `python -m pip install --force-reinstall --user lib-sync`
+- If your python is installed via uv (or in a virtual environment), try `python -m pip install --force-reinstall --user lib-sync`
 - try running `python -m pip install --upgrade pip wheel` first
 
 ### Prerequisites

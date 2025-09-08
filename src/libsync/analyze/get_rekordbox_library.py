@@ -1,9 +1,12 @@
 """contains get_rekordbox_library function and helpers"""
 
 import logging
+import os
+import shutil
+import time
 import xml.etree.ElementTree as ET
 
-from libsync.utils import string_utils
+from libsync.utils import filepath_utils, string_utils
 from libsync.utils.rekordbox_library import (
     RekordboxLibrary,
     RekordboxNodeType,
@@ -119,6 +122,76 @@ def get_rekordbox_library(
 
 
 def get_tree_from_xml(xml_path: str):
+    # Validate file before attempting to parse
+    if not os.path.exists(xml_path):
+        string_utils.print_libsync_status_error(
+            f"couldn't find '{xml_path}'. check the path and try again"
+        )
+        exit(1)
+
+    if not os.path.isfile(xml_path):
+        string_utils.print_libsync_status_error(f"'{xml_path}' is not a file")
+        exit(1)
+
+    if not os.access(xml_path, os.R_OK):
+        string_utils.print_libsync_status_error(
+            f"'{xml_path}' is not readable. check file permissions"
+        )
+        exit(1)
+
+    # Check file size (reject files larger than 1GB or empty files)
+    file_size = os.path.getsize(xml_path)
+    if file_size == 0:
+        string_utils.print_libsync_status_error(f"'{xml_path}' is empty")
+        exit(1)
+
+    if file_size > 100_000_000:  # 100MB
+        string_utils.print_libsync_status_error(
+            f"'{xml_path}' is too large ({file_size / 1_000_000:.1f}MB). "
+            + "rekordbox XML files should not exceed 100MB"
+        )
+        exit(1)
+
+    # Check file modification time
+    file_mtime = os.path.getmtime(xml_path)
+    current_time = time.time()
+    age_seconds = current_time - file_mtime
+    age_hours = age_seconds / 3600
+
+    if age_hours > 1:
+        logger.warning(f"'{xml_path}' was last modified {age_hours:.1f} hours ago")
+        string_utils.print_libsync_status(
+            f"⚠️  Warning: XML file is {age_hours:.1f} hours old. "
+            + "Consider exporting a fresh copy from Rekordbox for the most up-to-date library.",
+            level=1,
+        )
+
+    # Backup the XML file before parsing
+    backup_path = filepath_utils.get_rekordbox_xml_backup_path(xml_path, file_mtime)
+
+    # Only backup if this exact file hasn't been backed up already
+    if not backup_path.exists():
+        try:
+            shutil.copy2(xml_path, backup_path)
+            logger.info(f"Backed up XML file to: {backup_path}")
+        except Exception as error:
+            logger.warning(f"Failed to backup XML file: {str(error)}")
+            # Don't exit on backup failure, just warn
+
+    # Quick check for XML header
+    try:
+        with open(xml_path, "rb") as f:
+            header = f.read(100)
+            if not header.strip().startswith(b"<?xml") and not header.strip().startswith(b"<"):
+                string_utils.print_libsync_status_error(
+                    f"'{xml_path}' does not appear to be an XML file"
+                )
+                exit(1)
+    except Exception as error:
+        logger.exception(error)
+        string_utils.print_libsync_status_error(f"error reading '{xml_path}': {str(error)}")
+        exit(1)
+
     try:
         return ET.parse(xml_path)
     except FileNotFoundError as error:
@@ -131,6 +204,12 @@ def get_tree_from_xml(xml_path: str):
         logger.exception(error)
         string_utils.print_libsync_status_error(
             f"the file at '{xml_path}' is the wrong format. try exporting again"
+        )
+        exit(1)
+    except ET.ParseError as error:
+        logger.exception(error)
+        string_utils.print_libsync_status_error(
+            f"error parsing XML file '{xml_path}': {str(error)}"
         )
         exit(1)
 

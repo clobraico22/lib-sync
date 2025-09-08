@@ -5,10 +5,9 @@ import pickle
 import time
 
 from libsync.db import db_read_operations, db_write_operations
-from libsync.db.db_utils import get_spotify_playlist_backup_path, get_spotify_playlist_cache_path
 from libsync.spotify import spotify_api_utils
 from libsync.spotify.spotify_auth import SpotifyAuthManager
-from libsync.utils import constants, string_utils
+from libsync.utils import filepath_utils, string_utils
 from libsync.utils.rekordbox_library import (
     PlaylistName,
     RekordboxCollection,
@@ -58,6 +57,7 @@ def sync_spotify_playlists(
     dry_run: bool,
     use_cached_spotify_playlist_data: bool,
     collection: RekordboxCollection,
+    overwrite_spotify_playlists: bool,
 ) -> dict[str, str]:
     """creates playlists in the user's account with the matched songs
 
@@ -70,6 +70,7 @@ def sync_spotify_playlists(
         make_playlists_public (bool): determines if playlist will be made public or not
         dry_run (bool): don't make playlists (skip for debugging or local matching)
         use_cached_spotify_playlist_data (bool): use cached spotify playlist data
+        overwrite_spotify_playlists (bool): overwrite spotify playlists with only rekordbox tracks
 
     Returns:
         dict[str, str]: reference to playlist_id_map argument which is modified in place
@@ -88,7 +89,7 @@ def sync_spotify_playlists(
 
     if use_cached_spotify_playlist_data:
         string_utils.print_libsync_status("Using cached Spotify playlist data", level=1)
-        pickle_path = get_spotify_playlist_cache_path()
+        pickle_path = filepath_utils.get_spotify_playlist_cache_path()
 
         try:
             with open(pickle_path, "rb") as f:
@@ -118,8 +119,8 @@ def sync_spotify_playlists(
             "all_user_spotify_playlists": all_user_spotify_playlists,
         }
 
-        pickle_path = get_spotify_playlist_cache_path()
-        pickle_path_backup = get_spotify_playlist_backup_path()
+        pickle_path = filepath_utils.get_spotify_playlist_cache_path()
+        pickle_path_backup = filepath_utils.get_spotify_playlist_backup_path()
 
         with open(pickle_path, "wb") as f:
             pickle.dump(playlist_data, f)
@@ -146,19 +147,18 @@ def sync_spotify_playlists(
         logger.debug(f"deleting playlist mapping for name: {key}")
         del playlist_id_map[key]
 
-    spotify = SpotifyAuthManager.get_spotify_client()
-
     if len(spotify_playlist_ids_to_delete) < 1:
         string_utils.print_libsync_status("No Spotify playlists to delete", level=1)
     else:
         string_utils.print_libsync_status("Deleting old Spotify playlists", level=1)
+        spotify_client = SpotifyAuthManager.get_spotify_client()
 
         for playlist_id in spotify_playlist_ids_to_delete:
             logger.debug(f"deleting playlist with id: {playlist_id}")
             # "unfollowing" your own playlist is the same as deleting it from the spotify UI.
             # it's impossible to actually "delete" a spotify playlist.
             if not dry_run:
-                spotify.current_user_unfollow_playlist(playlist_id)
+                spotify_client.current_user_unfollow_playlist(playlist_id)
 
         string_utils.print_libsync_status_success("Done", level=1)
 
@@ -174,10 +174,11 @@ def sync_spotify_playlists(
     else:
         if not dry_run:
             string_utils.print_libsync_status("Creating new Spotify playlists", level=1)
+            spotify_client = SpotifyAuthManager.get_spotify_client()
 
             # TODO: parallelize this if necessary (see spotify_api_utils), shouldn't be a very hot path.
             for rb_playlist_name in playlist_names_to_create:
-                playlist_create_result = spotify.user_playlist_create(
+                playlist_create_result = spotify_client.user_playlist_create(
                     user=SpotifyAuthManager.get_user_id(),
                     name=string_utils.generate_spotify_playlist_name(rb_playlist_name),
                     # NOTE: private playlists don't work! read here:
@@ -207,6 +208,7 @@ def sync_spotify_playlists(
         rekordbox_to_spotify_map,
         playlist_id_map,
         libsync_owned_spotify_playlists,
+        overwrite_spotify_playlists,
     )
     # logger.debug(f"spotify_playlist_write_jobs: {spotify_playlist_write_jobs}")
     logger.debug(f"new_spotify_additions: {new_spotify_additions}")
@@ -239,7 +241,7 @@ def sync_spotify_playlists(
         else:
             string_utils.print_libsync_status("Dry run, skipping", level=2)
 
-    if constants.IGNORE_SP_NEW_TRACKS or len(new_spotify_additions) < 1:
+    if overwrite_spotify_playlists or len(new_spotify_additions) < 1:
         string_utils.print_libsync_status("No Rekordbox playlists to update", level=1)
         db_write_operations.save_pending_tracks_spotify_to_rekordbox(rekordbox_xml_path, set(), {})
 
@@ -406,6 +408,7 @@ def get_playlist_diffs(
     rekordbox_to_spotify_map: dict[str, str],
     playlist_id_map: dict[PlaylistName, SpotifyPlaylistId],
     libsync_owned_spotify_playlists: dict[str, list[str]],
+    overwrite_spotify_playlists: bool,
 ) -> tuple[
     list[tuple[SpotifyPlaylistId, list[SpotifyURI]]],
     dict[PlaylistName, list[SpotifyURI]],
@@ -444,7 +447,7 @@ def get_playlist_diffs(
             new_spotify_additions[rb_playlist.name] = sp_new_tracks
 
         # this is what we want the spotify playlist to look like
-        if constants.IGNORE_SP_NEW_TRACKS:
+        if overwrite_spotify_playlists:
             logger.debug(
                 "ignoring new tracks from spotify playlist (overwriting with rekordbox playlist)"
             )
@@ -500,10 +503,11 @@ def print_spotify_playlist_changes_summary(
         added_tracks = set(new_track_uris) - set(current_track_uris)
         removed_tracks = set(current_track_uris) - set(new_track_uris)
 
-        if len(added_tracks) == 0 and len(removed_tracks) == 0:
-            continue
-
         log_and_print(f"\n      Playlist: {playlist_name}")
+
+        if len(added_tracks) == 0 and len(removed_tracks) == 0:
+            log_and_print("        No additions, just reordering")
+            continue
 
         if added_tracks:
             log_and_print("        Adding:")
@@ -516,5 +520,9 @@ def print_spotify_playlist_changes_summary(
             log_and_print("        Removing:")
             for uri in sorted(removed_tracks):
                 if uri in reverse_rekordbox_to_spotify_map:
-                    rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
-                    log_and_print(f"          {rb_track.artist} - {rb_track.name}")
+                    try:
+                        rb_track = collection[reverse_rekordbox_to_spotify_map[uri]]
+                        log_and_print(f"          {rb_track.artist} - {rb_track.name}")
+                    except KeyError:
+                        logger.error(f"failed to find track {uri} in collection")
+                        log_and_print(f"          {uri} (track not in rekordbox collection)")
