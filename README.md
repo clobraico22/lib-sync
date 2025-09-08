@@ -15,7 +15,10 @@ Please make sure you have Python 3.11 or newer (python --version).
 ### Install lib-sync
 
 ```bash
-# with pipx (recommended)
+# with uvx (recommended)
+uvx lib-sync
+
+# with pipx
 pipx install lib-sync
 
 # with pip
@@ -25,7 +28,10 @@ python -m pip install lib-sync
 ### Upgrade lib-sync
 
 ```bash
-# with pipx (recommended)
+# with uv (recommended)
+uv tool upgrade lib-sync
+
+# with pipx
 pipx upgrade lib-sync
 
 # with pip

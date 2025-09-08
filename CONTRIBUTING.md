@@ -23,7 +23,7 @@ cd lib-sync
 2. Install development dependencies using uv:
 
 ```bash
-uv sync --all-groups
+uv sync
 ```
 
 3. Install pre-commit hooks:
