@@ -74,7 +74,7 @@ def cli():
 
         sync_rekordbox_to_spotify(
             rekordbox_xml_path=rekordbox_xml_path,
-            create_collection_playlist=args.create_collection_playlist,
+            skip_collection_playlist=args.skip_collection_playlist,
             make_playlists_public=args.make_playlists_public,
             include_loose_songs=args.include_loose_songs,
             ignore_spotify_search_cache=args.ignore_spotify_search_cache,

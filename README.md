@@ -91,7 +91,7 @@ REKORDBOX_XML_PATH=/path/to/rekordbox_export.xml
 3. Run the sync command:
 
 ```bash
-# Display help
+# Describe available flags
 libsync sync -h
 
 # Basic sync (using environment variable from .env)
@@ -99,18 +99,12 @@ libsync sync
 
 # Basic sync (using CLI flag)
 libsync sync --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
-
-# Sync with collection playlist
-libsync sync --create_collection_playlist
-
-# Force refresh Spotify search cache
-libsync sync --ignore_spotify_search_cache
 ```
 
 ### Analyze Rekordbox Library
 
 ```bash
-# Display help
+# Describe available flags
 libsync analyze -h
 
 # Analyze library (path from CLI or .env)
@@ -128,24 +122,19 @@ libsync id file --recording_audio_file_path ~/Music/unknown_track.mp3
 
 # Identify from YouTube URL
 libsync id youtube --youtube_url "https://www.youtube.com/watch?v=VIDEO_ID"
-
-# Identify with timestamp range (for DJ sets)
-libsync id youtube \
-  --youtube_url "https://www.youtube.com/watch?v=VIDEO_ID" \
-  --start_time "10:30" \
-  --end_time "15:45"
 ```
 
 ### Debugging
 
+Logs go to `~/.libsync/data/logs`. check there for records of all the libsync commands you run.
 Use `-v` or `--verbose` flags before the subcommand for more detailed output:
 
 ```bash
 # INFO level logging
-libsync -v sync --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
+libsync -v sync
 
 # DEBUG level logging
-libsync -vv sync --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
+libsync -vv sync
 ```
 
 ## Manual Track Matching

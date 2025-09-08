@@ -53,7 +53,7 @@ def get_cli_argparser():
         + "manual mapping corrections or testing libsync features",
     )
     parser_sync.add_argument(
-        "--create_collection_playlist",
+        "--skip_collection_playlist",
         action="store_true",
         help="make a playlist of the total rekordbox collection",
     )

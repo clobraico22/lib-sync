@@ -5,9 +5,7 @@
 if true; then
   uv run libsync \
     --verbose \
-    sync \
-    --create_collection_playlist \
-    --dry_run \
+    sync
 
 fi
 
@@ -19,7 +17,6 @@ if false; then
     sync \
     --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
     --skip_spotify_playlist_sync \
-    --create_collection_playlist \
 
 fi
 
@@ -34,7 +31,7 @@ if false; then
     --skip_interactive_mode_pending_tracks \
     --ignore_spotify_search_cache \
     --skip_spotify_playlist_sync \
-    --create_collection_playlist \
+    --skip_collection_playlist \
     --make_playlists_public \
     --include_loose_songs \
     --dry_run \

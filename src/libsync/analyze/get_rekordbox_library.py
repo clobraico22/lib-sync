@@ -27,13 +27,13 @@ logger = logging.getLogger("libsync")
 
 def get_rekordbox_library(
     rekordbox_xml_path: str,
-    create_collection_playlist: bool,
+    skip_collection_playlist: bool,
 ) -> RekordboxLibrary:
     """get user's rekordbox library from filepath and convert it into internal data structures
 
     Args:
         rekordbox_xml_path (str): path to user's library export
-        create_collection_playlist (bool): should we create an additional playlist with
+        skip_collection_playlist (bool): should we skip creating an additional playlist with
           everything in the collection
 
     Returns:
@@ -102,7 +102,7 @@ def get_rekordbox_library(
 
         nodes.pop(0)
 
-    if create_collection_playlist:
+    if not skip_collection_playlist:
         logger.debug("adding Collection playlist")
         rekordbox_playlists.append(
             RekordboxPlaylist(
