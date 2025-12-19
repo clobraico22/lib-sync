@@ -32,6 +32,20 @@ SPOTIFY_API_GET_TRACKS_ITEMS_PER_PAGE = 50
 
 NUM_SHAZAM_MATCHES_THRESHOLD = 4
 
+# Shazam processing configuration
+SHAZAM_SEGMENT_LENGTH_MS = 15000  # 15 seconds - optimal for Shazam accuracy
+SHAZAM_MAX_CONCURRENT = 1  # Max parallel Shazam API requests (set to 1 due to heavy rate limiting)
+SHAZAM_FFMPEG_WORKERS = 4  # Max parallel FFmpeg processes
+
+# Two-pass recognition strategy
+SHAZAM_PASS1_STEP_MS = 30000  # Discovery pass: 30s steps
+SHAZAM_PASS2_STEP_MS = 7500  # Gap-filling pass: 7.5s steps
+SHAZAM_MIN_GAP_MS = 45000  # Only fill gaps >45s
+
+# Confidence scoring
+SHAZAM_MIN_MATCHES = 2  # Minimum matches for detection
+SHAZAM_MIN_CONFIDENCE = 0.7  # Minimum composite confidence score
+
 
 # Flags
 

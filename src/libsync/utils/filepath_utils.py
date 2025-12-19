@@ -105,6 +105,30 @@ def get_youtube_download_output_template() -> str:
     return str(LIBSYNC_DATA_DIR / "%(id)s_audio_download")
 
 
+# Shazam cache paths
+SHAZAM_CACHE_DIR = LIBSYNC_DATA_DIR / "shazam_cache"
+SHAZAM_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_shazam_segment_cache_path(audio_file_path: str) -> str:
+    """Get path for Shazam segment-level cache database.
+
+    The cache is named using a hash of the audio file path to keep
+    the filename short while remaining unique per audio file.
+
+    Args:
+        audio_file_path: Path to the audio file being processed
+
+    Returns:
+        Path to the SQLite cache database
+    """
+    import hashlib
+
+    # Create a short hash of the audio path for the filename
+    path_hash = hashlib.sha256(audio_file_path.encode()).hexdigest()[:12]
+    return str(SHAZAM_CACHE_DIR / f"shazam_cache_{path_hash}.db")
+
+
 # Utility functions
 def get_sanitized_xml_path(xml_path: str) -> str:
     """Sanitize XML path for use in filenames."""
