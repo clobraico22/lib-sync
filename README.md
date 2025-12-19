@@ -131,6 +131,68 @@ libsync id youtube \
   --end_time "15:45"
 ```
 
+### Audio Analysis Scripts
+
+In addition to the CLI commands, lib-sync includes standalone scripts for analyzing audio recordings.
+
+#### BPM Analysis
+
+Analyzes BPM throughout an audio recording and produces a visualization showing tempo changes over time.
+
+```bash
+# Basic usage
+uv run python scripts/bpm_analysis.py recording.m4a
+
+# Custom window size and BPM range
+uv run python scripts/bpm_analysis.py recording.mp3 --window-size 20 --hop-size 10
+
+# Specify BPM range for electronic music
+uv run python scripts/bpm_analysis.py recording.wav --min-bpm 100 --max-bpm 150
+
+# Custom output path
+uv run python scripts/bpm_analysis.py recording.m4a -o my_analysis.png
+```
+
+**Features:**
+- Multi-method tempo detection (tempogram, autocorrelation, beat tracking) for robustness
+- Automatic octave error correction (handles half/double tempo detection errors)
+- Music vs silence detection to exclude non-music sections
+- Outlier filtering with configurable thresholds
+- Three-panel visualization: BPM trend, detection confidence, music presence
+
+**Output:** Generates `<filename>_bpm_analysis.png` with:
+- BPM measurements over time with outliers marked
+- Smoothed BPM trend line
+- Confidence scores for each measurement
+- Music/silence detection timeline
+- Summary statistics (median, mean, std dev, range)
+
+#### Combined Analysis Visualization
+
+Creates a combined visualization showing BPM analysis with Shazam track detections overlaid. Requires running `libsync id file` first to populate the Shazam cache.
+
+```bash
+# Basic usage (after running libsync id file on the recording)
+uv run python scripts/combined_analysis_viz.py recording.m4a
+
+# Require more matches for higher confidence
+uv run python scripts/combined_analysis_viz.py recording.m4a --min-matches 3
+
+# Custom output path
+uv run python scripts/combined_analysis_viz.py recording.m4a -o combined.png
+```
+
+**Features:**
+- Overlays detected track names on the BPM graph with timestamps
+- Color-coded track regions showing where each song was detected
+- Match count displayed for each track (e.g., `[7x]` = detected 7 times)
+- Track detection timeline showing song durations
+- Prints tracklist summary with timestamps
+
+**Output:** Generates `<filename>_combined_analysis.png` with:
+- Top panel: BPM trend with track annotations and shaded regions
+- Bottom panel: Track detection timeline with match counts
+
 ### Debugging
 
 Use `-v` or `--verbose` flags before the subcommand for more detailed output:
