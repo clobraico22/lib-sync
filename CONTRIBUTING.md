@@ -50,6 +50,24 @@ During development, use uv to run the code:
 uv run libsync sync --help
 ```
 
+#### Using the Makefile
+
+Common commands are available via Make for convenience:
+
+```bash
+# Show all available make commands
+make help
+
+# Sync playlists (use when Spotify has changed since last sync)
+make sync
+
+# Preview overwriting Spotify playlists from Rekordbox (dry run)
+make sync-dry-run
+
+# Overwrite Spotify playlists from Rekordbox (uses cached data)
+make sync-overwrite
+```
+
 #### Useful Shell Aliases
 
 Add these to your `.bashrc` or `.zshrc` for convenience:
@@ -58,8 +76,6 @@ Add these to your `.bashrc` or `.zshrc` for convenience:
 # Update the path to match your local repo location
 LIBSYNC_REPO_DIRECTORY="${HOME}/code/lib-sync"
 alias libsync-dev="cd ${LIBSYNC_REPO_DIRECTORY} && uv run libsync"
-alias libsync-run-sync="cd ${LIBSYNC_REPO_DIRECTORY} && ${LIBSYNC_REPO_DIRECTORY}/scripts/run_sync.sh"
-alias libsync-run-sync-edit="cd ${LIBSYNC_REPO_DIRECTORY} && code ${LIBSYNC_REPO_DIRECTORY}/scripts/run_sync.sh"
 ```
 
 ### Testing
