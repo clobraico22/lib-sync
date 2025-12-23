@@ -1,5 +1,32 @@
+import os
+import sys
+
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+
+REQUIRED_SPOTIFY_ENV_VARS = [
+    "SPOTIPY_CLIENT_ID",
+    "SPOTIPY_CLIENT_SECRET",
+    "SPOTIPY_REDIRECT_URI",
+]
+
+
+def validate_spotify_env_vars() -> None:
+    """Check that all required Spotify environment variables are set.
+
+    Exits with a user-friendly error message if any are missing.
+    """
+    missing_vars = [var for var in REQUIRED_SPOTIFY_ENV_VARS if not os.environ.get(var)]
+
+    if missing_vars:
+        print("Error: Missing required Spotify environment variables:", file=sys.stderr)
+        for var in missing_vars:
+            print(f"  - {var}", file=sys.stderr)
+        print(
+            "\nPlease set these in your .env file or environment. See .env.example for reference.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 class SpotifyAuthManager:

@@ -10,6 +10,7 @@ from libsync.id.get_ids_from_recording import (
     get_track_ids_from_audio_file,
     get_track_ids_from_youtube_link,
 )
+from libsync.spotify.spotify_auth import validate_spotify_env_vars
 from libsync.spotify.sync_rekordbox_to_spotify import sync_rekordbox_to_spotify
 from libsync.utils.parser_utils import get_cli_argparser
 from libsync.utils.rekordbox_library import LibsyncCommand
@@ -57,6 +58,7 @@ def cli():
     command = args.command
 
     if command == LibsyncCommand.SYNC:
+        validate_spotify_env_vars()
         sync_rekordbox_to_spotify(
             rekordbox_xml_path=args.rekordbox_xml_path,
             create_collection_playlist=args.create_collection_playlist,
