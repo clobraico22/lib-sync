@@ -15,12 +15,12 @@ logger = logging.getLogger("libsync")
 
 def sync_rekordbox_to_spotify(
     rekordbox_xml_path: str,
-    create_collection_playlist: bool,
+    skip_collection_playlist: bool,
     make_playlists_public: bool,
     include_loose_songs: bool,
     ignore_spotify_search_cache: bool,
-    interactive_mode: bool,
-    interactive_mode_pending_tracks: bool,
+    skip_interactive_mode: bool,
+    skip_interactive_mode_pending_tracks: bool,
     skip_spotify_playlist_sync: bool,
     dry_run: bool,
     use_cached_spotify_playlist_data: bool,
@@ -33,11 +33,11 @@ def sync_rekordbox_to_spotify(
         + ", ".join(
             [
                 f"rekordbox_xml_path={rekordbox_xml_path}",
-                f"create_collection_playlist={create_collection_playlist}",
+                f"skip_collection_playlist={skip_collection_playlist}",
                 f"make_playlists_public={make_playlists_public}",
                 f"include_loose_songs={include_loose_songs}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
-                f"interactive_mode={interactive_mode}",
+                f"skip_interactive_mode={skip_interactive_mode}",
                 f"dry_run={dry_run}",
                 f"use_cached_spotify_playlist_data={use_cached_spotify_playlist_data}",
                 f"overwrite_spotify_playlists={overwrite_spotify_playlists}",
@@ -57,7 +57,7 @@ def sync_rekordbox_to_spotify(
     )
 
     # get rekordbox db from xml
-    rekordbox_library = get_rekordbox_library(rekordbox_xml_path, create_collection_playlist)
+    rekordbox_library = get_rekordbox_library(rekordbox_xml_path, skip_collection_playlist)
 
     # this muddies up the logs quite a bit - add it back if needed
     # logger.debug(f"got rekordbox library: {rekordbox_library}")
@@ -69,8 +69,8 @@ def sync_rekordbox_to_spotify(
         rb_track_ids_flagged_for_rematch,
         pending_tracks_spotify_to_rekordbox,
         ignore_spotify_search_cache,
-        interactive_mode,
-        interactive_mode_pending_tracks,
+        skip_interactive_mode,
+        skip_interactive_mode_pending_tracks,
     )
 
     # create a playlist in the user's account for each rekordbox playlist

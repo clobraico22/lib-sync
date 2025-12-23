@@ -72,7 +72,6 @@ The repository includes sample data for testing:
 # Test sync command
 uv run libsync -vv sync \
   --rekordbox_xml_path sample_data/example_rekordbox_export.xml \
-  --create_collection_playlist
 
 # Test analyze command
 uv run libsync analyze \
@@ -92,7 +91,6 @@ uv run libsync id youtube \
 # Sync with your Rekordbox library
 uv run libsync -vv sync \
   --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml \
-  --create_collection_playlist
 
 # Analyze your library
 uv run libsync analyze \

@@ -52,8 +52,8 @@ def get_spotify_matches(
     rb_track_ids_flagged_for_rematch: set[str],
     pending_tracks_spotify_to_rekordbox: dict[str, object],
     ignore_spotify_search_cache: bool,
-    interactive_mode: bool,
-    interactive_mode_pending_tracks: bool,  # Add this parameter
+    skip_interactive_mode: bool,
+    skip_interactive_mode_pending_tracks: bool,
 ) -> dict[str, str]:
     """attempt to map all songs in rekordbox library to spotify uris
 
@@ -66,10 +66,10 @@ def get_spotify_matches(
         pending_tracks_spotify_to_rekordbox (dict[str, str]): map from spotify uri to spotify song details object
         ignore_spotify_search_cache (bool): hit spotify apis to fetch songs
             instead of relying on local libsync cache
-        interactive_mode (bool): run searching + matching process
-            with manual input on failed auto match
-        interactive_mode_pending_tracks (bool): run searching + matching process
-            for pending tracks with manual input on failed auto match
+        skip_interactive_mode (bool): run searching + matching process
+            without manual input on failed auto match
+        skip_interactive_mode_pending_tracks (bool): run searching + matching process
+            for pending tracks without manual input on failed auto match
 
     Returns:
         rekordbox_to_spotify_map (dict[str, str]): reference to rekordbox_to_spotify_map argument
@@ -90,8 +90,8 @@ def get_spotify_matches(
                 f"rb_track_ids_flagged_for_rematch={rb_track_ids_flagged_for_rematch}",
                 # f"pending_tracks_spotify_to_rekordbox={pending_tracks_spotify_to_rekordbox}",
                 f"ignore_spotify_search_cache={ignore_spotify_search_cache}",
-                f"interactive_mode={interactive_mode}",
-                f"interactive_mode_pending_tracks={interactive_mode_pending_tracks}",
+                f"skip_interactive_mode={skip_interactive_mode}",
+                f"skip_interactive_mode_pending_tracks={skip_interactive_mode_pending_tracks}",
             ]
         )
     )
@@ -142,7 +142,7 @@ def get_spotify_matches(
             or rekordbox_to_spotify_map[t] == SpotifyMappingDbFlags.SKIP_TRACK
         ]
 
-        if not interactive_mode_pending_tracks:
+        if skip_interactive_mode_pending_tracks:
             string_utils.print_libsync_status(
                 f"Skipping interactive matching against pending tracks for {len(rb_track_ids_to_match)} tracks",
                 level=1,
@@ -197,7 +197,7 @@ def get_spotify_matches(
         or rekordbox_to_spotify_map[t] == SpotifyMappingDbFlags.SKIP_TRACK
     ]
 
-    if not interactive_mode:
+    if skip_interactive_mode:
         string_utils.print_libsync_status(
             f"Skipping interactive matching for f{len(rb_track_ids_to_match)} tracks",
             level=1,
