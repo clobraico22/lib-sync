@@ -26,16 +26,17 @@ def get_cli_argparser():
     parser_sync.add_argument(
         "--rekordbox_xml_path",
         type=str,
-        help="path to rekordbox xml (in rekordbox: file -> Export Collection in xml format)",
-        required=True,
+        help="path to rekordbox xml (in rekordbox: file -> Export Collection in xml format). "
+        + "If not provided, will use REKORDBOX_XML_PATH environment variable",
+        required=False,
     )
     parser_sync.add_argument(
-        "--interactive_mode",
+        "--skip_interactive_mode",
         action="store_true",
         help="interactively fix matches",
     )
     parser_sync.add_argument(
-        "--interactive_mode_pending_tracks",
+        "--skip_interactive_mode_pending_tracks",
         action="store_true",
         help="Enable interactive mode for pending tracks",
     )
@@ -52,7 +53,7 @@ def get_cli_argparser():
         + "manual mapping corrections or testing libsync features",
     )
     parser_sync.add_argument(
-        "--create_collection_playlist",
+        "--skip_collection_playlist",
         action="store_true",
         help="make a playlist of the total rekordbox collection",
     )
@@ -89,8 +90,9 @@ def get_cli_argparser():
     parser_analyze.add_argument(
         "--rekordbox_xml_path",
         type=str,
-        help="path to rekordbox xml (in rekordbox: file -> Export Collection in xml format)",
-        required=True,
+        help="path to rekordbox xml (in rekordbox: file -> Export Collection in xml format). "
+        + "If not provided, will use REKORDBOX_XML_PATH environment variable",
+        required=False,
     )
     parser_analyze.add_argument(
         "--include_loose_songs",

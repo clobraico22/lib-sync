@@ -54,65 +54,64 @@ After installation, the `libsync` command will be available in your terminal.
 
 ## Configuration
 
-### Spotify API Setup
+### Environment Variables
 
-1. Go to the [Spotify Developers Dashboard](https://developer.spotify.com/dashboard)
-2. Click "Create App" to get a Client ID and Client Secret
-3. Create a `.env` file in your working directory:
+Create a `.env` file in your working directory:
 
 ```bash
 cp .env.example .env
 ```
 
-4. Add your Spotify credentials to the `.env` file:
+Supported environment variables:
 
-```
+```bash
+# Required for Spotify sync
 SPOTIPY_CLIENT_ID=your_client_id_here
 SPOTIPY_CLIENT_SECRET=your_client_secret_here
+SPOTIPY_REDIRECT_URI=http://localhost:8080
+
+# Optional: Default path to Rekordbox XML export
+REKORDBOX_XML_PATH=/path/to/rekordbox_export.xml
 ```
+
+### Spotify API Setup
+
+1. Go to the [Spotify Developers Dashboard](https://developer.spotify.com/dashboard)
+2. Click "Create App" to get a Client ID and Client Secret
+3. Add your credentials to the `.env` file (see above)
 
 ## Usage
 
 ### Sync Rekordbox to Spotify
 
-First, export your library from Rekordbox as XML (File → Export Collection in XML format).
+1. Export your library from Rekordbox (File → Export Collection in XML format)
+2. Tell libsync where to find the exported XML file - two options:
+   - CLI flag: `--rekordbox_xml_path /path/to/export.xml` (takes precedence)
+   - Environment variable: Set `REKORDBOX_XML_PATH` in your `.env` file
+3. Run the sync command:
 
 ```bash
-# Display help
+# Describe available flags
 libsync sync -h
 
-# Basic sync
+# Basic sync (using environment variable from .env)
+libsync sync
+
+# Basic sync (using CLI flag)
 libsync sync --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
-
-# Sync with collection playlist creation
-libsync sync \
-  --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml \
-  --create_collection_playlist
-
-# Sync specific playlists only
-libsync sync \
-  --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml \
-  --rekordbox_playlist_names "House Music" "Techno Classics"
-
-# Force refresh Spotify search cache
-libsync sync \
-  --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml \
-  --ignore_spotify_search_cache
 ```
 
 ### Analyze Rekordbox Library
 
 ```bash
-# Display help
+# Describe available flags
 libsync analyze -h
 
-# Analyze library
-libsync analyze --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
+# Analyze library (path from CLI or .env)
+libsync analyze
 
-# Generate detailed report
-libsync analyze \
-  --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml \
-  --output_format detailed
+# Analyze with explicit path
+libsync analyze --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
 ```
 
 ### Identify Songs
@@ -123,12 +122,6 @@ libsync id file --recording_audio_file_path ~/Music/unknown_track.mp3
 
 # Identify from YouTube URL
 libsync id youtube --youtube_url "https://www.youtube.com/watch?v=VIDEO_ID"
-
-# Identify with timestamp range (for DJ sets)
-libsync id youtube \
-  --youtube_url "https://www.youtube.com/watch?v=VIDEO_ID" \
-  --start_time "10:30" \
-  --end_time "15:45"
 ```
 
 ### Audio Analysis Scripts
@@ -195,14 +188,15 @@ uv run python scripts/combined_analysis_viz.py recording.m4a -o combined.png
 
 ### Debugging
 
+Logs go to `~/.libsync/data/logs`. check there for records of all the libsync commands you run.
 Use `-v` or `--verbose` flags before the subcommand for more detailed output:
 
 ```bash
 # INFO level logging
-libsync -v sync --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
+libsync -v sync
 
 # DEBUG level logging
-libsync -vv sync --rekordbox_xml_path ~/Documents/rekordbox/rekordbox_export.xml
+libsync -vv sync
 ```
 
 ## Manual Track Matching

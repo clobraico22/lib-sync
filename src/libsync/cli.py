@@ -1,6 +1,8 @@
 """CLI entry point"""
 
 import logging
+import os
+import sys
 import time
 
 from dotenv import load_dotenv
@@ -32,6 +34,17 @@ def setup_logger(logger):
     logger.addHandler(ch)
 
 
+def get_rekordbox_xml_path_or_throw(args, logger):
+    rekordbox_xml_path = args.rekordbox_xml_path or os.getenv("REKORDBOX_XML_PATH")
+    if not rekordbox_xml_path:
+        logger.error(
+            "Error: rekordbox_xml_path is required. "
+            "Provide it via --rekordbox_xml_path flag or REKORDBOX_XML_PATH environment variable"
+        )
+        sys.exit(1)
+    return rekordbox_xml_path
+
+
 def cli():
     """
     parse command line args, call other components
@@ -57,14 +70,16 @@ def cli():
     command = args.command
 
     if command == LibsyncCommand.SYNC:
+        rekordbox_xml_path = get_rekordbox_xml_path_or_throw(args, logger)
+
         sync_rekordbox_to_spotify(
-            rekordbox_xml_path=args.rekordbox_xml_path,
-            create_collection_playlist=args.create_collection_playlist,
+            rekordbox_xml_path=rekordbox_xml_path,
+            skip_collection_playlist=args.skip_collection_playlist,
             make_playlists_public=args.make_playlists_public,
             include_loose_songs=args.include_loose_songs,
             ignore_spotify_search_cache=args.ignore_spotify_search_cache,
-            interactive_mode=args.interactive_mode,
-            interactive_mode_pending_tracks=args.interactive_mode_pending_tracks,
+            skip_interactive_mode=args.skip_interactive_mode,
+            skip_interactive_mode_pending_tracks=args.skip_interactive_mode_pending_tracks,
             skip_spotify_playlist_sync=args.skip_spotify_playlist_sync,
             dry_run=args.dry_run,
             use_cached_spotify_playlist_data=args.use_cached_spotify_playlist_data,
@@ -72,7 +87,7 @@ def cli():
         )
 
     elif command == LibsyncCommand.ANALYZE:
-        rekordbox_xml_path = args.rekordbox_xml_path
+        rekordbox_xml_path = get_rekordbox_xml_path_or_throw(args, logger)
         include_loose_songs = args.include_loose_songs
 
         analyze_rekordbox_library(
