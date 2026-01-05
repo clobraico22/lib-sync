@@ -6,7 +6,7 @@ help: ## Show this help message
 sync: ## Sync playlists (use when Spotify has changed since last sync)
 	uv run libsync sync
 
-sync-dry-run: ## Preview overwriting Spotify playlists from Rekordbox (dry run)
+sync-overwrite-dry-run: ## Preview overwriting Spotify playlists from Rekordbox (dry run)
 	uv run libsync sync --overwrite_spotify_playlists --dry_run --use_cached_spotify_playlist_data
 
 sync-overwrite: ## Overwrite Spotify playlists from Rekordbox (uses cached data)
