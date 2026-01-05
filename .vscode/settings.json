@@ -16,5 +16,6 @@
   "notebook.formatOnSave.enabled": true,
   "workbench.colorCustomizations": {
     "titleBar.activeBackground": "#770000"
-  }
+  },
+  "makefile.configureOnOpen": false
 }
