@@ -203,8 +203,14 @@ def sync_spotify_playlists(
         f"time taken for save_list_of_user_playlists: {(time.time() - start_time):.3f} seconds"
     )
 
+    # filter out playlists not in playlist_id_map (e.g. during dry run, new playlists
+    # are identified but not created, so they won't have an entry in the map yet)
+    rb_playlists_in_map = [
+        rb_playlist for rb_playlist in rekordbox_playlists if rb_playlist.name in playlist_id_map
+    ]
+
     spotify_playlist_write_jobs, new_spotify_additions = get_playlist_diffs(
-        rekordbox_playlists,
+        rb_playlists_in_map,
         rekordbox_to_spotify_map,
         playlist_id_map,
         libsync_owned_spotify_playlists,
@@ -229,9 +235,7 @@ def sync_spotify_playlists(
         confirmation = input("\nDo you want to proceed with these changes? (y/n): ").lower().strip()
         if confirmation != "y":
             string_utils.print_libsync_status("Canceling playlist updates", level=2)
-            return playlist_id_map
-
-        if not dry_run:
+        elif not dry_run:
             string_utils.print_libsync_status("Updating Spotify playlists", level=1)
 
             logger.info(f"running overwrite_playlists with {len(spotify_playlist_write_jobs)} jobs")
@@ -422,7 +426,7 @@ def get_playlist_diffs(
         logger.debug(f"get_playlist_diffs for rekordbox playlist with name: {rb_playlist.name}")
 
         if rb_playlist.name not in playlist_id_map:
-            logger.error(f"failed to add playlist {rb_playlist.name} to playlist_id_map.")
+            logger.warning(f"playlist {rb_playlist.name} not found in playlist_id_map, skipping.")
             continue
 
         sp_uris_from_rb = get_filtered_spotify_uris_from_rekordbox_playlist(
