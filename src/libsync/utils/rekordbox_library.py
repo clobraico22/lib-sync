@@ -16,17 +16,50 @@ class LibsyncCommand(str, Enum):
 
 RekordboxTrackID = str
 
+CAMELOT_TO_MUSICAL_KEY = {
+    "1A": "Ab minor",
+    "2A": "Eb minor",
+    "3A": "Bb minor",
+    "4A": "F minor",
+    "5A": "C minor",
+    "6A": "G minor",
+    "7A": "D minor",
+    "8A": "A minor",
+    "9A": "E minor",
+    "10A": "B minor",
+    "11A": "F# minor",
+    "12A": "Db minor",
+    "1B": "B major",
+    "2B": "F# major",
+    "3B": "Db major",
+    "4B": "Ab major",
+    "5B": "Eb major",
+    "6B": "Bb major",
+    "7B": "F major",
+    "8B": "C major",
+    "9B": "G major",
+    "10B": "D major",
+    "11B": "A major",
+    "12B": "E major",
+}
+
 
 class RekordboxTrack:
     """Relevant track info from rekordbox xml file"""
 
     def __init__(
-        self, id: RekordboxTrackID, name: str, artist: str, album: str | None = None
+        self,
+        id: RekordboxTrackID,
+        name: str,
+        artist: str,
+        album: str | None = None,
+        tonality: str | None = None,
     ) -> None:
         self.id = id
         self.name = name
         self.artist = artist
         self.album = album
+        self.tonality = tonality
 
     def __repr__(self) -> str:
         return f"[{self.id}] {self.artist} - {self.name} - " + (

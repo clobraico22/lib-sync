@@ -51,6 +51,7 @@ def get_rekordbox_library(
             name=track.get("Name"),
             artist=track.get("Artist"),
             album=track.get("Album"),
+            tonality=track.get("Tonality") or None,
         )
         for track in root.findall("./COLLECTION/TRACK")
         if should_keep_track_in_collection(track)
