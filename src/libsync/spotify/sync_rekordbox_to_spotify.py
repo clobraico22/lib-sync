@@ -59,6 +59,15 @@ def sync_rekordbox_to_spotify(
     # get rekordbox db from xml
     rekordbox_library = get_rekordbox_library(rekordbox_xml_path, skip_collection_playlist)
 
+    # remove stale mappings for tracks no longer in the rekordbox collection
+    stale_track_ids = [
+        rb_id for rb_id in rekordbox_to_spotify_map if rb_id not in rekordbox_library.collection
+    ]
+    for rb_id in stale_track_ids:
+        del rekordbox_to_spotify_map[rb_id]
+    if stale_track_ids:
+        logger.info(f"removed {len(stale_track_ids)} stale track mappings for deleted tracks")
+
     # this muddies up the logs quite a bit - add it back if needed
     # logger.debug(f"got rekordbox library: {rekordbox_library}")
 
